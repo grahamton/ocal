@@ -1,0 +1,15 @@
+{
+  "name": "functions",
+  "private": true,
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "lint": "echo \"(no lint configured for functions)\""
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.16.0",
+    "ajv": "^8.17.1",
+    "firebase-functions": "^5.1.0",
+    "openai": "^4.77.4"
+  }
+}

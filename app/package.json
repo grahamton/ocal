@@ -1,0 +1,37 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "eslint .",
+    "test": "npm run test:unit",
+    "test:unit": "npm run build:test && node --test dist/tests/**/*.js",
+    "build:test": "tsc -p tsconfig.test.json"
+  },
+  "dependencies": {
+    "expo": "~54.0.30",
+    "expo-camera": "~17.0.10",
+    "expo-file-system": "~19.0.21",
+    "expo-location": "~19.0.8",
+    "expo-media-library": "~18.2.1",
+    "expo-sqlite": "~16.0.10",
+    "expo-status-bar": "~3.0.9",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-safe-area-context": "^5.6.2"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.50.1",
+    "@typescript-eslint/parser": "^8.50.1",
+    "eslint": "^9.39.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "typescript": "~5.9.2"
+  },
+  "private": true
+}
