@@ -15,6 +15,10 @@ function clampImages(body) {
 }
 
 async function callOpenAI({ userPrompt, images }) {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('Missing OPENAI_API_KEY secret');
+  }
+
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const content = [{ type: 'input_text', text: userPrompt }];
   for (const img of images) {
@@ -68,6 +72,10 @@ function toGeminiParts({ userPrompt, images }) {
 }
 
 async function callGemini({ userPrompt, images }) {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('Missing GEMINI_API_KEY secret');
+  }
+
   // Direct REST call to v1 Gemini to avoid client version issues.
   const apiKey = process.env.GEMINI_API_KEY;
   const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -113,6 +121,9 @@ exports.identify = onRequest(
 
     const body = req.body || {};
     const provider = (body.provider || 'openai').toLowerCase();
+    if (!['openai', 'gemini'].includes(provider)) {
+      return res.status(400).json({ error: 'Unsupported provider', provider });
+    }
     const images = clampImages(body);
     if (images.length === 0) {
       return res.status(400).json({ error: 'No images provided' });
