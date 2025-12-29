@@ -19,7 +19,7 @@ export function CameraCapture({ onSaved }: Props) {
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusKind, setStatusKind] = useState<'info' | 'success' | 'error'>('info');
-  const { activeSession, addFindToActiveSession } = useSession();
+  const { activeSession, startSession, addFindToActiveSession } = useSession();
 
   useEffect(() => {
     if (!permission?.granted) {
@@ -73,6 +73,7 @@ export function CameraCapture({ onSaved }: Props) {
     setStatusMessage('Capturing...');
 
     try {
+      const session = activeSession ?? (await startSession());
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.6, skipProcessing: true });
       const dir = await ensureDir();
       const id = createId();
@@ -102,15 +103,13 @@ export function CameraCapture({ onSaved }: Props) {
         category: null,
         label: `Find ${new Date().toLocaleDateString()}`,
         status: 'draft',
-        sessionId: activeSession?.id ?? null,
+        sessionId: session.id,
         favorite: false,
       };
 
       try {
         await insertFind(record);
-        if (activeSession) {
-          await addFindToActiveSession(record.id);
-        }
+        await addFindToActiveSession(record.id, session.id);
         const locationNote = location ? '' : ' (no GPS - still saved)';
         setStatusKind('success');
         setStatusMessage(`Saved offline${locationNote}`);
