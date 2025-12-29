@@ -53,6 +53,10 @@ function AppContent() {
   const [devNotesVisible, setDevNotesVisible] = useState(false);
   const [nextActionVisible, setNextActionVisible] = useState(false);
 
+  const handleRefresh = () => {
+    setRefreshKey((n) => n + 1);
+  };
+
   const handleSaved = () => {
     setRefreshKey((n) => n + 1);
     setNextActionVisible(true);
@@ -114,42 +118,40 @@ function AppContent() {
       <ScrollView style={styles.pageScroll} contentContainerStyle={styles.pageContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.headerRow}>
-            <View>
-              <Text style={styles.title}>Ocal</Text>
-              <Text style={styles.subtitle}>Beach Mode capture + easy sorting.</Text>
-            </View>
+            <Text style={styles.title}>Ocal</Text>
+            {activeSession ? <Text style={styles.sessionPill}>{activeSession.name}</Text> : null}
+            <View style={{ flex: 1 }} />
             {__DEV__ ? (
-              <TouchableOpacity style={styles.devPill} onPress={() => setDevNotesVisible(true)}>
-                <Text style={styles.devPillText}>Dev notes</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity style={styles.devPill} onPress={() => setDevNotesVisible(true)}>
+                  <Text style={styles.devPillText}>Notes</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.devReset} onPress={handleDevReset}>
+                  <Text style={styles.devResetText}>Reset</Text>
+                </TouchableOpacity>
+              </View>
             ) : null}
           </View>
-          {activeSession ? <Text style={styles.sessionPill}>Active session: {activeSession.name}</Text> : null}
-          {__DEV__ ? (
-            <TouchableOpacity style={styles.devReset} onPress={handleDevReset}>
-              <Text style={styles.devResetText}>Reset local data</Text>
-            </TouchableOpacity>
-          ) : null}
         </View>
         <View style={styles.tabs}>
-          {[
-            { key: 'capture', label: 'Capture' },
-            { key: 'cataloger', label: 'Cataloger' },
-            { key: 'gallery', label: 'Gallery' },
-          ].map((tab) => {
-            const active = view === tab.key;
-            return (
-              <TouchableOpacity
-                key={tab.key}
-                style={[styles.tabButton, active && styles.tabButtonActive]}
-                onPress={() => setView(tab.key as typeof view)}
-                activeOpacity={0.85}
-              >
-                <Text style={[styles.tabText, active && styles.tabTextActive]}>{tab.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+            {[
+              { key: 'capture', label: 'Capture' },
+              { key: 'cataloger', label: 'Cataloger' },
+              { key: 'gallery', label: 'Gallery' },
+            ].map((tab) => {
+              const active = view === tab.key;
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  style={[styles.tabButton, active && styles.tabButtonActive]}
+                  onPress={() => setView(tab.key as typeof view)}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[styles.tabText, active && styles.tabTextActive]}>{tab.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         {view === 'capture' ? (
           <View style={styles.section}>
             <CameraCapture
@@ -160,7 +162,7 @@ function AppContent() {
             />
             <SessionLedger
               refreshKey={refreshKey}
-              onUpdated={handleSaved}
+              onUpdated={handleRefresh}
               onRequestReview={() => {
                 setSelectedSessionId(activeSession?.id ?? null);
                 setView('cataloger');
@@ -180,7 +182,7 @@ function AppContent() {
             ) : (
               <CatalogerDashboard
                 refreshKey={refreshKey}
-                onUpdated={handleSaved}
+                onUpdated={handleRefresh}
                 onStartSession={() => setView('capture')}
                 onOpenSession={(id) => setSelectedSessionId(id)}
               />
@@ -268,20 +270,15 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#111',
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#4b5563',
-  },
   sessionPill: {
-    marginTop: 4,
-    alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 10,
+    borderRadius: 8,
     backgroundColor: '#eef2ff',
-    color: '#111',
+    color: '#4f46e5',
     fontWeight: '700',
     fontSize: 13,
+    overflow: 'hidden',
   },
   tabs: {
     flexDirection: 'row',
@@ -290,8 +287,8 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: 14,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#e5e7eb',
     alignItems: 'center',
@@ -302,7 +299,7 @@ const styles = StyleSheet.create({
     borderColor: '#0f172a',
   },
   tabText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
     color: '#0f172a',
   },

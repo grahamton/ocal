@@ -122,11 +122,11 @@ export function SessionDetailView({ sessionId, refreshKey, onBack, onUpdated }: 
                 {item.favorite ? <Text style={styles.favoriteMark}>★</Text> : null}
               </View>
               <TouchableOpacity
-                style={styles.favoriteButton}
+                style={[styles.favoriteButton, item.favorite && styles.favoriteButtonActive]}
                 onPress={() => toggleFavorite(item.id, !item.favorite)}
                 activeOpacity={0.9}
               >
-                <Text style={styles.favoriteButtonText}>{item.favorite ? 'Unstar' : 'Star for ledger'}</Text>
+                <Text style={[styles.favoriteButtonText, item.favorite && styles.favoriteButtonTextActive]}>{item.favorite ? 'Kept' : 'Keep'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -291,9 +291,16 @@ const styles = StyleSheet.create({
     borderColor: '#e5e7eb',
     alignItems: 'center',
   },
+  favoriteButtonActive: {
+    backgroundColor: '#0f172a',
+    borderColor: '#0f172a',
+  },
   favoriteButtonText: {
     fontWeight: '800',
     color: '#0f172a',
+  },
+  favoriteButtonTextActive: {
+    color: '#fff',
   },
   activeHint: {
     color: '#0f172a',
