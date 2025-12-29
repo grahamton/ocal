@@ -12,15 +12,15 @@ export function NextActionPrompt({ visible, onStay, onReview, onEndSession }: Pr
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onStay}>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
-          <Text style={styles.title}>Next up?</Text>
-          <Text style={styles.subtitle}>Saved offline. Pick your move.</Text>
+          <Text style={styles.title}>Saved offline.</Text>
+          <Text style={styles.subtitle}>Review now or keep capturing?</Text>
           <TouchableOpacity style={[styles.button, styles.primary]} onPress={onReview} activeOpacity={0.9}>
-            <Text style={styles.primaryText}>Review & identify</Text>
-            <Text style={styles.hint}>Jump to cataloger to sort and run analysis.</Text>
+            <Text style={styles.primaryText}>Review kept</Text>
+            <Text style={styles.hint}>See your photos and add details.</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.button} onPress={onStay} activeOpacity={0.9}>
             <Text style={styles.secondaryText}>Keep capturing</Text>
-            <Text style={styles.hint}>Stay in capture for the next find.</Text>
+            <Text style={styles.hint}>Stay in camera for the next find.</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.endButton} onPress={onEndSession} activeOpacity={0.9}>
             <Text style={styles.endText}>End session</Text>
@@ -45,13 +45,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '900',
     color: '#0f172a',
   },
   subtitle: {
     color: '#475569',
-    fontWeight: '700',
+    fontWeight: '800',
   },
   button: {
     padding: 14,

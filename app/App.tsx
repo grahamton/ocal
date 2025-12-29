@@ -124,32 +124,36 @@ function AppContent() {
               </TouchableOpacity>
             ) : null}
           </View>
-          {activeSession ? <Text style={styles.sessionPill}>Active session: {activeSession.name}</Text> : null}
+          {activeSession ? <Text style={styles.sessionPill}>Session: {activeSession.name}</Text> : null}
+          <TouchableOpacity style={styles.reviewButton} onPress={() => setView('cataloger')} activeOpacity={0.9}>
+            <Text style={styles.reviewButtonText}>Review finds</Text>
+          </TouchableOpacity>
           {__DEV__ ? (
             <TouchableOpacity style={styles.devReset} onPress={handleDevReset}>
               <Text style={styles.devResetText}>Reset local data</Text>
             </TouchableOpacity>
           ) : null}
         </View>
-        <View style={styles.tabs}>
-          {[
-            { key: 'capture', label: 'Capture' },
-            { key: 'cataloger', label: 'Cataloger' },
-            { key: 'gallery', label: 'Gallery' },
-          ].map((tab) => {
-            const active = view === tab.key;
-            return (
-              <TouchableOpacity
-                key={tab.key}
-                style={[styles.tabButton, active && styles.tabButtonActive]}
-                onPress={() => setView(tab.key as typeof view)}
-                activeOpacity={0.85}
-              >
-                <Text style={[styles.tabText, active && styles.tabTextActive]}>{tab.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        {view !== 'capture' ? (
+          <View style={styles.tabs}>
+            {[
+              { key: 'cataloger', label: 'Cataloger' },
+              { key: 'gallery', label: 'Gallery' },
+            ].map((tab) => {
+              const active = view === tab.key;
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  style={[styles.tabButton, active && styles.tabButtonActive]}
+                  onPress={() => setView(tab.key as typeof view)}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[styles.tabText, active && styles.tabTextActive]}>{tab.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : null}
         {view === 'capture' ? (
           <View style={styles.section}>
             <CameraCapture
@@ -275,13 +279,13 @@ const styles = StyleSheet.create({
   sessionPill: {
     marginTop: 4,
     alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
     backgroundColor: '#eef2ff',
     color: '#111',
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 14,
   },
   tabs: {
     flexDirection: 'row',
@@ -290,8 +294,8 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: 14,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#e5e7eb',
     alignItems: 'center',
@@ -302,7 +306,7 @@ const styles = StyleSheet.create({
     borderColor: '#0f172a',
   },
   tabText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
     color: '#0f172a',
   },
