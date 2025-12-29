@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Modal,
   ScrollView,
@@ -11,11 +10,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system/legacy';
 import { updateFindMetadata } from '../../shared/db';
 import { FindRecord } from '../../shared/types';
 import { identifyRock } from '../../ai/identifyRock';
 import { formatCoords } from '../../shared/format';
+import { SinglePosterView } from '../poster/SinglePosterView';
 
 type Props = {
   visible: boolean;
@@ -51,6 +52,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
   };
 
   const [aiResult, setAiResult] = useState<AiResult | null>(null);
+  const [posterVisible, setPosterVisible] = useState(false);
 
   useEffect(() => {
     if (item) {
@@ -141,10 +143,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
         <View style={styles.sheet}>
           <ScrollView contentContainerStyle={styles.content}>
             <View style={styles.topBar}>
-              <TouchableOpacity
-                style={styles.posterButton}
-                onPress={() => Alert.alert('Poster', 'Poster preview coming soon.')}
-              >
+              <TouchableOpacity style={styles.posterButton} onPress={() => setPosterVisible(true)}>
                 <Text style={styles.posterText}>✨ Poster</Text>
               </TouchableOpacity>
             </View>
@@ -323,6 +322,13 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
           </ScrollView>
         </View>
       </View>
+      <Modal visible={posterVisible} animationType="slide" onRequestClose={() => setPosterVisible(false)}>
+        <SafeAreaView style={styles.posterSafeArea}>
+          <ScrollView contentContainerStyle={styles.posterModalContent}>
+            <SinglePosterView item={item} onClose={() => setPosterVisible(false)} />
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </Modal>
   );
 }
@@ -333,6 +339,13 @@ function createStyles() {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.35)',
       justifyContent: 'flex-end',
+    },
+    posterSafeArea: {
+      flex: 1,
+      backgroundColor: '#fafaf9',
+    },
+    posterModalContent: {
+      padding: 20,
     },
     sheet: {
       backgroundColor: '#fff',
