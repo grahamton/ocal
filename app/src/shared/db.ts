@@ -184,6 +184,14 @@ export async function deleteFind(id: string) {
   await db.runAsync(`DELETE FROM finds WHERE id = ?;`, id);
 }
 
+export async function clearAllDataForDev() {
+  if (!__DEV__) {
+    throw new Error('clearAllDataForDev is only available in development builds.');
+  }
+  await db.execAsync('DELETE FROM finds;');
+  await db.execAsync('DELETE FROM sessions;');
+}
+
 export async function createSession(session: Session) {
   await db.runAsync(
     `

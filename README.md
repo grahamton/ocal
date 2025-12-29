@@ -80,6 +80,13 @@ Quick, forgiving field logger for rockhounds. Capture finds in seconds on the be
 - Thumb-zone placement for primary CTAs; secondary actions at top.
 - Progress cues: "Saved offline" badge; sync state indicator when back on WiFi.
 
+## Code Style & Quality (repo hygiene)
+- Linting: run `npm run lint` before finishing any task; no unused variables.
+- Testing: add simple unit tests for utilities; UI tests should assert main buttons are visible.
+- Refactoring: stay modular but avoid over-slicing. Split when sections are reused, hard to scan, have distinct logic/tests, or files creep past ~250–300 lines. Keep simple, single-use UI blocks inline when that makes the flow clearer.
+- Dependencies: do not add new npm packages without explicit permission.
+- Comments: keep them minimal; prioritize clear naming.
+
 ## Future Nice-to-Haves
 - Tide widget showing upcoming low tides for current GPS.
 - Favorites to spotlight the best find of the day/trip.

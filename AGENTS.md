@@ -30,7 +30,7 @@ Guidance for AI agents and humans working on Ocal. Primary user is a non-technic
 
 - Linting: run `npm run lint` before finishing any task; no unused variables.
 - Testing: write simple unit tests for utilities (e.g., coordinate formatting). UI tests should assert main buttons are visible.
-- Refactoring: if a file exceeds 200 lines, propose refactor immediately.
+- Refactoring: stay modular but avoid over-slicing. Split when sections are reused, hard to scan, have distinct logic/tests, or files creep past ~250–300 lines. Keep simple, single-use UI blocks inline when that makes the flow clearer.
 - Dependencies: do not add new npm packages without explicit user permission.
 - Comments: keep them minimal; prioritize clear naming.
 
