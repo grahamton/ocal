@@ -10,7 +10,7 @@ type SessionContextValue = {
   endSession: (name?: string) => Promise<Session | null>;
   endSessionById: (sessionId: string, name?: string) => Promise<Session | null>;
   refreshSessions: () => Promise<void>;
-  addFindToActiveSession: (findId: string) => Promise<void>;
+  addFindToActiveSession: (findId: string, sessionIdOverride?: string) => Promise<void>;
 };
 
 const SessionContext = createContext<SessionContextValue | undefined>(undefined);
@@ -76,9 +76,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   const addFindToActiveSession = useCallback(
-    async (findId: string) => {
-      if (!activeSession) return;
-      await addFindToSession(activeSession.id, findId);
+    async (findId: string, sessionIdOverride?: string) => {
+      const sessionId = sessionIdOverride ?? activeSession?.id;
+      if (!sessionId) return;
+      await addFindToSession(sessionId, findId);
       await refreshSessions();
     },
     [activeSession, refreshSessions]
