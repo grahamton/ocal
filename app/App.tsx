@@ -11,6 +11,9 @@ import { SessionProvider, useSession } from './src/shared/SessionContext';
 import { CatalogerDashboard } from './src/features/cataloger/CatalogerDashboard';
 import { SessionDetailView } from './src/features/cataloger/SessionDetailView';
 import { SessionLedger } from './src/features/capture/SessionLedger';
+import { resetLocalDataForDev } from './src/shared/debugReset';
+import { DevNotes } from './src/shared/DevNotes';
+import { NextActionPrompt } from './src/shared/NextActionPrompt';
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -45,11 +48,14 @@ function AppContent() {
   const [detailVisible, setDetailVisible] = useState(false);
   const [view, setView] = useState<'capture' | 'cataloger' | 'gallery'>('capture');
   const [galleryFilter, setGalleryFilter] = useState<'all' | 'draft'>('all');
-  const { activeSession } = useSession();
+  const { activeSession, startSession, endSession } = useSession();
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [devNotesVisible, setDevNotesVisible] = useState(false);
+  const [nextActionVisible, setNextActionVisible] = useState(false);
 
   const handleSaved = () => {
     setRefreshKey((n) => n + 1);
+    setNextActionVisible(true);
   };
 
   const openDetail = (item: FindRecord) => {
@@ -57,14 +63,73 @@ function AppContent() {
     setDetailVisible(true);
   };
 
+  const handleDevReset = () => {
+    if (!__DEV__) return;
+    Alert.alert('Reset local data', 'This deletes all captures, photos, and sessions on this device.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await resetLocalDataForDev();
+            setSelectedFind(null);
+            setDetailVisible(false);
+            setSelectedSessionId(null);
+            setGalleryFilter('all');
+            setView('capture');
+            setRefreshKey((n) => n + 1);
+            Alert.alert('Reset complete', 'Local cache cleared. Ready for a fresh start.');
+          } catch (error) {
+            Alert.alert('Reset failed', (error as Error)?.message ?? 'Could not reset local data.');
+          }
+        },
+      },
+    ]);
+  };
+
+  const ensureSession = async () => {
+    if (!activeSession) {
+      await startSession();
+    }
+  };
+
+  const handleReview = () => {
+    setNextActionVisible(false);
+    setView('cataloger');
+  };
+
+  const handleEndSession = async () => {
+    setNextActionVisible(false);
+    if (activeSession) {
+      await endSession();
+      setSelectedSessionId(null);
+    }
+    setView('capture');
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <StatusBar barStyle="dark-content" />
-      <View style={styles.content}>
+      <ScrollView style={styles.pageScroll} contentContainerStyle={styles.pageContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Ocal</Text>
-          <Text style={styles.subtitle}>Beach Mode capture + easy sorting.</Text>
+          <View style={styles.headerRow}>
+            <View>
+              <Text style={styles.title}>Ocal</Text>
+              <Text style={styles.subtitle}>Beach Mode capture + easy sorting.</Text>
+            </View>
+            {__DEV__ ? (
+              <TouchableOpacity style={styles.devPill} onPress={() => setDevNotesVisible(true)}>
+                <Text style={styles.devPillText}>Dev notes</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
           {activeSession ? <Text style={styles.sessionPill}>Active session: {activeSession.name}</Text> : null}
+          {__DEV__ ? (
+            <TouchableOpacity style={styles.devReset} onPress={handleDevReset}>
+              <Text style={styles.devResetText}>Reset local data</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
         <View style={styles.tabs}>
           {[
@@ -87,12 +152,24 @@ function AppContent() {
         </View>
         {view === 'capture' ? (
           <View style={styles.section}>
-            <CameraCapture onSaved={handleSaved} />
-            <SessionLedger refreshKey={refreshKey} onUpdated={handleSaved} />
+            <CameraCapture
+              onSaved={async () => {
+                await ensureSession();
+                handleSaved();
+              }}
+            />
+            <SessionLedger
+              refreshKey={refreshKey}
+              onUpdated={handleSaved}
+              onRequestReview={() => {
+                setSelectedSessionId(activeSession?.id ?? null);
+                setView('cataloger');
+              }}
+            />
           </View>
         ) : null}
         {view === 'cataloger' ? (
-          <ScrollView contentContainerStyle={styles.section}>
+          <View style={styles.section}>
             {selectedSessionId ? (
               <SessionDetailView
                 sessionId={selectedSessionId}
@@ -108,10 +185,10 @@ function AppContent() {
                 onOpenSession={(id) => setSelectedSessionId(id)}
               />
             )}
-          </ScrollView>
+          </View>
         ) : null}
         {view === 'gallery' ? (
-          <ScrollView contentContainerStyle={styles.section}>
+          <View style={styles.section}>
             <View style={styles.galleryHeader}>
               <Text style={styles.title}>Gallery</Text>
               <View style={styles.chipRow}>
@@ -134,9 +211,9 @@ function AppContent() {
             </View>
             <GalleryGrid refreshKey={refreshKey} onSelect={openDetail} filter={galleryFilter} />
             <PosterStub onPress={() => Alert.alert('Poster', 'Poster builder coming soon.')} />
-          </ScrollView>
+          </View>
         ) : null}
-      </View>
+      </ScrollView>
       <FindDetailModal
         visible={detailVisible}
         item={selectedFind}
@@ -145,6 +222,21 @@ function AppContent() {
           setDetailVisible(false);
           handleSaved();
         }}
+      />
+      {__DEV__ ? (
+        <DevNotes
+          visible={devNotesVisible}
+          onClose={() => setDevNotesVisible(false)}
+          onSubmit={(note) => {
+            console.log('[DevNote submit]', note);
+          }}
+        />
+      ) : null}
+      <NextActionPrompt
+        visible={nextActionVisible}
+        onStay={() => setNextActionVisible(false)}
+        onReview={handleReview}
+        onEndSession={handleEndSession}
       />
     </SafeAreaView>
   );
@@ -155,12 +247,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f9fafb',
   },
-  content: {
+  pageScroll: {
+    flex: 1,
+  },
+  pageContent: {
     padding: 16,
-    gap: 20,
+    gap: 14,
+    paddingBottom: 32,
   },
   header: {
-    gap: 4,
+    gap: 8,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
     fontSize: 22,
@@ -185,7 +286,7 @@ const styles = StyleSheet.create({
   tabs: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   tabButton: {
     flex: 1,
@@ -210,7 +311,6 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: 12,
-    paddingBottom: 16,
   },
   galleryHeader: {
     marginBottom: 8,
@@ -239,6 +339,31 @@ const styles = StyleSheet.create({
   },
   filterTextActive: {
     color: '#fff',
+  },
+  devPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#e0f2fe',
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+  },
+  devPillText: {
+    color: '#0f172a',
+    fontWeight: '800',
+  },
+  devReset: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#fee2e2',
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+  },
+  devResetText: {
+    color: '#b91c1c',
+    fontWeight: '800',
   },
   loadingContainer: {
     flex: 1,
