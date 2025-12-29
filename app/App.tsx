@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { CameraCapture } from './src/features/capture/CameraCapture';
@@ -52,6 +52,29 @@ function AppContent() {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [devNotesVisible, setDevNotesVisible] = useState(false);
   const [nextActionVisible, setNextActionVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [, setCaptureCount] = useState(0);
+  const [autoPromptEnabled, setAutoPromptEnabled] = useState(false);
+  const [promptSource, setPromptSource] = useState<'auto' | 'manual' | null>(null);
+
+  const autoPromptInterval = 3; // Ask every N captures when enabled.
+
+  const dismissPrompt = useCallback(() => {
+    setNextActionVisible(false);
+    setPromptSource(null);
+  }, []);
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => setToastMessage(null), 3200);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
+
+  useEffect(() => {
+    if (!nextActionVisible || promptSource === 'manual') return;
+    const timer = setTimeout(() => dismissPrompt(), 4200);
+    return () => clearTimeout(timer);
+  }, [dismissPrompt, nextActionVisible, promptSource]);
 
   const handleRefresh = () => {
     setRefreshKey((n) => n + 1);
@@ -59,7 +82,15 @@ function AppContent() {
 
   const handleSaved = () => {
     setRefreshKey((n) => n + 1);
-    setNextActionVisible(true);
+    setCaptureCount((current) => {
+      const next = current + 1;
+      if (autoPromptEnabled && next % autoPromptInterval === 0) {
+        setNextActionVisible(true);
+        setPromptSource('auto');
+      }
+      return next;
+    });
+    setToastMessage(autoPromptEnabled ? 'Saved offline. Review prompt is armed.' : 'Saved offline. Keep snapping.');
   };
 
   const openDetail = (item: FindRecord) => {
@@ -99,12 +130,12 @@ function AppContent() {
   };
 
   const handleReview = () => {
-    setNextActionVisible(false);
+    dismissPrompt();
     setView('cataloger');
   };
 
   const handleEndSession = async () => {
-    setNextActionVisible(false);
+    dismissPrompt();
     if (activeSession) {
       await endSession();
       setSelectedSessionId(null);
@@ -163,6 +194,11 @@ function AppContent() {
             <SessionLedger
               refreshKey={refreshKey}
               onUpdated={handleRefresh}
+              onKept={() => {
+                setAutoPromptEnabled(true);
+                setNextActionVisible(true);
+                setPromptSource('manual');
+              }}
               onRequestReview={() => {
                 setSelectedSessionId(activeSession?.id ?? null);
                 setView('cataloger');
@@ -236,10 +272,43 @@ function AppContent() {
       ) : null}
       <NextActionPrompt
         visible={nextActionVisible}
-        onStay={() => setNextActionVisible(false)}
+        onStay={dismissPrompt}
         onReview={handleReview}
         onEndSession={handleEndSession}
       />
+      {toastMessage ? (
+        <View style={styles.toast}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.toastTitle}>{toastMessage}</Text>
+            <Text style={styles.toastHint}>
+              {autoPromptEnabled
+                ? `We'll suggest a review every ${autoPromptInterval} saves.`
+                : 'Review anytime from the Cataloger tab.'}
+            </Text>
+          </View>
+          <View style={styles.toastActions}>
+            <TouchableOpacity
+              style={[styles.toastButton, autoPromptEnabled && styles.toastButtonActive]}
+              onPress={() => setAutoPromptEnabled((v) => !v)}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.toastButtonText, autoPromptEnabled && styles.toastButtonTextActive]}>
+                {autoPromptEnabled ? 'Auto prompt on' : 'Auto prompt off'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.toastButton}
+              onPress={() => {
+                setNextActionVisible(true);
+                setPromptSource('manual');
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.toastButtonText}>Review options</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -371,5 +440,53 @@ const styles = StyleSheet.create({
   loadingText: {
     color: '#111',
     fontSize: 16,
+  },
+  toast: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 16,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: '#0f172a',
+    borderWidth: 1,
+    borderColor: '#c7d2fe',
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+  },
+  toastTitle: {
+    color: '#fff',
+    fontWeight: '900',
+    fontSize: 15,
+  },
+  toastHint: {
+    color: '#e2e8f0',
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  toastActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  toastButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+    backgroundColor: '#111827',
+  },
+  toastButtonActive: {
+    backgroundColor: '#eef2ff',
+    borderColor: '#c7d2fe',
+  },
+  toastButtonText: {
+    color: '#e2e8f0',
+    fontWeight: '800',
+    fontSize: 12,
+  },
+  toastButtonTextActive: {
+    color: '#111827',
   },
 });

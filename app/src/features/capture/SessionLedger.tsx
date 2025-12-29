@@ -8,6 +8,7 @@ type Props = {
   refreshKey: number;
   onUpdated?: () => void;
   onRequestReview?: () => void;
+  onKept?: () => void;
 };
 
 // Simple ledger: pick keeps, then review.
@@ -31,6 +32,9 @@ export function SessionLedger({ refreshKey, onUpdated, onRequestReview }: Props)
 
   const toggleKeep = async (id: string, current: boolean) => {
     await updateFindMetadata(id, { favorite: !current });
+    if (!current && onKept) {
+      onKept();
+    }
     // Trigger refreshKey increment in parent to reload us and update UI
     if (onUpdated) onUpdated();
     else load();
