@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { listFinds } from '../../shared/db';
+import { listFinds, updateFindMetadata } from '../../shared/db';
 import { useSession } from '../../shared/SessionContext';
 import { FindRecord } from '../../shared/types';
 
@@ -11,15 +11,13 @@ type Props = {
 };
 
 // Simple ledger: pick keeps, then review.
-export function SessionLedger({ refreshKey, onRequestReview }: Props) {
+export function SessionLedger({ refreshKey, onUpdated, onRequestReview }: Props) {
   const { activeSession } = useSession();
   const [items, setItems] = useState<FindRecord[]>([]);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     if (!activeSession) {
       setItems([]);
-      setSelected(new Set());
       return;
     }
     const rows = await listFinds({ sessionId: activeSession.id });
@@ -31,16 +29,11 @@ export function SessionLedger({ refreshKey, onRequestReview }: Props) {
     load();
   }, [load, refreshKey]);
 
-  const toggleSelect = (id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+  const toggleKeep = async (id: string, current: boolean) => {
+    await updateFindMetadata(id, { favorite: !current });
+    // Trigger refreshKey increment in parent to reload us and update UI
+    if (onUpdated) onUpdated();
+    else load();
   };
 
   const handleVoiceNote = () => {
@@ -49,30 +42,45 @@ export function SessionLedger({ refreshKey, onRequestReview }: Props) {
 
   if (!activeSession) return null;
 
+  const keptCount = items.filter((i) => i.favorite).length;
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Session ledger</Text>
         <Text style={styles.caption}>{items.length} finds</Text>
       </View>
-      <Text style={styles.prompt}>Which captures do you want to keep for analysis?</Text>
+      <Text style={styles.prompt}>Tap &quot;Keep&quot; to star items for review.</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         {items.length === 0 ? <Text style={styles.caption}>Captures will appear here.</Text> : null}
         {items.map((item) => (
-          <TouchableOpacity key={item.id} style={styles.tile} onPress={() => toggleSelect(item.id)} activeOpacity={0.9}>
+          <TouchableOpacity
+            key={item.id}
+            style={styles.tile}
+            onPress={() => toggleKeep(item.id, item.favorite)}
+            activeOpacity={0.9}
+          >
             <Image source={{ uri: item.photoUri }} style={styles.thumb} />
-            <TouchableOpacity style={styles.selectBadge} onPress={() => toggleSelect(item.id)} activeOpacity={0.8}>
-              <Text style={[styles.selectText, selected.has(item.id) && styles.selectTextActive]}>
-                {selected.has(item.id) ? '✓' : '○'}
+            <TouchableOpacity
+              style={styles.selectBadge}
+              onPress={() => toggleKeep(item.id, item.favorite)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.selectText, item.favorite && styles.selectTextActive]}>
+                {item.favorite ? '★' : '☆'}
               </Text>
             </TouchableOpacity>
             <View style={styles.meta}>
               <Text style={styles.label} numberOfLines={1}>
                 {item.label || 'Unlabeled'}
               </Text>
-              <TouchableOpacity style={styles.keepChip} onPress={() => toggleSelect(item.id)} activeOpacity={0.85}>
-                <Text style={[styles.keepText, selected.has(item.id) && styles.keepTextActive]}>
-                  {selected.has(item.id) ? 'Kept' : 'Keep'}
+              <TouchableOpacity
+                style={[styles.keepChip, item.favorite && styles.keepChipActive]}
+                onPress={() => toggleKeep(item.id, item.favorite)}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.keepText, item.favorite && styles.keepTextActive]}>
+                  {item.favorite ? 'Kept' : 'Keep'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.voiceChip} onPress={handleVoiceNote} activeOpacity={0.85}>
@@ -83,13 +91,8 @@ export function SessionLedger({ refreshKey, onRequestReview }: Props) {
         ))}
       </ScrollView>
       {items.length > 0 ? (
-        <TouchableOpacity
-          style={[styles.analyzeButton, selected.size === 0 && styles.analyzeButtonDisabled]}
-          disabled={selected.size === 0}
-          onPress={onRequestReview}
-          activeOpacity={0.9}
-        >
-          <Text style={styles.analyzeText}>Review kept ({selected.size})</Text>
+        <TouchableOpacity style={styles.analyzeButton} onPress={onRequestReview} activeOpacity={0.9}>
+          <Text style={styles.analyzeText}>Review Session {keptCount > 0 ? `(${keptCount} kept)` : ''}</Text>
         </TouchableOpacity>
       ) : null}
     </View>
@@ -159,7 +162,7 @@ const styles = StyleSheet.create({
     color: '#0f172a',
   },
   selectTextActive: {
-    color: '#0f172a',
+    color: '#f59e0b', // Gold for star
   },
   meta: {
     padding: 8,
@@ -178,12 +181,15 @@ const styles = StyleSheet.create({
     borderColor: '#0f172a',
     backgroundColor: '#fff',
   },
+  keepChipActive: {
+    backgroundColor: '#0f172a',
+  },
   keepText: {
     fontWeight: '800',
     color: '#0f172a',
   },
   keepTextActive: {
-    color: '#0f172a',
+    color: '#fff',
   },
   voiceChip: {
     alignSelf: 'flex-start',

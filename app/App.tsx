@@ -53,6 +53,10 @@ function AppContent() {
   const [devNotesVisible, setDevNotesVisible] = useState(false);
   const [nextActionVisible, setNextActionVisible] = useState(false);
 
+  const handleRefresh = () => {
+    setRefreshKey((n) => n + 1);
+  };
+
   const handleSaved = () => {
     setRefreshKey((n) => n + 1);
     setNextActionVisible(true);
@@ -114,29 +118,24 @@ function AppContent() {
       <ScrollView style={styles.pageScroll} contentContainerStyle={styles.pageContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.headerRow}>
-            <View>
-              <Text style={styles.title}>Ocal</Text>
-              <Text style={styles.subtitle}>Beach Mode capture + easy sorting.</Text>
-            </View>
+            <Text style={styles.title}>Ocal</Text>
+            {activeSession ? <Text style={styles.sessionPill}>{activeSession.name}</Text> : null}
+            <View style={{ flex: 1 }} />
             {__DEV__ ? (
-              <TouchableOpacity style={styles.devPill} onPress={() => setDevNotesVisible(true)}>
-                <Text style={styles.devPillText}>Dev notes</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity style={styles.devPill} onPress={() => setDevNotesVisible(true)}>
+                  <Text style={styles.devPillText}>Notes</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.devReset} onPress={handleDevReset}>
+                  <Text style={styles.devResetText}>Reset</Text>
+                </TouchableOpacity>
+              </View>
             ) : null}
           </View>
-          {activeSession ? <Text style={styles.sessionPill}>Session: {activeSession.name}</Text> : null}
-          <TouchableOpacity style={styles.reviewButton} onPress={() => setView('cataloger')} activeOpacity={0.9}>
-            <Text style={styles.reviewButtonText}>Review finds</Text>
-          </TouchableOpacity>
-          {__DEV__ ? (
-            <TouchableOpacity style={styles.devReset} onPress={handleDevReset}>
-              <Text style={styles.devResetText}>Reset local data</Text>
-            </TouchableOpacity>
-          ) : null}
         </View>
-        {view !== 'capture' ? (
-          <View style={styles.tabs}>
+        <View style={styles.tabs}>
             {[
+              { key: 'capture', label: 'Capture' },
               { key: 'cataloger', label: 'Cataloger' },
               { key: 'gallery', label: 'Gallery' },
             ].map((tab) => {
@@ -153,7 +152,6 @@ function AppContent() {
               );
             })}
           </View>
-        ) : null}
         {view === 'capture' ? (
           <View style={styles.section}>
             <CameraCapture
@@ -164,7 +162,7 @@ function AppContent() {
             />
             <SessionLedger
               refreshKey={refreshKey}
-              onUpdated={handleSaved}
+              onUpdated={handleRefresh}
               onRequestReview={() => {
                 setSelectedSessionId(activeSession?.id ?? null);
                 setView('cataloger');
@@ -184,7 +182,7 @@ function AppContent() {
             ) : (
               <CatalogerDashboard
                 refreshKey={refreshKey}
-                onUpdated={handleSaved}
+                onUpdated={handleRefresh}
                 onStartSession={() => setView('capture')}
                 onOpenSession={(id) => setSelectedSessionId(id)}
               />
@@ -272,20 +270,15 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#111',
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#4b5563',
-  },
   sessionPill: {
-    marginTop: 4,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
     backgroundColor: '#eef2ff',
-    color: '#111',
+    color: '#4f46e5',
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 13,
+    overflow: 'hidden',
   },
   tabs: {
     flexDirection: 'row',
