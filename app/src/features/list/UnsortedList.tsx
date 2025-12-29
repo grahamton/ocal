@@ -9,9 +9,10 @@ import { formatCoords } from '../../shared/format';
 type Props = {
   refreshKey: number;
   onUpdated?: () => void;
+  mode?: 'unsorted' | 'all';
 };
 
-export function UnsortedList({ refreshKey, onUpdated }: Props) {
+export function UnsortedList({ refreshKey, onUpdated, mode = 'unsorted' }: Props) {
   const [items, setItems] = useState<FindRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<FindRecord | null>(null);
@@ -23,12 +24,12 @@ export function UnsortedList({ refreshKey, onUpdated }: Props) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const rows = await listFinds();
+      const rows = await listFinds(mode === 'unsorted' ? { sessionId: null } : {});
       setItems(rows);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     let mounted = true;
@@ -53,7 +54,7 @@ export function UnsortedList({ refreshKey, onUpdated }: Props) {
   const handleHideFromUnsorted = async (item: FindRecord) => {
     setMarkingId(item.id);
     try {
-      await updateFindMetadata(item.id, item.label, item.note, item.category, 'cataloged');
+      await updateFindMetadata(item.id, { status: 'cataloged' });
       load();
       onUpdated?.();
     } finally {
@@ -91,7 +92,7 @@ export function UnsortedList({ refreshKey, onUpdated }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.heading}>Unsorted</Text>
+        <Text style={styles.heading}>{mode === 'unsorted' ? 'Unsorted' : 'All Finds'}</Text>
         <View style={styles.chipRow}>
           {['draft', 'cataloged', 'all'].map((filter) => {
             const label = filter === 'all' ? 'All' : filter === 'draft' ? 'Draft' : 'Cataloged';

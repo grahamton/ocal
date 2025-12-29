@@ -1,4 +1,4 @@
-export function createId() {
+export function createId(prefix = 'find') {
   // Simple, dependency-free unique-ish id for local records.
-  return `find-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }

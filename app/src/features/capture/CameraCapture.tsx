@@ -7,6 +7,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { insertFind } from '../../shared/db';
 import { createId } from '../../shared/id';
 import { FindRecord } from '../../shared/types';
+import { useSession } from '../../shared/SessionContext';
 
 type Props = {
   onSaved: () => void;
@@ -18,6 +19,7 @@ export function CameraCapture({ onSaved }: Props) {
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusKind, setStatusKind] = useState<'info' | 'success' | 'error'>('info');
+  const { activeSession, addFindToActiveSession } = useSession();
 
   useEffect(() => {
     if (!permission?.granted) {
@@ -100,11 +102,16 @@ export function CameraCapture({ onSaved }: Props) {
         category: null,
         label: `Find ${new Date().toLocaleDateString()}`,
         status: 'draft',
+        sessionId: activeSession?.id ?? null,
+        favorite: false,
       };
 
       try {
         await insertFind(record);
-        const locationNote = location ? '' : ' (no GPS—still saved)';
+        if (activeSession) {
+          await addFindToActiveSession(record.id);
+        }
+        const locationNote = location ? '' : ' (no GPS - still saved)';
         setStatusKind('success');
         setStatusMessage(`Saved offline${locationNote}`);
         Vibration.vibrate(50);

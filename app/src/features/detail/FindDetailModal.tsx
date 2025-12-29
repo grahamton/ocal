@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Modal,
   ScrollView,
@@ -29,13 +30,15 @@ const STATUS_OPTIONS: Array<{ value: 'draft' | 'cataloged'; label: string }> = [
   { value: 'cataloged', label: 'Cataloged' },
 ];
 
-// Context: Phase 2 — detail view, notes, manual categories.
+// Context: Phase 2 - detail view, notes, manual categories.
 export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
   const [note, setNote] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<'draft' | 'cataloged'>('draft');
   const [label, setLabel] = useState('');
+  const [favorite, setFavorite] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   type AiResult = {
@@ -55,6 +58,8 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
       setNote(item.note ?? '');
       setCategory(item.category ?? null);
       setStatus(item.status);
+      setFavorite(item.favorite);
+      setSessionId(item.sessionId ?? null);
       setAiError(null);
       setAiResult(null);
       setAiLoading(false);
@@ -78,13 +83,14 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
     if (!item || saving) return;
     setSaving(true);
     try {
-      await updateFindMetadata(
-        item.id,
-        label.trim() || null,
-        note.trim() || null,
-        category === 'Unsorted' ? null : category,
-        status
-      );
+      await updateFindMetadata(item.id, {
+        label: label.trim() || null,
+        note: note.trim() || null,
+        category: category === 'Unsorted' ? null : category,
+        status,
+        favorite,
+        sessionId,
+      });
       onSaved();
       onClose();
     } finally {
@@ -134,10 +140,34 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <ScrollView contentContainerStyle={styles.content}>
+            <View style={styles.topBar}>
+              <TouchableOpacity
+                style={styles.posterButton}
+                onPress={() => Alert.alert('Poster', 'Poster preview coming soon.')}
+              >
+                <Text style={styles.posterText}>✨ Poster</Text>
+              </TouchableOpacity>
+            </View>
             <Image source={{ uri: item.photoUri }} style={styles.hero} />
             <View style={styles.metaRow}>
               <Text style={styles.metaText}>Captured {formatTimestamp(item.timestamp)}</Text>
               <Text style={styles.metaText}>{formatCoords(item.lat, item.long)}</Text>
+            </View>
+            <View style={styles.section}>
+              <Text style={styles.label}>Session</Text>
+              <Text style={styles.metaText}>{sessionId ? 'Linked to a session' : 'Unsorted'}</Text>
+              {sessionId ? <Text style={styles.metaSubtle}>{sessionId}</Text> : null}
+            </View>
+            <View style={styles.section}>
+              <Text style={styles.label}>Favorite</Text>
+              <TouchableOpacity
+                style={[styles.favoriteChip, favorite && styles.favoriteChipActive]}
+                onPress={() => setFavorite((prev) => !prev)}
+              >
+                <Text style={[styles.favoriteText, favorite && styles.favoriteTextActive]}>
+                  {favorite ? 'Starred for ledger' : 'Mark favorite'}
+                </Text>
+              </TouchableOpacity>
             </View>
             <View style={styles.section}>
               <Text style={styles.label}>Label</Text>
@@ -206,7 +236,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
                     <View style={styles.aiSection}>
                       <Text style={styles.label}>Reasons</Text>
                       {aiResult.observable_reasons.map((reason: string, idx: number) => (
-                        <Text key={idx} style={styles.metaText}>• {reason}</Text>
+                        <Text key={idx} style={styles.metaText}>- {reason}</Text>
                       ))}
                     </View>
                   ) : null}
@@ -214,7 +244,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
                     <View style={styles.aiSection}>
                       <Text style={styles.label}>Caution</Text>
                       {aiResult.caution.map((c: string, idx: number) => (
-                        <Text key={idx} style={styles.metaText}>• {c}</Text>
+                        <Text key={idx} style={styles.metaText}>- {c}</Text>
                       ))}
                     </View>
                   ) : null}
@@ -222,7 +252,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
                     <View style={styles.aiSection}>
                       <Text style={styles.label}>Red flags</Text>
                       {aiResult.red_flags.map((c: string, idx: number) => (
-                        <Text key={idx} style={styles.metaText}>• {c}</Text>
+                        <Text key={idx} style={styles.metaText}>- {c}</Text>
                       ))}
                     </View>
                   ) : null}
@@ -315,6 +345,22 @@ function createStyles() {
       padding: 20,
       gap: 18,
     },
+    topBar: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+    },
+    posterButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: '#e5e7eb',
+      backgroundColor: '#fff',
+    },
+    posterText: {
+      fontWeight: '800',
+      color: '#0f172a',
+    },
     hero: {
       width: '100%',
       height: 280,
@@ -328,6 +374,11 @@ function createStyles() {
       color: '#0f172a',
       fontSize: 18,
       fontWeight: '800',
+    },
+    metaSubtle: {
+      color: '#6b7280',
+      fontSize: 14,
+      fontWeight: '700',
     },
     presetRow: {
       gap: 10,
@@ -464,6 +515,27 @@ function createStyles() {
       fontSize: 15,
     },
     chipTextSelected: {
+      color: '#fff',
+    },
+    favoriteChip: {
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: '#e5e7eb',
+      backgroundColor: '#f8fafc',
+      alignItems: 'center',
+    },
+    favoriteChipActive: {
+      backgroundColor: '#111',
+      borderColor: '#111',
+    },
+    favoriteText: {
+      color: '#111',
+      fontWeight: '800',
+      fontSize: 15,
+    },
+    favoriteTextActive: {
       color: '#fff',
     },
     actions: {
