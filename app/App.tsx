@@ -65,7 +65,7 @@ function AppContent() {
   const [detailVisible, setDetailVisible] = useState(false);
   const [view, setView] = useState<'capture' | 'cataloger' | 'gallery'>('capture');
   // galleryFilter moved to internal Gallery state
-  const { activeSession, startSession } = useSession(); // endSession unused
+  const { activeSession } = useSession(); // endSession unused
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [devNotesVisible, setDevNotesVisible] = useState(false);
   const { isSelectionMode } = useSelection();
@@ -73,6 +73,7 @@ function AppContent() {
   const handleRefresh = () => {
     setRefreshKey((n) => n + 1);
   };
+
 
   const openDetail = (item: FindRecord) => {
     setSelectedFind(item);
@@ -390,6 +391,54 @@ const styles = StyleSheet.create({
     ...THEME.typography.label,
     color: PALETTE.danger,
     fontSize: 10,
+  },
+  toast: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 16,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: '#0f172a',
+    borderWidth: 1,
+    borderColor: '#c7d2fe',
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+  },
+  toastTitle: {
+    color: '#fff',
+    fontWeight: '900',
+    fontSize: 15,
+  },
+  toastHint: {
+    color: '#e2e8f0',
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  toastActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  toastButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+    backgroundColor: '#111827',
+  },
+  toastButtonActive: {
+    backgroundColor: '#eef2ff',
+    borderColor: '#c7d2fe',
+  },
+  toastButtonText: {
+    color: '#e2e8f0',
+    fontWeight: '800',
+    fontSize: 12,
+  },
+  toastButtonTextActive: {
+    color: '#111827',
   },
 });
 

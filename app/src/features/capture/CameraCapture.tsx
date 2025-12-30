@@ -74,6 +74,7 @@ export function CameraCapture({ onSaved }: Props) {
     setStatusMessage('Capturing...');
 
     try {
+      const session = activeSession ?? (await startSession());
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.6, skipProcessing: true });
       const dir = await ensureDir();
       const id = createId();
@@ -92,18 +93,6 @@ export function CameraCapture({ onSaved }: Props) {
       setStatusMessage('Grabbing location...');
       const location = await getLocation();
 
-      // Ensure we have an active session ID
-      let currentSessionId = activeSession?.id;
-      if (!currentSessionId) {
-        // Auto-start a session if none exists!
-        try {
-           const newSession = await startSession();
-           currentSessionId = newSession.id;
-        } catch (e) {
-           console.error('Auto-start session failed', e);
-           // Fallback to null (orphan) but logs show it shouldn't happen
-        }
-      }
 
       const record: FindRecord = {
         id,
@@ -116,15 +105,13 @@ export function CameraCapture({ onSaved }: Props) {
         category: null,
         label: `Find ${new Date().toLocaleDateString()}`,
         status: 'draft',
-        sessionId: currentSessionId ?? null,
+        sessionId: session.id,
         favorite: false,
       };
 
       try {
         await insertFind(record);
-        if (currentSessionId) {
-          await addFindToActiveSession(record.id);
-        }
+        await addFindToActiveSession(record.id, session.id);
         const locationNote = location ? '' : ' (no GPS - still saved)';
         setStatusKind('success');
         setStatusMessage(`Saved offline${locationNote}`);

@@ -38,5 +38,4 @@ curl -X POST https://identify-yq7xepmata-uc.a.run.app \
 ```
 
 ## Response
-Strict JSON matching `rock_id_result` schema (see `rockIdSchema.js`). The function validates the model output against this schema and returns 400 on missing images, 405 on non-POST, 500 on generation/validation errors.
-*** End Patch***고 json code? wrong format. apply_patch expects plain text. revert. Can't apply. Need reapply correct. Let's add README with apply_patch plain. Let's do. end patch markers etc. Don't use JSON. We'll apply_patch. Let's redo.  
+Strict JSON matching `rock_id_result` schema (see `rockIdSchema.js`). The function validates the model output against this schema and returns 400 on missing images, 405 on non-POST, and 500 on generation/validation errors.
