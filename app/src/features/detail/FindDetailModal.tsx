@@ -56,12 +56,11 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
         label: label.trim() || null,
         note: note.trim() || null,
         category: category === 'Unsorted' ? null : category,
-        status,
+        status: 'cataloged', // Force cataloged on "File It"
         favorite,
         sessionId,
       });
-      // Flip back to front to show "saved" state visually?
-      // Or just close? For now, standard save behavior.
+      // Close handled by parent callback usually
       setIsFlipped(false);
       onSaved();
     } finally {

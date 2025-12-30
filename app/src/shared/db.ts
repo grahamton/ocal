@@ -132,16 +132,28 @@ export async function updateFindMetadata(id: string, updates: FindUpdate) {
   await db.runAsync(`UPDATE finds SET ${fields.join(', ')} WHERE id = ?;`, ...values, id);
 }
 
-export async function listFinds(options?: { sessionId?: string | null }): Promise<FindRecord[]> {
-  const { sessionId } = options ?? {};
+export async function listFinds(options?: { sessionId?: string | null; status?: 'draft' | 'cataloged' | 'all' }): Promise<FindRecord[]> {
+  const { sessionId, status } = options ?? {};
   let query = 'SELECT * FROM finds';
   const params: Array<string | null> = [];
+  const conditions: string[] = [];
+
   if (sessionId === null) {
-    query += ' WHERE sessionId IS NULL';
+    conditions.push('sessionId IS NULL');
   } else if (typeof sessionId === 'string') {
-    query += ' WHERE sessionId = ?';
+    conditions.push('sessionId = ?');
     params.push(sessionId);
   }
+
+  if (status && status !== 'all') {
+    conditions.push('status = ?');
+    params.push(status);
+  }
+
+  if (conditions.length > 0) {
+    query += ' WHERE ' + conditions.join(' AND ');
+  }
+
   query += ' ORDER BY datetime(timestamp) DESC;';
 
   const result = await db.getAllAsync<{

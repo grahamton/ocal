@@ -1,6 +1,6 @@
 # Ocal Roadmap
 
-Context: Beach Mode, tools-not-toys, anti-monolith. Primary user is a non-technical outdoor enthusiast. Current focus: Phase 2 (Sorting Table). Aligned with App Workflow Analysis (sessions + cataloger dashboard + ledger + poster path).
+Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-technical outdoor enthusiast. Current focus: Transitioning to Phase 3 (Rock Buddy AI) while polishing Phase 2 (Deck UI).
 
 ## Phase 1 - The Bucket (Capture Core)
 
@@ -11,28 +11,31 @@ Context: Beach Mode, tools-not-toys, anti-monolith. Primary user is a non-techni
   - Giant camera button -> capture photo(s) -> save locally with GPS + timestamp -> Unsorted list view.
   - Offline-first save; mark records `synced=false`; simple list with thumbnails.
 - Tests/QA: Lint clean; unit for coordinate formatting; UI test that main buttons render; airplane-mode capture/save; cold-start camera latency.
-- Status: Implemented in app; pending manual QA for airplane-mode capture/save and cold-start camera latency.
+- Status: **Complete**. Core capture loop is stable.
 - Risks: Permission friction; slow GPS; storage limits; device variance for Camera.
 
-## Phase 2 - Sorting Table **current**
+## Phase 2 - Sorting Table (Deck & Ledger) **Complete**
 
-- Scope: Detail view, editing notes, manual categories, plus session-aware cataloger prep from workflow analysis.
+- Scope: Review workflow ("Deck of Cards"), "Field Journal" Detail View ("Card"), Session Context.
 - Milestones:
-  - Open Unsorted item -> detail screen; add/edit label and notes (typing/dictation).
-  - Change status draft->cataloged; add simple category/tag.
-  - Local-only persistence with optimistic UI.
-  - Session groundwork (workflow analysis): session data model + storage, session context, cataloger dashboard list, session detail scaffold, active-session ledger surfaced in capture.
+  - [x] Refactor Inbox to "Deck of Cards" (Single item view, huge Keep/Trash buttons).
+  - [x] "Field Journal" Detail View (CardFront/CardBack) with distinct "Flip" interaction and Themes.
+  - [x] Session data model + Dashboard + Ledger.
+  - [x] "Silent Partner" UX (Persistent Keep, consistent navigation, decluttered UI).
+  - [x] Manual QA for offline edit persistence.
 - Tests/QA: Validate edits persist offline; UI test for visibility of edit controls; lint/unit coverage for data mappers; verify session-linked saves and ledger visibility offline.
-- Status: Implemented in app (labels, notes, category, status, presets, gallery access; session model + dashboard + ledger). Session flow usability improved (persistent "Keep", navigation tabs, UI declutter). Manual QA for offline edit persistence pending.
-- Risks: Input UX in sunlight; large text entry ergonomics; session/ledger UX sprawl (mitigated by UI declutter).
+- Status: **Complete**. Refactored from Glassmorphism to "Field Journal" aesthetic (Cream/Ink). Session logic is stable.
+- Risks: "Card Flip" interaction conflicts with scrolling (mitigated by CardBack specific non-flip zones).
 
-## Phase 3 - Rock Buddy (AI)
+## Phase 3 - Rock Buddy (AI) **In Progress**
 
 - Scope: Vision API suggestions using photos + GPS; iterate on session detail batch actions (AI on selections).
 - Milestones:
-  - Queue image+GPS for cloud call; retry/sync strategy.
-  - Response format: Primary Guess, Confidence (Low/Med/High), Visual cues, Fun Fact.
-  - UI affordance: Identify action on detail; accept/override suggestion.
+  - [x] Scaffolding: `identifyRock` client function & `RockIdResult` schema.
+  - [x] UI: `IdentifySection` in CardBack (Analyze/Apply buttons, Confidence display).
+  - [_] Queue system: Queue image+GPS for cloud call; retry/sync strategy (currently direct fetch).
+  - [_] Backend: Deploy cloud function (currently placeholder URL).
+  - [_] Batch/Deck Integration: Allow AI pass from the Inbox Deck (currently alert stub).
 - Tests/QA: Mocked AI responses; retry/backoff logic; UI shows suggestion and override path.
 - Risks: Latency offline + ensure queue; model accuracy; cost controls.
 

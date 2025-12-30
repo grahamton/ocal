@@ -10,17 +10,19 @@ import { FindDetailModal } from './src/features/detail/FindDetailModal';
 import { setupDatabase } from './src/shared/db';
 import { FindRecord } from './src/shared/types';
 import { SessionProvider, useSession } from './src/shared/SessionContext';
-import { CatalogerDashboard } from './src/features/cataloger/CatalogerDashboard';
-import { SessionDetailView } from './src/features/cataloger/SessionDetailView';
-import { SessionLedger } from './src/features/capture/SessionLedger';
-import { resetLocalDataForDev } from './src/shared/debugReset';
-import { DevNotes } from './src/shared/DevNotes';
+import { InboxList } from './src/features/list/InboxList'; // Updated import
+// Removed Cataloger imports to clean up unused code if possible, or keeping them if needed for other things.
+// Actually I removed usage in AppContent, so I should remove imports.
+
+
 // import { NextActionPrompt } from './src/shared/NextActionPrompt';
 import { GradientBackground } from './src/shared/components/GradientBackground';
 import { GlassView } from './src/shared/components/GlassView';
-import { THEME, PALETTE } from './src/shared/theme';
+import { THEME } from './src/shared/theme';
 import { SelectionProvider, useSelection } from './src/shared/SelectionContext';
 import { BatchActionBar } from './src/shared/components/BatchActionBar';
+
+import { ThemeProvider } from './src/shared/ThemeContext';
 
 export default function App() {
   const [dbReady, setDbReady] = useState(false);
@@ -46,97 +48,100 @@ export default function App() {
   }
 
   return (
-    <SessionProvider>
-      <SelectionProvider>
-        <SafeAreaProvider>
-          <GradientBackground>
-            <AppContent />
-          </GradientBackground>
-        </SafeAreaProvider>
-      </SelectionProvider>
-    </SessionProvider>
+    <ThemeProvider>
+      <SessionProvider>
+        <SelectionProvider>
+          <SafeAreaProvider>
+            <GradientBackground>
+              <AppContent />
+            </GradientBackground>
+          </SafeAreaProvider>
+        </SelectionProvider>
+      </SessionProvider>
+    </ThemeProvider>
   );
 }
 
-function AppContent() {
+import { SessionControlModal } from './src/shared/components/SessionControlModal';
+import { TesterOverlay } from './src/shared/components/TesterOverlay';
+import { logger } from './src/shared/LogService';
+
+  import { useTheme } from './src/shared/ThemeContext';
+
+  function AppContent() {
   const insets = useSafeAreaInsets();
+  const { colors, toggleTheme, mode } = useTheme();
+  // ... existing hooks
+
+  // Update header text styles to use colors.text
+
+  // Add Toggle Button
+  // <TouchableOpacity onPress={toggleTheme}>
+  //   <Ionicons name={mode === 'high-contrast' ? 'contrast' : 'contrast-outline'} ... />
+  // </TouchableOpacity>
+
+  // This is too complex for a blind replace without seeing the exact lines.
+  // I will read AppContent again to be precise.
+  // Aborting this specific replace to read file first.
+
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedFind, setSelectedFind] = useState<FindRecord | null>(null);
   const [detailVisible, setDetailVisible] = useState(false);
-  const [view, setView] = useState<'capture' | 'cataloger' | 'gallery'>('capture');
-  // galleryFilter moved to internal Gallery state
-  const { activeSession } = useSession(); // endSession unused
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const [devNotesVisible, setDevNotesVisible] = useState(false);
+  const [sessionModalVisible, setSessionModalVisible] = useState(false);
+
+  // Navigation State
+  const [view, setView] = useState<'capture' | 'inbox' | 'gallery'>('capture');
+
+  // Log navigation changes
+  useEffect(() => {
+    logger.add('nav', `Navigated to ${view}`);
+  }, [view]);
+
+  const { activeSession } = useSession();
+
   const { isSelectionMode } = useSelection();
 
   const handleRefresh = () => {
     setRefreshKey((n) => n + 1);
   };
 
-
   const openDetail = (item: FindRecord) => {
+    logger.add('nav', 'Opened detail view', { id: item.id });
     setSelectedFind(item);
     setDetailVisible(true);
   };
 
-  const handleDevReset = () => {
-    if (!__DEV__) return;
-    Alert.alert('Reset local data', 'This deletes all captures, photos, and sessions on this device.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await resetLocalDataForDev();
-            setSelectedFind(null);
-            setDetailVisible(false);
-            setSelectedSessionId(null);
-            // setGalleryFilter('all'); // Removed
-            setView('capture');
-            setRefreshKey((n) => n + 1);
-            Alert.alert('Reset complete', 'Local cache cleared. Ready for a fresh start.');
-          } catch (error) {
-            Alert.alert('Reset failed', (error as Error)?.message ?? 'Could not reset local data.');
-          }
-        },
-      },
-    ]);
-  };
 
-  // ensureSession moved to CameraCapture internal logic
-
-
-  // handleReview and handleEndSession removed as NextActionPrompt is gone
 
   return (
     <View style={[styles.safe, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle={mode === 'high-contrast' ? "light-content" : "dark-content"} />
+      <TesterOverlay />
       <ScrollView
         style={styles.pageScroll}
-        contentContainerStyle={[styles.pageContent, { paddingBottom: 120 }]} // Extra padding for floating tab bar
+        contentContainerStyle={[styles.pageContent, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
           <View style={styles.headerRow}>
-            <Text style={styles.title}>Ocal</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Ocal</Text>
             {activeSession ? (
-              <GlassView style={styles.sessionPillContainer} intensity={10}>
-                <Text style={styles.sessionPillText}>{activeSession.name}</Text>
-              </GlassView>
+              <TouchableOpacity onPress={() => setSessionModalVisible(true)} style={{ flexShrink: 1 }}>
+                <GlassView style={styles.sessionPillContainer} intensity={10}>
+                  <Text style={[styles.sessionPillText, { color: colors.accent }]} numberOfLines={1} ellipsizeMode="tail">
+                    {activeSession.name}
+                  </Text>
+                  <Ionicons name="create-outline" size={12} color={colors.accent} style={{marginLeft: 4, flexShrink: 0}} />
+                </GlassView>
+              </TouchableOpacity>
             ) : null}
             <View style={{ flex: 1 }} />
-            {__DEV__ ? (
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TouchableOpacity style={styles.devPill} onPress={() => setDevNotesVisible(true)}>
-                  <Text style={styles.devPillText}>Notes</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.devReset} onPress={handleDevReset}>
-                  <Text style={styles.devResetText}>Reset</Text>
-                </TouchableOpacity>
-              </View>
-            ) : null}
+
+            <TouchableOpacity onPress={toggleTheme} style={{ padding: 8 }}>
+                <Ionicons name={mode === 'high-contrast' ? 'contrast' : 'contrast-outline'} size={24} color={colors.text} />
+            </TouchableOpacity>
+
+
           </View>
         </View>
 
@@ -144,41 +149,16 @@ function AppContent() {
           <View style={styles.section}>
             <CameraCapture
               onSaved={() => {
-                // await ensureSession(); // CameraCapture now handles auto-start!
+                logger.add('user', 'Captured photo');
                 handleRefresh();
               }}
             />
-            {/* Capture View Ledger */}
-            <View style={{ padding: 12 }}>
-                 <SessionLedger
-                  refreshKey={refreshKey}
-                  onUpdated={handleRefresh}
-                  onRequestReview={() => {
-                    setSelectedSessionId(activeSession?.id ?? null);
-                    setView('cataloger');
-                  }}
-                />
-            </View>
           </View>
         ) : null}
 
-        {view === 'cataloger' ? (
+        {view === 'inbox' ? (
           <View style={styles.section}>
-            {selectedSessionId ? (
-              <SessionDetailView
-                sessionId={selectedSessionId}
-                onBack={() => setSelectedSessionId(null)}
-                refreshKey={refreshKey}
-                onUpdated={handleRefresh}
-              />
-            ) : (
-              <CatalogerDashboard
-                refreshKey={refreshKey}
-                onUpdated={handleRefresh}
-                onStartSession={() => setView('capture')}
-                onOpenSession={(id) => setSelectedSessionId(id)}
-              />
-            )}
+             <InboxList refreshKey={refreshKey} onUpdated={handleRefresh} />
           </View>
         ) : null}
 
@@ -194,7 +174,15 @@ function AppContent() {
       </ScrollView>
 
       {/* Floating Glass Tab Bar OR Batch Action Bar */}
-      <View style={[styles.floatingTabsContainer, { paddingBottom: insets.bottom + 10 }]}>
+      {/* Floating Glass Tab Bar OR Batch Action Bar */}
+      <View style={[
+        styles.floatingTabsContainer,
+        {
+          paddingBottom: insets.bottom + 10,
+          backgroundColor: colors.card,
+          borderTopColor: colors.border
+        }
+      ]}>
         {isSelectionMode ? (
           <BatchActionBar
             onIdentify={() => Alert.alert('Identify', 'Batch identification stub')}
@@ -205,24 +193,30 @@ function AppContent() {
           <View style={styles.floatingTabs}>
             {[
               { key: 'capture', label: 'Capture', icon: 'camera' },
-              { key: 'cataloger', label: 'Logbook', icon: 'book' },
+              { key: 'inbox', label: 'Inbox', icon: 'file-tray-full' },
               { key: 'gallery', label: 'Gallery', icon: 'grid' },
             ].map((tab) => {
               const active = view === tab.key;
               const iconName = (active ? tab.icon : `${tab.icon}-outline`) as keyof typeof Ionicons.glyphMap;
+              const activeColor = colors.accent;
+              const inactiveColor = colors.textSecondary;
+
               return (
                 <TouchableOpacity
                   key={tab.key}
-                  style={[styles.tabButton, active && styles.tabButtonActive]}
+                  style={[styles.tabButton, active && { backgroundColor: mode === 'high-contrast' ? colors.accent : 'rgba(0,0,0,0.05)' }]}
                   onPress={() => setView(tab.key as typeof view)}
                   activeOpacity={0.7}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={tab.label}
                 >
                   <Ionicons
                     name={iconName}
-                    size={24}
-                    color={active ? '#fff' : 'rgba(255,255,255,0.6)'}
+                    size={32}
+                    color={active ? activeColor : inactiveColor}
                   />
-                  {active && <Text style={styles.tabTextActive}>{tab.label}</Text>}
+                  <Text style={[styles.tabTextActive, { color: active ? activeColor : inactiveColor }]}>{tab.label}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -233,22 +227,23 @@ function AppContent() {
       <FindDetailModal
         visible={detailVisible}
         item={selectedFind}
-        onClose={() => setDetailVisible(false)}
+        onClose={() => {
+            logger.add('nav', 'Closed detail view');
+            setDetailVisible(false);
+        }}
         onSaved={() => {
           setDetailVisible(false);
           handleRefresh();
         }}
       />
-      {__DEV__ ? (
-        <DevNotes
-          visible={devNotesVisible}
-          onClose={() => setDevNotesVisible(false)}
-          onSubmit={(note) => {
-            console.log('[DevNote submit]', note);
-          }}
-        />
-      ) : null}
-      {/* NextActionPrompt removed for rapid workflow */}
+
+      <SessionControlModal
+        visible={sessionModalVisible && !!activeSession}
+        onClose={() => setSessionModalVisible(false)}
+        session={activeSession}
+      />
+
+
     </View>
   );
 }
@@ -290,10 +285,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
+    flexDirection: 'row', // Ensure text and icon align
+    alignItems: 'center',
+    maxWidth: '100%', // Respect shrinking
   },
   sessionPillText: {
     ...THEME.typography.label,
-    color: PALETTE.electricTeal,
+    flexShrink: 1, // Allow truncation
   },
   tabs: {
     flexDirection: 'row',
@@ -305,38 +303,34 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    borderTopWidth: 2,
+    paddingTop: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
   },
   floatingTabs: {
     flexDirection: 'row',
-    padding: 6,
-    borderRadius: 32,
-    gap: 4,
-    backgroundColor: '#0f172a', // Solid dark background
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)', // Subtle border
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    width: '100%',
+    justifyContent: 'space-around',
+    paddingHorizontal: 16,
+    gap: 0,
   },
   tabButton: {
-    flexDirection: 'row',
+    flex: 1,
+    flexDirection: 'column', // Stack icon and text
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 24,
-    gap: 8,
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 12,
+    gap: 4,
   },
   tabButtonActive: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   tabTextActive: {
     ...THEME.typography.label,
-    fontSize: 12,
+    fontSize: 14, // Larger
+    fontWeight: '700',
   },
   section: {
     gap: 16,
@@ -361,8 +355,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.05)',
   },
   filterChipActive: {
-    backgroundColor: PALETTE.electricTeal,
-    borderColor: PALETTE.electricTeal,
+    // Dynamic styles handled inline or keeping static fallback
+    backgroundColor: THEME.colors.accent,
+    borderColor: THEME.colors.accent,
   },
   filterText: {
     ...THEME.typography.label,
@@ -370,7 +365,7 @@ const styles = StyleSheet.create({
     color: THEME.colors.textSecondary,
   },
   filterTextActive: {
-    color: PALETTE.oceanDark,
+    color: THEME.colors.background,
   },
   devPill: {
     paddingHorizontal: 12,
@@ -390,7 +385,7 @@ const styles = StyleSheet.create({
   },
   devResetText: {
     ...THEME.typography.label,
-    color: PALETTE.danger,
+    color: THEME.colors.danger,
     fontSize: 10,
   },
   toast: {

@@ -4,7 +4,7 @@ import { getSession, listFinds, updateFindMetadata } from '../../shared/db';
 import { useSession } from '../../shared/SessionContext';
 import { FindRecord, Session } from '../../shared/types';
 import { GlassView } from '../../shared/components/GlassView';
-import { THEME, PALETTE } from '../../shared/theme';
+import { THEME } from '../../shared/theme';
 import { useSelection } from '../../shared/SelectionContext';
 import { FlipCard } from '../../shared/components/FlipCard';
 
@@ -264,6 +264,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
   },
+  loader: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: THEME.colors.background,
+  },
+  loadingText: {
+    ...THEME.typography.subHeader,
+    marginTop: 16,
+    color: THEME.colors.textSecondary,
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: THEME.colors.background,
+    padding: 20,
+  },
+  emptyText: {
+    ...THEME.typography.subHeader,
+    color: THEME.colors.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptySubText: {
+    ...THEME.typography.body,
+    color: THEME.colors.textSecondary,
+    textAlign: 'center',
+  },
   metric: {
     flex: 1,
     padding: 16,
@@ -273,7 +302,7 @@ const styles = StyleSheet.create({
   metricValue: {
     ...THEME.typography.header,
     fontSize: 28,
-    color: PALETTE.electricTeal,
+    color: THEME.colors.accent,
   },
   metricLabel: {
     ...THEME.typography.label,
@@ -282,7 +311,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   endButton: {
-    backgroundColor: PALETTE.danger,
+    backgroundColor: THEME.colors.danger,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
@@ -325,12 +354,12 @@ const styles = StyleSheet.create({
   },
   aiTitle: {
     ...THEME.typography.label,
-    color: PALETTE.electricTeal,
+    color: THEME.colors.accent,
     fontSize: 14, // 12 -> 14
   },
   aiScore: {
     ...THEME.typography.label,
-    color: PALETTE.softSand,
+    color: THEME.colors.textSecondary,
     fontSize: 14, // 12 -> 14
   },
   aiBody: {
@@ -339,7 +368,7 @@ const styles = StyleSheet.create({
   aiLabel: {
     ...THEME.typography.header, // bold
     fontSize: 22, // 20 -> 22
-    color: '#fff',
+    color: THEME.colors.text,
   },
   aiDesc: {
     ...THEME.typography.body,
@@ -357,7 +386,7 @@ const styles = StyleSheet.create({
   aiTag: {
     fontSize: 12, // 10 -> 12
     fontWeight: 'bold',
-    color: PALETTE.electricTeal,
+    color: THEME.colors.accent,
     backgroundColor: 'rgba(45, 212, 191, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -371,7 +400,7 @@ const styles = StyleSheet.create({
   },
   cardSelected: {
     borderWidth: 2,
-    borderColor: PALETTE.electricTeal,
+    borderColor: THEME.colors.accent,
   },
   checkOverlay: {
     position: 'absolute',
@@ -380,12 +409,12 @@ const styles = StyleSheet.create({
     width: 28, // 24 -> 28
     height: 28,
     borderRadius: 14,
-    backgroundColor: PALETTE.electricTeal,
+    backgroundColor: THEME.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkMark: {
-    color: PALETTE.oceanDark,
+    color: THEME.colors.background,
     fontWeight: 'bold',
     fontSize: 16,
   },
@@ -428,13 +457,13 @@ const styles = StyleSheet.create({
     fontSize: 12, // 10 -> 12
   },
   badgeTextDraft: {
-    color: PALETTE.softSand,
+    color: THEME.colors.textSecondary,
   },
   badgeTextCataloged: {
-    color: PALETTE.electricTeal,
+    color: THEME.colors.accent,
   },
   favoriteMark: {
-    color: PALETTE.softSand,
+    color: THEME.colors.textSecondary,
     fontSize: 18,
   },
   favoriteButton: {
@@ -443,19 +472,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)', // Higher contrast border
+    borderColor: THEME.colors.border, // Higher contrast border
     alignItems: 'center',
   },
   favoriteButtonActive: {
-    backgroundColor: PALETTE.electricTeal,
-    borderColor: PALETTE.electricTeal,
+    backgroundColor: THEME.colors.accent,
+    borderColor: THEME.colors.accent,
   },
   favoriteButtonText: {
     ...THEME.typography.label,
     fontSize: 14, // 12 -> 14
   },
   favoriteButtonTextActive: {
-    color: PALETTE.oceanDark,
+    color: THEME.colors.background,
   },
   activeHint: {
     ...THEME.typography.body,

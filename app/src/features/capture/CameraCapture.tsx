@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Vibration } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Vibration, Animated, Easing } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 // Use legacy FileSystem API to avoid runtime errors in Expo 54 until the new API migration is done.
@@ -21,15 +21,20 @@ export function CameraCapture({ onSaved }: Props) {
   const [statusKind, setStatusKind] = useState<'info' | 'success' | 'error'>('info');
   const { activeSession, startSession, addFindToActiveSession } = useSession();
 
+  // Animations
+  const flashOpacity = useRef(new Animated.Value(0)).current;
+  const thumbnailScale = useRef(new Animated.Value(0)).current;
+  const thumbnailTranslateY = useRef(new Animated.Value(0)).current;
+  const thumbnailTranslateX = useRef(new Animated.Value(0)).current;
+  const [capturedUri, setCapturedUri] = useState<string | null>(null);
+
   useEffect(() => {
     if (!permission?.granted) {
       requestPermission();
     }
   }, [permission?.granted, requestPermission]);
 
-  const readyToCapture = permission?.granted;
-
-  const styles = useMemo(() => createStyles(), []);
+  const classes = useMemo(() => createStyles(), []);
 
   const ensureDir = async () => {
     const dir = `${FileSystem.documentDirectory}finds`;
@@ -43,28 +48,54 @@ export function CameraCapture({ onSaved }: Props) {
   const getLocation = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        return null;
-      }
-    } catch (error) {
-      console.warn('Location permission request failed', error);
+      if (status !== 'granted') return null;
+    } catch {
       return null;
     }
-
     const last = await Location.getLastKnownPositionAsync();
     if (last) return last;
-
     try {
-      return await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-        timeInterval: 10000,
-        // maximumAge not supported in new Expo Location type?
-        // timeout: 4000,
-      });
-    } catch (error) {
-      console.warn('Location lookup failed', error);
+      return await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    } catch {
       return null;
     }
+  };
+
+  const triggerFlash = () => {
+    flashOpacity.setValue(1);
+    Animated.timing(flashOpacity, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const animateFlyAway = () => {
+    thumbnailScale.setValue(1);
+    thumbnailTranslateY.setValue(0);
+    thumbnailTranslateX.setValue(0);
+
+    Animated.parallel([
+      Animated.timing(thumbnailScale, {
+        toValue: 0.1,
+        duration: 800,
+        easing: Easing.ease,
+        useNativeDriver: true,
+      }),
+      Animated.timing(thumbnailTranslateY, {
+        toValue: 600, // Move down towards the tab bar
+        duration: 800,
+        easing: Easing.in(Easing.exp),
+        useNativeDriver: true,
+      }),
+      Animated.timing(thumbnailTranslateX, {
+        toValue: 100, // Slightly right towards the Inbox/Gallery tabs usually
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setCapturedUri(null); // Hide after animation
+    });
   };
 
   const handleCapture = async () => {
@@ -73,27 +104,26 @@ export function CameraCapture({ onSaved }: Props) {
     setStatusKind('info');
     setStatusMessage('Capturing...');
 
+    // Tactile Feedback 1: Flash & Vibration
+    triggerFlash();
+    Vibration.vibrate([0, 80, 50, 80]); // "Heavy" double bump
+
     try {
       const session = activeSession ?? (await startSession());
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.6, skipProcessing: true });
+
+      // Show thumbnail for animation
+      setCapturedUri(photo.uri);
+      animateFlyAway();
+
       const dir = await ensureDir();
       const id = createId();
       const fileUri = `${dir}/${id}.jpg`;
 
-      try {
-        await FileSystem.copyAsync({ from: photo.uri, to: fileUri });
-      } catch (error) {
-        console.error('File save failed', error);
-        setStatusKind('error');
-        setStatusMessage('Could not save photo. Try again.');
-        return;
-      }
+      // Async save in background while animation plays
+      await FileSystem.copyAsync({ from: photo.uri, to: fileUri });
 
-      setStatusKind('info');
-      setStatusMessage('Grabbing location...');
       const location = await getLocation();
-
-
       const record: FindRecord = {
         id,
         photoUri: fileUri,
@@ -109,83 +139,80 @@ export function CameraCapture({ onSaved }: Props) {
         favorite: false,
       };
 
-      try {
-        await insertFind(record);
-        await addFindToActiveSession(record.id, session.id);
-        const locationNote = location ? '' : ' (no GPS - still saved)';
-        setStatusKind('success');
-        setStatusMessage(`Saved offline${locationNote}`);
-        Vibration.vibrate(50);
-        onSaved();
-      } catch (error) {
-        console.error('Insert failed', error);
-        setStatusKind('error');
-        setStatusMessage("Couldn't save find. Try again.");
-      }
+      await insertFind(record);
+      await addFindToActiveSession(record.id, session.id);
+
+      setStatusKind('success');
+      setStatusMessage('Saved!');
+      // Second confirmation vibration
+      Vibration.vibrate(50);
+      onSaved();
     } catch (error) {
-      console.error('Capture failed', error);
+      console.error('Capture error', error);
       setStatusKind('error');
-      setStatusMessage('Could not save. Try again.');
+      setStatusMessage('Error saving.');
+      Vibration.vibrate([0, 200, 100, 200]); // Long error buzz
     } finally {
       setSaving(false);
-      setTimeout(() => setStatusMessage(null), 8000);
+      setTimeout(() => setStatusMessage(null), 3000);
     }
   };
 
-  /* State for info box visibility */
-  const [showInfo, setShowInfo] = useState(true);
+  /* State for info box visibility - simplified for Senior Mode */
+  // Info box removed
 
-  if (!readyToCapture) {
+
+  if (!permission?.granted) {
     return (
-      <View style={styles.permissionContainer}>
-        <Text style={styles.title}>Ready to capture?</Text>
-        <Text style={styles.permissionText}>We need camera access. You can change this later in Settings.</Text>
-        <TouchableOpacity style={styles.primaryButton} onPress={requestPermission}>
-          <Text style={styles.primaryButtonText}>Grant Camera Permission</Text>
+      <View style={classes.permissionContainer}>
+        <Text style={classes.title}>Camera Access Needed</Text>
+        <TouchableOpacity style={classes.primaryButton} onPress={requestPermission}>
+          <Text style={classes.primaryButtonText}>Enable Camera</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={styles.wrapper}>
-      {showInfo ? (
-        <View style={styles.infoBox}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.title}>Quick snap, saves offline.</Text>
-              <Text style={styles.description}>Tap once and it stores locally in case there is no signal. GPS is added when available.</Text>
-            </View>
-            <TouchableOpacity onPress={() => setShowInfo(false)} style={styles.closeInfoBtn}>
-               <Text style={styles.closeInfoText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : null}
+    <View style={classes.wrapper}>
+      {/* Flash Overlay */}
+      <View style={classes.cameraContainer}>
+        <CameraView ref={cameraRef} style={classes.camera} facing="back" />
+        <Animated.View style={[classes.flashOverlay, { opacity: flashOpacity }]} pointerEvents="none" />
 
-      <View style={[styles.cameraContainer, !showInfo && { marginTop: 60 }]}>
-        <CameraView ref={cameraRef} style={styles.camera} facing="back" />
-        <View style={styles.captureRow}>
-          <TouchableOpacity style={styles.captureButton} onPress={handleCapture} disabled={saving}>
-            {saving ? <ActivityIndicator color="#0f172a" size="large" /> : <View style={styles.shutterInner} />}
+        {/* Fly-away Thumbnail */}
+        {capturedUri && (
+          <Animated.Image
+            source={{ uri: capturedUri }}
+            style={[
+              classes.flyAwayThumbnail,
+              {
+                transform: [
+                  { translateX: thumbnailTranslateX },
+                  { translateY: thumbnailTranslateY },
+                  { scale: thumbnailScale }
+                ]
+              }
+            ]}
+          />
+        )}
+
+        <View style={classes.captureZone}>
+          <TouchableOpacity
+            style={classes.captureButton}
+            onPress={handleCapture}
+            activeOpacity={0.5}
+            disabled={saving}
+          >
+             <View style={classes.shutterInner} />
           </TouchableOpacity>
+          <Text style={classes.captureLabel}>TAP TO CAPTURE</Text>
         </View>
       </View>
+
       {statusMessage ? (
-        <View
-          style={[
-            styles.statusBanner,
-            statusKind === 'success' && styles.statusBannerSuccess,
-            statusKind === 'error' && styles.statusBannerError,
-          ]}
-        >
-          {saving ? <ActivityIndicator color="#fff" style={styles.statusSpinner} /> : null}
-          <Text style={styles.statusText}>{statusMessage}</Text>
-          {statusKind === 'error' ? (
-            <TouchableOpacity style={styles.statusRetry} onPress={handleCapture} disabled={saving}>
-              <Text style={styles.statusRetryText}>Try again</Text>
-            </TouchableOpacity>
-          ) : null}
+        <View style={[classes.statusBanner, statusKind === 'success' ? classes.statusSuccess : classes.statusError]}>
+          <Text style={classes.statusText}>{statusMessage}</Text>
         </View>
       ) : null}
     </View>
@@ -197,160 +224,131 @@ function createStyles() {
     wrapper: {
       flex: 1,
       backgroundColor: '#000',
-      gap: 16,
-    },
-    infoBox: {
-      position: 'absolute',
-      top: 60,
-      left: 16,
-      right: 16,
-      zIndex: 10,
-      padding: 16,
-      borderRadius: 16,
-      backgroundColor: 'rgba(15, 23, 42, 0.8)', // Dark semi-transparent
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.1)',
-    },
-    title: {
-      color: '#fff',
-      fontSize: 20,
-      fontWeight: '800', // Extra bold for readability
-      fontFamily: 'Outfit_800ExtraBold',
-      marginBottom: 4,
-    },
-    description: {
-      color: '#cbd5e1', // Slate-300
-      fontSize: 16,
-      lineHeight: 24,
-      fontFamily: 'Outfit_400Regular',
     },
     cameraContainer: {
-      height: 480, // Fixed height required inside ScrollView
-      marginHorizontal: 16,
-      marginTop: 120, // push down below info box
-      marginBottom: 0,
+      height: 520, // Fixed large height (approx 80% screen on most devices)
       borderRadius: 24,
       overflow: 'hidden',
       backgroundColor: '#1e293b',
+      margin: 12,
       borderWidth: 2,
       borderColor: 'rgba(255,255,255,0.15)',
+      position: 'relative',
     },
     camera: {
       flex: 1,
     },
-    captureRow: {
+    flashOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: '#fff',
+      zIndex: 10,
+    },
+    flyAwayThumbnail: {
       position: 'absolute',
-      bottom: 40,
+      width: '100%',
+      height: '100%',
+      zIndex: 9,
+    },
+    captureZone: {
+      position: 'absolute',
+      bottom: 0,
       left: 0,
       right: 0,
+      height: 160,
       alignItems: 'center',
       justifyContent: 'center',
-      // No background here, letting camera show through or sitting below
+      backgroundColor: 'rgba(0,0,0,0.3)', // Slight dim for contrast
+      zIndex: 12,
     },
     captureButton: {
-      width: 88,
-      height: 88,
-      borderRadius: 44,
+      width: 100,
+      height: 100,
+      borderRadius: 50,
       backgroundColor: 'transparent',
       borderWidth: 6,
       borderColor: '#fff',
       alignItems: 'center',
       justifyContent: 'center',
-      // Inner circle simulated by padding/content
+      marginBottom: 8,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.5,
+      shadowRadius: 10,
+      elevation: 10,
     },
-    // Inner fill for shutter to make it look like a physical button
     shutterInner: {
-      width: 68,
-      height: 68,
-      borderRadius: 34,
+      width: 80,
+      height: 80,
+      borderRadius: 40,
       backgroundColor: '#fff',
     },
-    captureText: {
-      display: 'none', // Text inside shutter is hard to read; shape implies function
-    },
-    statusText: {
+    captureLabel: {
       color: '#fff',
-      fontSize: 18,
       fontWeight: '800',
       fontFamily: 'Outfit_700Bold',
-      textAlign: 'center',
+      marginTop: 8,
+      fontSize: 14,
+      textShadowColor: 'rgba(0,0,0,0.8)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 4,
     },
     statusBanner: {
       position: 'absolute',
-      bottom: 140, // Above the shutter
+      top: 60,
       left: 20,
       right: 20,
-      flexDirection: 'row',
+      padding: 20,
+      borderRadius: 16,
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 12,
-      paddingVertical: 16,
-      paddingHorizontal: 20,
-      borderRadius: 16,
-      backgroundColor: '#0f172a',
+      zIndex: 20,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 6,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.5,
+      shadowRadius: 20,
     },
-    statusBannerSuccess: {
+    statusSuccess: {
       backgroundColor: '#15803d', // Green-700
+      borderWidth: 2,
+      borderColor: '#4ade80',
     },
-    statusBannerError: {
+    statusError: {
       backgroundColor: '#b91c1c', // Red-700
+      borderWidth: 2,
+      borderColor: '#fca5a5',
     },
-    statusSpinner: {
-      marginRight: 4,
-    },
-    statusRetry: {
-      marginLeft: 8,
-      paddingVertical: 8,
-      paddingHorizontal: 16,
-      borderRadius: 8,
-      backgroundColor: 'rgba(0,0,0,0.2)',
-    },
-    statusRetryText: {
+    statusText: {
       color: '#fff',
-      fontSize: 14,
-      fontWeight: '700',
+      fontSize: 24, // HUGE text
+      fontWeight: '900',
+      fontFamily: 'Outfit_800ExtraBold',
+      textAlign: 'center',
     },
     permissionContainer: {
       flex: 1,
       justifyContent: 'center',
-      padding: 24,
+      padding: 32,
       backgroundColor: '#000',
-      gap: 20,
     },
-    permissionText: {
-      color: '#cbd5e1',
-      fontSize: 18,
-      textAlign: 'center',
+    title: {
+      color: '#fff',
+      fontSize: 28,
+      fontWeight: '800',
+      fontFamily: 'Outfit_800ExtraBold',
       marginBottom: 20,
+      textAlign: 'center',
     },
     primaryButton: {
       backgroundColor: '#fff',
-      paddingVertical: 16,
+      paddingVertical: 20,
       paddingHorizontal: 32,
       borderRadius: 100,
       alignItems: 'center',
-      alignSelf: 'center',
     },
     primaryButtonText: {
       color: '#000',
-      fontSize: 18,
+      fontSize: 20,
       fontWeight: '700',
-    },
-    closeInfoBtn: {
-      padding: 8,
-      marginLeft: 8,
-      backgroundColor: 'rgba(255,255,255,0.1)',
-      borderRadius: 20,
-    },
-    closeInfoText: {
-      color: '#fff',
-      fontSize: 16,
-      fontWeight: 'bold',
     },
   });
 }

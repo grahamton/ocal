@@ -1,5 +1,5 @@
 import { ReactNode, createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
-import { addFindToSession, createSession, endSession as endSessionDb, listSessions } from './db';
+import { addFindToSession, createSession, endSession as endSessionDb, listSessions, updateSession } from './db';
 import { createId } from './id';
 import { Session } from './types';
 
@@ -8,6 +8,7 @@ type SessionContextValue = {
   activeSession: Session | null;
   startSession: (name?: string, locationName?: string) => Promise<Session>;
   endSession: (name?: string) => Promise<Session | null>;
+  renameSession: (sessionId: string, newName: string) => Promise<void>;
   endSessionById: (sessionId: string, name?: string) => Promise<Session | null>;
   refreshSessions: () => Promise<void>;
   addFindToActiveSession: (findId: string, sessionIdOverride?: string) => Promise<void>;
@@ -63,6 +64,22 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [activeSession, refreshSessions]
   );
 
+  const renameSession = useCallback(
+    async (sessionId: string, newName: string) => {
+        const session = sessions.find(s => s.id === sessionId);
+        if (!session) return;
+        const updated = { ...session, name: newName };
+        await updateSession(updated);
+        await refreshSessions();
+    },
+    [sessions, refreshSessions]
+  );
+
+  // Actually, I'll rewrite the imports in a separate replace block if needed.
+  // Viewing file showed: import { addFindToSession, createSession, endSession as endSessionDb, listSessions } from './db';
+  // So updateSession is NOT imported.
+
+
   const endSessionById = useCallback(
     async (sessionId: string, name?: string) => {
       const ended = await endSessionDb(sessionId, Date.now(), name);
@@ -94,8 +111,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       endSessionById,
       refreshSessions,
       addFindToActiveSession,
+      renameSession,
     }),
-    [sessions, activeSession, startSession, endSession, endSessionById, refreshSessions, addFindToActiveSession]
+    [sessions, activeSession, startSession, endSession, endSessionById, refreshSessions, addFindToActiveSession, renameSession]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

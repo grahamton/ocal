@@ -1,7 +1,8 @@
+
 import { useState } from 'react';
 import { Animated, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GlassView } from '../../shared/components/GlassView';
-import { THEME, PALETTE } from '../../shared/theme';
+import { THEME } from '../../shared/theme';
 import { FindRecord } from '../../shared/types';
 
 type Props = {
@@ -127,14 +128,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.15)',
   },
   keepChipActive: {
-    backgroundColor: PALETTE.electricTeal,
-    borderColor: PALETTE.electricTeal,
+    backgroundColor: THEME.colors.accent,
+    borderColor: THEME.colors.accent,
   },
   keepText: {
     ...THEME.typography.label,
     fontSize: 13, // 12 -> 13
   },
   keepTextActive: {
-    color: PALETTE.oceanDark,
+    color: THEME.colors.background,
   },
 });

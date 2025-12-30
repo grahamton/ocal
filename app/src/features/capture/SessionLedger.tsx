@@ -1,9 +1,10 @@
+
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { listFinds, updateFindMetadata } from '../../shared/db';
 import { useSession } from '../../shared/SessionContext';
 import { FindRecord } from '../../shared/types';
-import { THEME, PALETTE } from '../../shared/theme';
+import { THEME } from '../../shared/theme';
 import { LedgerTile } from './LedgerTile';
 
 type Props = {
@@ -100,11 +101,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
-    backgroundColor: PALETTE.electricTeal,
+    backgroundColor: THEME.colors.accent,
   },
   analyzeText: {
     ...THEME.typography.label,
     fontSize: 14,
-    color: PALETTE.oceanDark,
+    color: '#fff', // accent usually needs white text or specific contrast
   },
 });

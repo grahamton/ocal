@@ -3,23 +3,20 @@ import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react
 import { listFinds } from '../../shared/db';
 import { useSession } from '../../shared/SessionContext';
 import { FindRecord, Session } from '../../shared/types';
-import { UnsortedList } from '../list/UnsortedList';
-import { THEME, PALETTE } from '../../shared/theme';
+import { InboxList } from '../list/InboxList';
+import { THEME } from '../../shared/theme';
 
 type Props = {
   refreshKey: number;
-  onUpdated?: () => void;
-  onStartSession: () => void;
-  onOpenSession: (sessionId: string) => void;
+  onSelectSession: (id: string) => void;
 };
 
 // Context: Phase 2 - Cataloger dashboard surfaces sessions and all finds.
-export function CatalogerDashboard({ refreshKey, onUpdated, onStartSession, onOpenSession }: Props) {
-  const { sessions, activeSession, startSession, refreshSessions } = useSession();
+export function CatalogerDashboard({ refreshKey, onSelectSession }: Props) {
+  const { sessions, activeSession, refreshSessions } = useSession();
   const [mode, setMode] = useState<'sessions' | 'all'>('sessions');
   const [finds, setFinds] = useState<FindRecord[]>([]);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'pending'>('pending');
-  const [startingSession, setStartingSession] = useState(false);
 
   const loadFinds = useCallback(async () => {
     const rows = await listFinds();
@@ -35,28 +32,18 @@ export function CatalogerDashboard({ refreshKey, onUpdated, onStartSession, onOp
     refreshSessions();
   }, [refreshSessions, refreshKey]);
 
-  const handleStartSession = useCallback(async () => {
-    if (startingSession) return;
-    setStartingSession(true);
-    try {
-      await startSession();
-      await refreshSessions();
-      onStartSession();
-    } finally {
-      setStartingSession(false);
-    }
-  }, [onStartSession, refreshSessions, startSession, startingSession]);
+
 
   const renderSession = useCallback(
     ({ item }: { item: Session }) => {
       const sessionFinds = finds.filter((find) => find.sessionId === item.id);
       return (
-        <TouchableOpacity activeOpacity={0.9} onPress={() => onOpenSession(item.id)}>
+        <TouchableOpacity activeOpacity={0.9} onPress={() => onSelectSession(item.id)}>
           <SessionCard session={item} finds={sessionFinds} active={item.id === activeSession?.id} />
         </TouchableOpacity>
       );
     },
-    [activeSession?.id, finds, onOpenSession]
+    [activeSession?.id, finds, onSelectSession]
   );
 
   return (
@@ -103,22 +90,14 @@ export function CatalogerDashboard({ refreshKey, onUpdated, onStartSession, onOp
               renderItem={renderSession}
               keyExtractor={(item) => item.id}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
-              scrollEnabled={false}
             />
           )}
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={handleStartSession}
-            activeOpacity={0.9}
-            disabled={startingSession}
-          >
-            <Text style={styles.primaryText}>{startingSession ? 'Starting...' : 'Start Session'}</Text>
-          </TouchableOpacity>
+          {/* Start Session button removed for simplified workflow */}
         </View>
       ) : null}
       {mode === 'all' ? (
         <View style={styles.section}>
-          <UnsortedList refreshKey={refreshKey} onUpdated={onUpdated} mode="all" />
+          <InboxList refreshKey={refreshKey} />
         </View>
       ) : null}
     </View>
@@ -164,10 +143,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingRight: 4, // Avoid right edge clipping
   },
   heading: {
     ...THEME.typography.header,
-    fontSize: 28, // Scaled for Senior Mode
+    fontSize: 28,
+    color: THEME.colors.text, // Ensure visibility on tan background
+    flexShrink: 1, // Allow text to shrink if needed
   },
   syncBadge: {
     paddingHorizontal: 12,
@@ -191,7 +173,7 @@ const styles = StyleSheet.create({
     color: '#4ade80', // Bright green text
   },
   syncTextPending: {
-    color: PALETTE.softSand, // Bright yellow/sand text
+    color: THEME.colors.textSecondary, // Bright yellow/sand text
   },
   toggleRow: {
     flexDirection: 'row',
@@ -199,16 +181,16 @@ const styles = StyleSheet.create({
   },
   toggleButton: {
     flex: 1,
-    paddingVertical: 16, // Larger target
+    paddingVertical: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.card,
     alignItems: 'center',
   },
   toggleButtonActive: {
-    backgroundColor: PALETTE.electricTeal,
-    borderColor: PALETTE.electricTeal,
+    backgroundColor: THEME.colors.accent,
+    borderColor: THEME.colors.accent,
   },
   toggleText: {
     fontSize: 18, // Larger font
@@ -216,7 +198,7 @@ const styles = StyleSheet.create({
     color: THEME.colors.text,
   },
   toggleTextActive: {
-    color: PALETTE.oceanDark,
+    color: THEME.colors.background,
   },
   section: {
     gap: 14,
@@ -232,7 +214,7 @@ const styles = StyleSheet.create({
   },
   activeHint: {
     ...THEME.typography.label,
-    color: PALETTE.electricTeal,
+    color: THEME.colors.accent,
     fontSize: 14,
   },
   emptyText: {
@@ -245,13 +227,13 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     marginTop: 8,
-    backgroundColor: PALETTE.electricTeal,
+    backgroundColor: THEME.colors.accent,
     paddingVertical: 18, // Larger target
     borderRadius: 16,
     alignItems: 'center',
   },
   primaryText: {
-    color: PALETTE.oceanDark,
+    color: THEME.colors.background,
     fontSize: 20,
     fontWeight: '800',
   },
@@ -264,7 +246,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardActive: {
-    borderColor: PALETTE.electricTeal,
+    borderColor: THEME.colors.accent,
     backgroundColor: 'rgba(45, 212, 191, 0.1)',
   },
   cardHeader: {
@@ -286,8 +268,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
-    backgroundColor: PALETTE.electricTeal,
-    color: PALETTE.oceanDark,
+    backgroundColor: THEME.colors.accent,
+    color: THEME.colors.background,
     fontWeight: '800',
     fontSize: 12,
   },
