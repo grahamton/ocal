@@ -8,6 +8,7 @@ import { insertFind } from '../../shared/db';
 import { createId } from '../../shared/id';
 import { FindRecord } from '../../shared/types';
 import { useSession } from '../../shared/SessionContext';
+import { logger } from '../../shared/LogService';
 
 type Props = {
   onSaved: () => void;
@@ -148,7 +149,7 @@ export function CameraCapture({ onSaved }: Props) {
       Vibration.vibrate(50);
       onSaved();
     } catch (error) {
-      console.error('Capture error', error);
+      logger.error('Capture error', error);
       setStatusKind('error');
       setStatusMessage('Error saving.');
       Vibration.vibrate([0, 200, 100, 200]); // Long error buzz

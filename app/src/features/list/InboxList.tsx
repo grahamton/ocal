@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { deleteFind, listFinds, updateFindMetadata } from '../../shared/db';
 import { FindRecord } from '../../shared/types';
 import { useTheme } from '../../shared/ThemeContext';
+import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
+import { logger } from '../../shared/LogService';
 
 type Props = {
   refreshKey: number;
@@ -18,6 +20,7 @@ export function InboxList({ refreshKey, onUpdated }: Props) {
   const [items, setItems] = useState<FindRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [index, setIndex] = useState(0);
+  const [queued, setQueued] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -37,6 +40,19 @@ export function InboxList({ refreshKey, onUpdated }: Props) {
 
   const currentItem = items[index];
 
+  // Reset local queued state when item changes
+  useEffect(() => {
+    setQueued(false);
+    if (currentItem?.aiData) {
+        setQueued(true); // Already has data
+    } else if (currentItem) {
+        // Check if pending?
+        IdentifyQueueService.getQueueStatus(currentItem.id).then(q => {
+            if (q && q.status !== 'failed') setQueued(true);
+        });
+    }
+  }, [currentItem]);
+
   const handleKeep = async () => {
     if (!currentItem) return;
     try {
@@ -50,7 +66,7 @@ export function InboxList({ refreshKey, onUpdated }: Props) {
       // Index stays same (next item slides into place) unless we were at end
       if (index >= nextItems.length) setIndex(Math.max(0, nextItems.length - 1));
     } catch (e) {
-      console.error(e);
+        logger.error('Keep failed', e);
       Alert.alert('Error', 'Could not keep item.');
     }
   };
@@ -69,10 +85,24 @@ export function InboxList({ refreshKey, onUpdated }: Props) {
                 setItems(nextItems);
                 onUpdated?.();
                 if (index >= nextItems.length) setIndex(Math.max(0, nextItems.length - 1));
-            } catch(e) { console.error(e); }
+            } catch(e) { logger.error('Trash failed', e); }
         }
       }
     ]);
+  };
+
+
+  const handleIdentify = async () => {
+    if (!currentItem || queued) return;
+    try {
+        setQueued(true);
+        logger.add('user', 'Inbox: Added to ID Queue', { id: currentItem.id });
+        await IdentifyQueueService.addToQueue(currentItem.id);
+    } catch (e) {
+          logger.error('Identify queue failed', e);
+        setQueued(false);
+        Alert.alert('Error', 'Could not queue for identification.');
+    }
   };
 
   if (loading && items.length === 0) {
@@ -126,10 +156,15 @@ export function InboxList({ refreshKey, onUpdated }: Props) {
           </TouchableOpacity>
       </View>
 
-      {/* Rock Buddy Prompt (Mini) */}
-      <TouchableOpacity style={styles.idButton} onPress={() => Alert.alert('Rock Buddy', 'AI Identification coming soon!')}>
-          <Ionicons name="help-circle-outline" size={24} color={colors.textSecondary} />
-          <Text style={[styles.idText, { color: colors.textSecondary }]}>What is this?</Text>
+      <TouchableOpacity
+          style={[styles.idButton, queued && styles.idButtonDisabled]}
+          onPress={handleIdentify}
+          disabled={queued}
+      >
+          <Ionicons name={queued ? "cloud-upload" : "sparkles"} size={24} color={queued ? colors.success : "#c084fc"} />
+          <Text style={[styles.idText, { color: queued ? colors.success : "#c084fc" }]}>
+              {queued ? "Queued for Analysis" : "Identify with AI"}
+          </Text>
       </TouchableOpacity>
 
     </View>
@@ -255,6 +290,10 @@ const styles = StyleSheet.create({
   },
   idText: {
     fontSize: 16,
-    textDecorationLine: 'underline',
+    fontWeight: '700',
+    fontFamily: 'Outfit_700Bold',
+  },
+  idButtonDisabled: {
+    opacity: 0.8,
   },
 });

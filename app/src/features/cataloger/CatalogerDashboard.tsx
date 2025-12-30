@@ -225,18 +225,7 @@ const styles = StyleSheet.create({
   separator: {
     height: 14,
   },
-  primaryButton: {
-    marginTop: 8,
-    backgroundColor: THEME.colors.accent,
-    paddingVertical: 18, // Larger target
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-  primaryText: {
-    color: THEME.colors.background,
-    fontSize: 20,
-    fontWeight: '800',
-  },
+
   card: {
     padding: 16,
     borderRadius: 16,

@@ -185,7 +185,6 @@ import { logger } from './src/shared/LogService';
       ]}>
         {isSelectionMode ? (
           <BatchActionBar
-            onIdentify={() => Alert.alert('Identify', 'Batch identification stub')}
             onPoster={() => Alert.alert('Poster', 'Batch poster stub')}
             onDelete={() => Alert.alert('Delete', 'Batch delete stub')}
           />

@@ -34,8 +34,17 @@ class LogService {
 
     // Optional: console output for dev
     if (__DEV__) {
-      console.log(`[${category.toUpperCase()}] ${message}`, metadata || '');
+      if (category === 'error') {
+        console.error(`[ERROR] ${message}`, metadata || '');
+      } else {
+        console.log(`[${category.toUpperCase()}] ${message}`, metadata || '');
+      }
     }
+  }
+
+  public error(message: string, error?: unknown) {
+    const metadata = error instanceof Error ? { message: error.message, stack: error.stack } : { error };
+    this.add('error', message, metadata as Record<string, unknown>);
   }
 
   public getLogs(): LogEntry[] {

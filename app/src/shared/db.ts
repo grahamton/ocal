@@ -1,5 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import { FindRecord, Session } from './types';
+import { RockIdResult } from '../ai/rockIdSchema';
 
 const db = SQLite.openDatabaseSync('ocal.db');
 
@@ -19,7 +20,8 @@ export async function setupDatabase() {
       label TEXT,
       status TEXT DEFAULT 'draft',
       sessionId TEXT,
-      favorite INTEGER DEFAULT 0
+      favorite INTEGER DEFAULT 0,
+      aiData TEXT
     );
   `);
   await db.execAsync(`
@@ -31,6 +33,17 @@ export async function setupDatabase() {
       locationName TEXT,
       status TEXT NOT NULL,
       finds TEXT NOT NULL
+    );
+  `);
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS find_queue (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      findId TEXT NOT NULL,
+      status TEXT NOT NULL,
+      attempts INTEGER DEFAULT 0,
+      lastAttempt INTEGER,
+      error TEXT,
+      FOREIGN KEY(findId) REFERENCES finds(id) ON DELETE CASCADE
     );
   `);
   await ensureColumns();
@@ -46,6 +59,7 @@ async function ensureColumns() {
     { name: 'status', sql: "ALTER TABLE finds ADD COLUMN status TEXT DEFAULT 'draft';" },
     { name: 'sessionId', sql: 'ALTER TABLE finds ADD COLUMN sessionId TEXT;' },
     { name: 'favorite', sql: 'ALTER TABLE finds ADD COLUMN favorite INTEGER DEFAULT 0;' },
+    { name: 'aiData', sql: 'ALTER TABLE finds ADD COLUMN aiData TEXT;' },
   ];
 
   for (const migration of migrations) {
@@ -68,7 +82,7 @@ async function ensureColumns() {
 
 export async function insertFind(record: FindRecord) {
   await db.runAsync(
-    `INSERT INTO finds (id, photoUri, lat, long, timestamp, synced, note, category, label, status, sessionId, favorite) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+    `INSERT INTO finds (id, photoUri, lat, long, timestamp, synced, note, category, label, status, sessionId, favorite, aiData) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     record.id,
     record.photoUri,
     record.lat,
@@ -80,7 +94,8 @@ export async function insertFind(record: FindRecord) {
     record.label ?? null,
     record.status,
     record.sessionId ?? null,
-    record.favorite ? 1 : 0
+    record.favorite ? 1 : 0,
+    JSON.stringify(record.aiData ?? null)
   );
 }
 
@@ -92,6 +107,7 @@ type FindUpdate = {
   sessionId?: string | null;
   favorite?: boolean;
   synced?: boolean;
+  aiData?: RockIdResult | null;
 };
 
 export async function updateFindMetadata(id: string, updates: FindUpdate) {
@@ -125,6 +141,10 @@ export async function updateFindMetadata(id: string, updates: FindUpdate) {
   if ('synced' in updates) {
     fields.push('synced = ?');
     values.push(updates.synced ? 1 : 0);
+  }
+  if ('aiData' in updates) {
+    fields.push('aiData = ?');
+    values.push(JSON.stringify(updates.aiData ?? null));
   }
 
   if (!fields.length) return;
@@ -169,6 +189,7 @@ export async function listFinds(options?: { sessionId?: string | null; status?: 
     status: 'draft' | 'cataloged' | null;
     sessionId: string | null;
     favorite: number | null;
+    aiData: string | null;
   }>(query, ...params);
 
   return result.map((row) => ({
@@ -184,7 +205,44 @@ export async function listFinds(options?: { sessionId?: string | null; status?: 
     status: (row.status as 'draft' | 'cataloged') ?? 'draft',
     sessionId: row.sessionId ?? null,
     favorite: row.favorite === 1,
+    aiData: row.aiData ? JSON.parse(row.aiData) : null,
   }));
+  return result.map((row) => ({
+    id: row.id,
+    photoUri: row.photoUri,
+    lat: row.lat,
+    long: row.long,
+    timestamp: row.timestamp,
+    synced: row.synced === 1,
+    note: row.note,
+    category: row.category,
+    label: row.label,
+    status: (row.status as 'draft' | 'cataloged') ?? 'draft',
+    sessionId: row.sessionId ?? null,
+    favorite: row.favorite === 1,
+    aiData: row.aiData ? JSON.parse(row.aiData) : null,
+  }));
+}
+
+export async function getFind(id: string): Promise<FindRecord | null> {
+  const rows = await db.getAllAsync<any>('SELECT * FROM finds WHERE id = ? LIMIT 1', id);
+  if (!rows[0]) return null;
+  const row = rows[0];
+  return {
+    id: row.id,
+    photoUri: row.photoUri,
+    lat: row.lat,
+    long: row.long,
+    timestamp: row.timestamp,
+    synced: row.synced === 1,
+    note: row.note,
+    category: row.category,
+    label: row.label,
+    status: (row.status as 'draft' | 'cataloged') ?? 'draft',
+    sessionId: row.sessionId ?? null,
+    favorite: row.favorite === 1,
+    aiData: row.aiData ? JSON.parse(row.aiData) : null,
+  };
 }
 
 export async function deleteFind(id: string) {

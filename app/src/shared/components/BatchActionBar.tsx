@@ -2,16 +2,30 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GlassView } from './GlassView';
 import { THEME } from '../theme';
 import { useSelection } from '../SelectionContext';
+import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
+import { logger } from '../LogService';
 
 type Props = {
-  onIdentify?: () => void;
+  // onIdentify moved internal
   onPoster?: () => void;
   onDelete?: () => void;
 };
 
-export function BatchActionBar({ onIdentify, onPoster, onDelete }: Props) {
+export function BatchActionBar({ onPoster, onDelete }: Omit<Props, 'onIdentify'>) {
   const { selectedIds, exitSelectionMode } = useSelection();
   const count = selectedIds.size;
+
+  const handleBatchIdentify = async () => {
+    // Queue all selected
+    try {
+        const ids = Array.from(selectedIds);
+        await Promise.all(ids.map(id => IdentifyQueueService.addToQueue(id)));
+        // Optional: Show toast?
+        exitSelectionMode();
+    } catch (e) {
+        logger.error('Batch identify failed', e);
+    }
+  };
 
   return (
     <GlassView style={styles.container} intensity={40}>
@@ -24,7 +38,7 @@ export function BatchActionBar({ onIdentify, onPoster, onDelete }: Props) {
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.actionButton} onPress={onIdentify}>
+        <TouchableOpacity style={styles.actionButton} onPress={handleBatchIdentify}>
           <Text style={styles.actionIcon}>✨</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={onPoster}>

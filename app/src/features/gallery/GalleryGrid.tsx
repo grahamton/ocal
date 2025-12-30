@@ -4,6 +4,8 @@ import { listFinds } from '../../shared/db';
 import { formatCoords } from '../../shared/format';
 import { FindRecord } from '../../shared/types';
 import { useTheme } from '../../shared/ThemeContext';
+import { useSelection } from '../../shared/SelectionContext';
+import { Ionicons } from '@expo/vector-icons';
 
 const spacing = 12; // Increased spacing for cleaner look
 const numColumns = 2;
@@ -19,6 +21,7 @@ type Props = {
 export function GalleryGrid({ refreshKey, onSelect }: Props) {
   const [items, setItems] = useState<FindRecord[]>([]);
   const { colors } = useTheme();
+  const { isSelectionMode, selectedIds, toggleSelection, enterSelectionMode } = useSelection();
 
   useEffect(() => {
     let active = true;
@@ -93,14 +96,32 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
            </View>
         ) : (
           <View style={styles.grid}>
-            {collection.map(item => (
+            {collection.map(item => {
+              const isSelected = selectedIds.has(item.id);
+              return (
               <TouchableOpacity
                 key={item.id}
-                style={[styles.tile, { backgroundColor: colors.card, borderColor: colors.border }]}
+                style={[
+                    styles.tile,
+                    { backgroundColor: colors.card, borderColor: isSelected ? colors.accent : colors.border },
+                    isSelected && { borderWidth: 3 }
+                ]}
                 activeOpacity={0.85}
-                onPress={() => onSelect?.(item)}
+                onLongPress={() => enterSelectionMode(item.id)}
+                onPress={() => {
+                    if (isSelectionMode) {
+                        toggleSelection(item.id);
+                    } else {
+                        onSelect?.(item);
+                    }
+                }}
               >
                 <Image source={{ uri: item.photoUri }} style={styles.image} />
+                {isSelected && (
+                    <View style={styles.selectionOverlay}>
+                        <Ionicons name="checkmark-circle" size={32} color={colors.accent} />
+                    </View>
+                )}
                 <View style={styles.cardBody}>
                   <View style={styles.cardHeader}>
                     <Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1}>
@@ -118,7 +139,7 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
                   </Text>
                 </View>
               </TouchableOpacity>
-            ))}
+            )})}
           </View>
         )}
       </View>
@@ -249,5 +270,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 10,
     // color inline
+  },
+  selectionOverlay: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    zIndex: 10,
   },
 });

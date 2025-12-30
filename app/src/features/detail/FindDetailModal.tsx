@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import * as FileSystem from 'expo-file-system/legacy';
-import { identifyRock } from '../../ai/identifyRock';
-import { updateFindMetadata } from '../../shared/db';
+
+// import { identifyRock } from '../../ai/identifyRock';
+import { updateFindMetadata, getFind } from '../../shared/db';
 import { FindRecord } from '../../shared/types';
+import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
 import { PosterPreviewModal } from './components/PosterPreviewModal';
 import { RockIdResult } from '../../ai/rockIdSchema';
 import { FlipCard } from '../../shared/components/FlipCard';
@@ -42,11 +43,45 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
       setFavorite(item.favorite);
       setSessionId(item.sessionId ?? null);
       setAiError(null);
-      setAiResult(null);
+      setAiResult(item.aiData || null);
       setAiLoading(false);
       setIsFlipped(false); // Always start showing the rock
     }
   }, [item, visible]);
+
+  // Poll for queue updates if we are waiting for AI or checking status
+  useEffect(() => {
+    if (!visible || !item || aiResult) return;
+
+    let mounted = true;
+    const checkQueue = async () => {
+      const qItem = await IdentifyQueueService.getQueueStatus(item.id);
+
+      if (!mounted) return;
+
+      if (qItem && (qItem.status === 'pending' || qItem.status === 'processing')) {
+        setAiLoading(true);
+        setTimeout(checkQueue, 2000); // Poll again
+      } else if (qItem && qItem.status === 'completed') {
+        // Reload data!
+        const fresh = await getFind(item.id);
+        if (fresh && fresh.aiData && mounted) {
+           setAiResult(fresh.aiData);
+           setAiLoading(false);
+        }
+      } else if (qItem && qItem.status === 'failed') {
+         setAiError(qItem.error || 'Request failed');
+         setAiLoading(false);
+      } else {
+         // No queue item, and no result. stop polling.
+         setAiLoading(false);
+      }
+    };
+
+    checkQueue();
+
+    return () => { mounted = false; };
+  }, [visible, item, aiResult]);
 
   const handleSave = async () => {
     if (!item || saving) return;
@@ -68,29 +103,17 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
     }
   };
 
-  const formatLocationHint = (lat: number | null, long: number | null) => {
-    if (lat == null || long == null) return '';
-    return `${lat.toFixed(4)}, ${long.toFixed(4)}`;
-  };
+
 
   const runIdentify = async () => {
     if (!item || aiLoading) return;
     setAiLoading(true);
     setAiError(null);
     try {
-      const fileData = await FileSystem.readAsStringAsync(item.photoUri, { encoding: FileSystem.EncodingType.Base64 });
-      const dataUrl = `data:image/jpeg;base64,${fileData}`;
-      const result = await identifyRock({
-        imageDataUrls: [dataUrl],
-        locationHint: formatLocationHint(item.lat, item.long),
-        contextNotes: note || label || 'Beach find',
-        userGoal: 'quick_id',
-        provider: 'gemini',
-      });
-      setAiResult(result);
+      await IdentifyQueueService.addToQueue(item.id);
+      // Logic handled by polling effect now
     } catch (err) {
-      setAiError((err as Error)?.message || 'Identify failed');
-    } finally {
+      setAiError((err as Error)?.message || 'Queue failed');
       setAiLoading(false);
     }
   };
