@@ -5,7 +5,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { useFonts, Outfit_400Regular, Outfit_700Bold, Outfit_800ExtraBold } from '@expo-google-fonts/outfit';
 import { CameraCapture } from './src/features/capture/CameraCapture';
 import { GalleryGrid } from './src/features/gallery/GalleryGrid';
-import { PosterStub } from './src/features/poster/PosterStub';
+
 import { FindDetailModal } from './src/features/detail/FindDetailModal';
 import { setupDatabase } from './src/shared/db';
 import { FindRecord } from './src/shared/types';
@@ -63,7 +63,7 @@ export default function App() {
 }
 
 import { SessionControlModal } from './src/shared/components/SessionControlModal';
-import { TesterOverlay } from './src/shared/components/TesterOverlay';
+
 import { logger } from './src/shared/LogService';
 
   import { useTheme } from './src/shared/ThemeContext';
@@ -116,7 +116,6 @@ import { logger } from './src/shared/LogService';
   return (
     <View style={[styles.safe, { paddingTop: insets.top }]}>
       <StatusBar barStyle={mode === 'high-contrast' ? "light-content" : "dark-content"} />
-      <TesterOverlay />
       <ScrollView
         style={styles.pageScroll}
         contentContainerStyle={[styles.pageContent, { paddingBottom: 120 }]}
@@ -168,7 +167,6 @@ import { logger } from './src/shared/LogService';
               <Text style={styles.sectionTitle}>Gallery</Text>
             </View>
             <GalleryGrid refreshKey={refreshKey} onSelect={openDetail} />
-            <PosterStub onPress={() => Alert.alert('Poster', 'Poster builder coming soon.')} />
           </View>
         ) : null}
       </ScrollView>
