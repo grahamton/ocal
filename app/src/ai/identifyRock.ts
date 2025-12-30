@@ -1,3 +1,5 @@
+import { RockIdResult } from './rockIdSchema';
+
 export type IdentifyInput = {
   imageUrls?: string[];
   imageDataUrls?: string[];
@@ -8,7 +10,7 @@ export type IdentifyInput = {
   endpoint?: string; // override function URL; default uses ENV or relative path
 };
 
-export async function identifyRock(input: IdentifyInput) {
+export async function identifyRock(input: IdentifyInput): Promise<RockIdResult> {
   const url =
     input.endpoint ||
     process.env.EXPO_PUBLIC_IDENTIFY_URL ||

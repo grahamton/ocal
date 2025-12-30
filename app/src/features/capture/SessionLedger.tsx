@@ -14,7 +14,7 @@ type Props = {
 };
 
 // Simple ledger: pick keeps, then review.
-export function SessionLedger({ refreshKey, onUpdated, onRequestReview }: Props) {
+export function SessionLedger({ refreshKey, onUpdated, onRequestReview, onKept }: Props) {
   const { activeSession } = useSession();
   const [items, setItems] = useState<FindRecord[]>([]);
 

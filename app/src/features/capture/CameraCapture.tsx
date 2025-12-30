@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Vibration } from 'react-native';
-import { CameraView, useCameraPermissions, CameraViewRef } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 // Use legacy FileSystem API to avoid runtime errors in Expo 54 until the new API migration is done.
 import * as FileSystem from 'expo-file-system/legacy';
@@ -14,7 +14,7 @@ type Props = {
 };
 
 export function CameraCapture({ onSaved }: Props) {
-  const cameraRef = useRef<CameraViewRef>(null);
+  const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -132,6 +132,9 @@ export function CameraCapture({ onSaved }: Props) {
     }
   };
 
+  /* State for info box visibility */
+  const [showInfo, setShowInfo] = useState(true);
+
   if (!readyToCapture) {
     return (
       <View style={styles.permissionContainer}>
@@ -146,15 +149,25 @@ export function CameraCapture({ onSaved }: Props) {
 
   return (
     <View style={styles.wrapper}>
-      <View style={styles.infoBox}>
-        <Text style={styles.title}>Quick snap, saves offline.</Text>
-        <Text style={styles.description}>Tap once and it stores locally in case there is no signal. GPS is added when available.</Text>
-      </View>
-      <View style={styles.cameraContainer}>
+      {showInfo ? (
+        <View style={styles.infoBox}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.title}>Quick snap, saves offline.</Text>
+              <Text style={styles.description}>Tap once and it stores locally in case there is no signal. GPS is added when available.</Text>
+            </View>
+            <TouchableOpacity onPress={() => setShowInfo(false)} style={styles.closeInfoBtn}>
+               <Text style={styles.closeInfoText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : null}
+
+      <View style={[styles.cameraContainer, !showInfo && { marginTop: 60 }]}>
         <CameraView ref={cameraRef} style={styles.camera} facing="back" />
         <View style={styles.captureRow}>
           <TouchableOpacity style={styles.captureButton} onPress={handleCapture} disabled={saving}>
-            {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.captureText}>Snap</Text>}
+            {saving ? <ActivityIndicator color="#0f172a" size="large" /> : <View style={styles.shutterInner} />}
           </TouchableOpacity>
         </View>
       </View>
@@ -182,116 +195,162 @@ export function CameraCapture({ onSaved }: Props) {
 function createStyles() {
   return StyleSheet.create({
     wrapper: {
-      gap: 8,
+      flex: 1,
+      backgroundColor: '#000',
+      gap: 16,
     },
     infoBox: {
-      padding: 14,
-      borderRadius: 12,
-      backgroundColor: '#eef2ff',
+      position: 'absolute',
+      top: 60,
+      left: 16,
+      right: 16,
+      zIndex: 10,
+      padding: 16,
+      borderRadius: 16,
+      backgroundColor: 'rgba(15, 23, 42, 0.8)', // Dark semi-transparent
       borderWidth: 1,
-      borderColor: '#c7d2fe',
-      gap: 6,
+      borderColor: 'rgba(255,255,255,0.1)',
     },
     title: {
-      color: '#0f172a',
-      fontSize: 18,
-      fontWeight: '800',
+      color: '#fff',
+      fontSize: 20,
+      fontWeight: '800', // Extra bold for readability
+      fontFamily: 'Outfit_800ExtraBold',
+      marginBottom: 4,
     },
     description: {
-      color: '#0f172a',
+      color: '#cbd5e1', // Slate-300
       fontSize: 16,
-      lineHeight: 22,
+      lineHeight: 24,
+      fontFamily: 'Outfit_400Regular',
     },
     cameraContainer: {
-      borderRadius: 12,
+      height: 480, // Fixed height required inside ScrollView
+      marginHorizontal: 16,
+      marginTop: 120, // push down below info box
+      marginBottom: 0,
+      borderRadius: 24,
       overflow: 'hidden',
-      backgroundColor: '#000',
+      backgroundColor: '#1e293b',
+      borderWidth: 2,
+      borderColor: 'rgba(255,255,255,0.15)',
     },
     camera: {
-      height: 320,
+      flex: 1,
     },
     captureRow: {
+      position: 'absolute',
+      bottom: 40,
+      left: 0,
+      right: 0,
       alignItems: 'center',
-      paddingVertical: 12,
-      backgroundColor: '#111',
+      justifyContent: 'center',
+      // No background here, letting camera show through or sitting below
     },
     captureButton: {
-      width: 112,
-      height: 112,
-      borderRadius: 56,
-      backgroundColor: '#111',
-      borderWidth: 5,
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      backgroundColor: 'transparent',
+      borderWidth: 6,
       borderColor: '#fff',
       alignItems: 'center',
       justifyContent: 'center',
+      // Inner circle simulated by padding/content
+    },
+    // Inner fill for shutter to make it look like a physical button
+    shutterInner: {
+      width: 68,
+      height: 68,
+      borderRadius: 34,
+      backgroundColor: '#fff',
     },
     captureText: {
-      color: '#fff',
-      fontSize: 20,
-      fontWeight: '800',
+      display: 'none', // Text inside shutter is hard to read; shape implies function
     },
     statusText: {
       color: '#fff',
       fontSize: 18,
-      fontWeight: '900',
+      fontWeight: '800',
+      fontFamily: 'Outfit_700Bold',
       textAlign: 'center',
     },
     statusBanner: {
+      position: 'absolute',
+      bottom: 140, // Above the shutter
+      left: 20,
+      right: 20,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 12,
-      paddingVertical: 14,
-      paddingHorizontal: 16,
-      borderRadius: 14,
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      borderRadius: 16,
       backgroundColor: '#0f172a',
-      minHeight: 64,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
     },
     statusBannerSuccess: {
-      backgroundColor: '#166534',
+      backgroundColor: '#15803d', // Green-700
     },
     statusBannerError: {
-      backgroundColor: '#b91c1c',
+      backgroundColor: '#b91c1c', // Red-700
     },
     statusSpinner: {
       marginRight: 4,
     },
     statusRetry: {
-      marginLeft: 6,
+      marginLeft: 8,
       paddingVertical: 8,
-      paddingHorizontal: 12,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: '#fff',
-      backgroundColor: 'rgba(255,255,255,0.12)',
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      backgroundColor: 'rgba(0,0,0,0.2)',
     },
     statusRetryText: {
       color: '#fff',
       fontSize: 14,
-      fontWeight: '800',
+      fontWeight: '700',
     },
     permissionContainer: {
-      padding: 16,
-      backgroundColor: '#fff',
-      borderRadius: 12,
-      gap: 12,
-      borderWidth: 1,
-      borderColor: '#e5e7eb',
+      flex: 1,
+      justifyContent: 'center',
+      padding: 24,
+      backgroundColor: '#000',
+      gap: 20,
     },
     permissionText: {
-      color: '#111',
-      fontSize: 16,
+      color: '#cbd5e1',
+      fontSize: 18,
+      textAlign: 'center',
+      marginBottom: 20,
     },
     primaryButton: {
-      backgroundColor: '#111',
-      paddingVertical: 14,
-      borderRadius: 12,
+      backgroundColor: '#fff',
+      paddingVertical: 16,
+      paddingHorizontal: 32,
+      borderRadius: 100,
       alignItems: 'center',
+      alignSelf: 'center',
     },
     primaryButtonText: {
+      color: '#000',
+      fontSize: 18,
+      fontWeight: '700',
+    },
+    closeInfoBtn: {
+      padding: 8,
+      marginLeft: 8,
+      backgroundColor: 'rgba(255,255,255,0.1)',
+      borderRadius: 20,
+    },
+    closeInfoText: {
       color: '#fff',
       fontSize: 16,
-      fontWeight: '700',
+      fontWeight: 'bold',
     },
   });
 }

@@ -149,7 +149,7 @@ function AppContent() {
               }}
             />
             {/* Capture View Ledger */}
-            <GlassView style={{ padding: 12 }}>
+            <View style={{ padding: 12 }}>
                  <SessionLedger
                   refreshKey={refreshKey}
                   onUpdated={handleRefresh}
@@ -158,7 +158,7 @@ function AppContent() {
                     setView('cataloger');
                   }}
                 />
-            </GlassView>
+            </View>
           </View>
         ) : null}
 
@@ -205,10 +205,11 @@ function AppContent() {
           <View style={styles.floatingTabs}>
             {[
               { key: 'capture', label: 'Capture', icon: 'camera' },
-              { key: 'cataloger', label: 'Logbook', icon: 'book' }, // Icon changed to book
+              { key: 'cataloger', label: 'Logbook', icon: 'book' },
               { key: 'gallery', label: 'Gallery', icon: 'grid' },
             ].map((tab) => {
               const active = view === tab.key;
+              const iconName = (active ? tab.icon : `${tab.icon}-outline`) as keyof typeof Ionicons.glyphMap;
               return (
                 <TouchableOpacity
                   key={tab.key}
@@ -217,7 +218,7 @@ function AppContent() {
                   activeOpacity={0.7}
                 >
                   <Ionicons
-                    name={active ? (tab.icon as any) : (tab.icon + '-outline' as any)}
+                    name={iconName}
                     size={24}
                     color={active ? '#fff' : 'rgba(255,255,255,0.6)'}
                   />

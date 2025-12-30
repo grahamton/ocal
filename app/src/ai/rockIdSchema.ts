@@ -79,4 +79,38 @@ export const RockIdSchema = {
   },
 } as const;
 
-export type RockIdResult = typeof RockIdSchema;
+// Explicit type matching the schema above
+export interface RockIdResponse {
+  best_guess: {
+    label: string;
+    confidence: number;
+    category: 'rock' | 'mineral' | 'fossil' | 'artifact_like' | 'unknown';
+  };
+  alternatives: {
+    label: string;
+    confidence: number;
+  }[];
+  observable_reasons: string[];
+  region_fit: {
+    location_hint: string | null;
+    fit: 'high' | 'medium' | 'low' | 'unknown';
+    note: string | null;
+  };
+  followup_photos: string[];
+  followup_questions: string[];
+  catalog_tags: {
+    type: string[];
+    color: string[];
+    pattern: string[];
+    luster: string[];
+    translucency: ('opaque' | 'translucent' | 'transparent' | 'unknown')[];
+    grain_size: ('fine' | 'medium' | 'coarse' | 'mixed' | 'unknown')[];
+    features: string[];
+    condition: ('fresh' | 'weathered' | 'polished' | 'broken' | 'unknown')[];
+  };
+  confidence_notes: string[];
+  caution: string[];
+  red_flags: string[];
+}
+
+export type RockIdResult = RockIdResponse;

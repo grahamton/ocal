@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { FindRecord } from '../../../shared/types';
 import { formatCoords } from '../../../shared/format';
 import { formatTimestamp } from '../utils';
-import { AiResult } from '../types';
+import { RockIdResult } from '../../../ai/rockIdSchema';
 import { IdentifySection } from './IdentifySection';
 import { ChipSelector } from './ChipSelector';
 
@@ -24,7 +24,7 @@ type Props = {
   sessionId: string | null;
 
   // AI
-  aiResult: AiResult | null;
+  aiResult: RockIdResult | null;
   aiError: string | null;
   aiLoading: boolean;
   onRunIdentify: () => void;
@@ -33,21 +33,29 @@ type Props = {
   // Actions
   onPoster: () => void;
   onClose: () => void;
-  onSave: () => void; // Save replaces "Flip back" in this context? Or explicit save button?
+  onSave: () => void;
+  onFlipBack: () => void;
 };
 
 const CATEGORY_OPTIONS = ['Unsorted', 'Agate', 'Jasper', 'Fossil', 'Driftwood', 'Other'].map((value) => ({
   value,
 }));
 
+import { GlassView } from '../../../shared/components/GlassView';
+
 export function CardBack(props: Props) {
   return (
-    <View style={styles.container}>
+    <GlassView style={styles.container} intensity={40}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Logbook Entry</Text>
-        <TouchableOpacity onPress={props.onClose} style={styles.closeBtn}>
-             <Ionicons name="close" size={24} color="#fff" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity onPress={props.onFlipBack} style={styles.closeBtn}>
+               <Ionicons name="camera-reverse-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={props.onClose} style={styles.closeBtn}>
+               <Ionicons name="close" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -125,7 +133,7 @@ export function CardBack(props: Props) {
              <Text style={styles.saveText}>Save & Flip</Text>
           </TouchableOpacity>
       </View>
-    </View>
+    </GlassView>
   );
 }
 
@@ -133,7 +141,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     borderRadius: 24,
-    backgroundColor: '#1e293b',
+    // backgroundColor: '#1e293b', // Handled by GlassView
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
     overflow: 'hidden',

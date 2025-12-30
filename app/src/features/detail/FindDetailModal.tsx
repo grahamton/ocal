@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Modal, StyleSheet, View } from 'react-native';
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import { identifyRock } from '../../ai/identifyRock';
 import { updateFindMetadata } from '../../shared/db';
 import { FindRecord } from '../../shared/types';
 import { PosterPreviewModal } from './components/PosterPreviewModal';
-import { AiResult } from './types';
+import { RockIdResult } from '../../ai/rockIdSchema';
 import { FlipCard } from '../../shared/components/FlipCard';
 import { CardFront } from './components/CardFront';
 import { CardBack } from './components/CardBack';
@@ -27,7 +27,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [aiResult, setAiResult] = useState<AiResult | null>(null);
+  const [aiResult, setAiResult] = useState<RockIdResult | null>(null);
   const [posterVisible, setPosterVisible] = useState(false);
 
   // Flip state
@@ -112,13 +112,30 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
 
         {/* The Card Container */}
         <View style={styles.cardContainer}>
+          <View style={styles.floatingControls}>
+             <TouchableOpacity
+                style={styles.floatingBtn}
+                onPress={() => setIsFlipped(p => !p)}
+                activeOpacity={0.8}
+             >
+                <Text style={styles.floatingBtnText}>Flip</Text>
+             </TouchableOpacity>
+             <TouchableOpacity
+                style={[styles.floatingBtn, styles.floatingBtnClose]}
+                onPress={onClose}
+                hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+             >
+                <Text style={styles.floatingBtnText}>✕</Text>
+             </TouchableOpacity>
+          </View>
+
           <FlipCard
             isFlipped={isFlipped}
             style={{ flex: 1 }}
             front={
                <CardFront
                   item={{...item, label, category, favorite}}
-                  onFlip={() => !isFlipped && setIsFlipped(true)}
+                  onFlip={() => setIsFlipped(true)}
                />
             }
             back={
@@ -141,8 +158,9 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
                  onRunIdentify={runIdentify}
                  onApplyTags={applyTags}
                  onPoster={() => setPosterVisible(true)}
-                 onClose={onClose}
+                 onClose={onClose} // Passed but handled by parent too
                  onSave={handleSave}
+                 onFlipBack={() => setIsFlipped(false)}
                />
             }
           />
@@ -168,5 +186,37 @@ const styles = StyleSheet.create({
     maxWidth: 600, // Tablet safe
     alignSelf: 'center',
     width: '100%',
+    position: 'relative', // Context for floating buttons
+  },
+  floatingControls: {
+    position: 'absolute',
+    top: -60,
+    right: 0,
+    flexDirection: 'row',
+    gap: 12,
+    zIndex: 20,
+  },
+  floatingBtn: {
+    height: 44,
+    minWidth: 44,
+    paddingHorizontal: 16,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  floatingBtnClose: {
+     paddingHorizontal: 0,
+     width: 44,
+     backgroundColor: 'rgba(239, 68, 68, 0.4)', // Subtle red tint for close
+     borderColor: 'rgba(239, 68, 68, 0.5)',
+  },
+  floatingBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '800',
+    fontFamily: 'Outfit_700Bold', // Ensure font is loaded in App
   },
 });
