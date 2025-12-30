@@ -27,7 +27,7 @@ type Props = {
   aiLoading: boolean;
   onRunIdentify: () => void;
   onApplyTags: () => void;
-  onPoster: () => void;
+
   onClose: () => void;
   onSave: () => void;
   onFlipBack: () => void;
@@ -124,13 +124,7 @@ export function CardBack(props: Props) {
                   <Text style={[styles.actionText, { color: props.favorite ? '#fff' : colors.textSecondary }]}>{props.favorite ? 'Favorited' : 'Favorite'}</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={[
-                    styles.actionBtn,
-                    { borderColor: colors.border, backgroundColor: mode === 'journal' ? '#f8fafc' : 'rgba(255,255,255,0.05)' }
-                ]} onPress={props.onPoster}>
-                  <Ionicons name="image-outline" size={20} color={colors.textSecondary} />
-                  <Text style={[styles.actionText, { color: colors.textSecondary }]}>Poster</Text>
-              </TouchableOpacity>
+
           </View>
 
         </ScrollView>

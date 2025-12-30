@@ -5,7 +5,7 @@ import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { updateFindMetadata, getFind } from '../../shared/db';
 import { FindRecord } from '../../shared/types';
 import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
-import { PosterPreviewModal } from './components/PosterPreviewModal';
+
 import { RockIdResult } from '../../ai/rockIdSchema';
 import { FlipCard } from '../../shared/components/FlipCard';
 import { CardFront } from './components/CardFront';
@@ -29,7 +29,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<RockIdResult | null>(null);
-  const [posterVisible, setPosterVisible] = useState(false);
+
 
   // Flip state
   const [isFlipped, setIsFlipped] = useState(false);
@@ -179,7 +179,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
                  aiLoading={aiLoading}
                  onRunIdentify={runIdentify}
                  onApplyTags={applyTags}
-                 onPoster={() => setPosterVisible(true)}
+
                  onClose={onClose} // Passed but handled by parent too
                  onSave={handleSave}
                  onFlipBack={() => setIsFlipped(false)}
@@ -189,7 +189,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
         </View>
 
       </View>
-      <PosterPreviewModal visible={posterVisible} item={item} onClose={() => setPosterVisible(false)} />
+
     </Modal>
   );
 }
