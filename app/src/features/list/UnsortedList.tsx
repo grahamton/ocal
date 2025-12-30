@@ -5,6 +5,7 @@ import { FindDetailModal } from '../detail/FindDetailModal';
 import { deleteFind, listFinds, updateFindMetadata } from '../../shared/db';
 import { FindRecord } from '../../shared/types';
 import { formatCoords } from '../../shared/format';
+import { THEME, PALETTE } from '../../shared/theme';
 
 type Props = {
   refreshKey: number;
@@ -185,7 +186,7 @@ function FindCard({
 
 const styles = StyleSheet.create({
   container: {
-    gap: 8,
+    gap: 12,
   },
   headerRow: {
     flexDirection: 'row',
@@ -193,82 +194,83 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   heading: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111',
+    ...THEME.typography.subHeader,
+    fontSize: 22,
   },
   chipRow: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
   },
   filterChip: {
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    backgroundColor: '#fff',
+    borderColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   filterChipActive: {
-    backgroundColor: '#111',
-    borderColor: '#111',
+    backgroundColor: PALETTE.electricTeal,
+    borderColor: PALETTE.electricTeal,
   },
   filterText: {
-    color: '#0f172a',
+    color: THEME.colors.text,
     fontWeight: '800',
-    fontSize: 13,
-  },
-  filterTextActive: {
-    color: '#fff',
-  },
-  empty: {
-    color: '#555',
     fontSize: 14,
   },
+  filterTextActive: {
+    color: PALETTE.oceanDark,
+  },
+  empty: {
+    ...THEME.typography.body,
+    fontSize: 16,
+    fontStyle: 'italic',
+  },
   separator: {
-    height: 12,
+    height: 14,
   },
   card: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)', // Glass
+    borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   thumbnail: {
     width: 112,
-    height: 112,
-    backgroundColor: '#f3f4f6',
+    height: '100%',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   meta: {
     flex: 1,
-    padding: 12,
+    padding: 14,
     justifyContent: 'space-between',
-    gap: 6,
+    gap: 8,
   },
   metaText: {
-    color: '#0f172a',
+    color: THEME.colors.textSecondary,
     fontSize: 16,
     fontWeight: '700',
   },
   label: {
-    color: '#0f172a',
-    fontSize: 17,
+    color: THEME.colors.text,
+    fontSize: 18,
     fontWeight: '900',
   },
   category: {
-    color: '#111',
+    color: PALETTE.electricTeal,
     fontSize: 16,
     fontWeight: '800',
   },
   note: {
-    color: '#111',
-    fontSize: 15,
+    color: THEME.colors.text,
+    fontSize: 16,
   },
   noteMuted: {
-    color: '#6b7280',
-    fontSize: 15,
+    color: THEME.colors.textSecondary,
+    fontSize: 16,
+    fontStyle: 'italic',
   },
   badge: {
     paddingHorizontal: 10,
@@ -279,16 +281,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   badgeDraft: {
-    backgroundColor: '#f97316',
-    color: '#fff',
+    backgroundColor: 'rgba(253, 230, 138, 0.2)',
+    color: PALETTE.softSand,
   },
   badgeDone: {
-    backgroundColor: '#22c55e',
-    color: '#fff',
+    backgroundColor: 'rgba(34, 197, 94, 0.2)',
+    color: '#4ade80',
   },
   offline: {
     marginLeft: 8,
-    color: '#6b7280',
+    color: THEME.colors.textSecondary,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -300,38 +302,38 @@ const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
-    gap: 10,
-    marginTop: 4,
+    gap: 12,
+    marginTop: 8,
   },
   actionButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    backgroundColor: '#fff',
+    borderColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   deleteButton: {
-    borderColor: '#b91c1c',
-    backgroundColor: '#fef2f2',
+    borderColor: PALETTE.danger,
+    backgroundColor: 'rgba(248, 113, 113, 0.1)',
   },
   hideButton: {
-    borderColor: '#0f172a',
-    backgroundColor: '#eef2ff',
+    borderColor: PALETTE.white60,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   actionText: {
-    color: '#0f172a',
+    color: THEME.colors.text,
     fontWeight: '800',
-    fontSize: 13,
+    fontSize: 14,
   },
   deleteText: {
-    color: '#b91c1c',
+    color: PALETTE.danger,
     fontWeight: '800',
-    fontSize: 13,
+    fontSize: 14,
   },
   hideText: {
-    color: '#0f172a',
+    color: THEME.colors.text,
     fontWeight: '800',
-    fontSize: 13,
+    fontSize: 14,
   },
 });

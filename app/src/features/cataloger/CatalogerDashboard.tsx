@@ -4,6 +4,7 @@ import { listFinds } from '../../shared/db';
 import { useSession } from '../../shared/SessionContext';
 import { FindRecord, Session } from '../../shared/types';
 import { UnsortedList } from '../list/UnsortedList';
+import { THEME, PALETTE } from '../../shared/theme';
 
 type Props = {
   refreshKey: number;
@@ -156,7 +157,8 @@ function SessionCard({ session, finds, active }: { session: Session; finds: Find
 
 const styles = StyleSheet.create({
   container: {
-    gap: 12,
+    gap: 16,
+    paddingHorizontal: 4,
   },
   headerRow: {
     flexDirection: 'row',
@@ -164,62 +166,60 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   heading: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#111',
+    ...THEME.typography.header,
+    fontSize: 28, // Scaled for Senior Mode
   },
   syncBadge: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
+    borderWidth: 1,
   },
   syncOk: {
-    backgroundColor: '#ecfdf3',
+    backgroundColor: 'rgba(34, 197, 94, 0.2)', // Green glass
     borderColor: '#22c55e',
-    borderWidth: 1,
   },
   syncPending: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: 'rgba(245, 158, 11, 0.2)', // Amber glass
     borderColor: '#f59e0b',
-    borderWidth: 1,
   },
   syncText: {
     fontWeight: '800',
-    fontSize: 13,
+    fontSize: 14,
   },
   syncTextOk: {
-    color: '#166534',
+    color: '#4ade80', // Bright green text
   },
   syncTextPending: {
-    color: '#92400e',
+    color: PALETTE.softSand, // Bright yellow/sand text
   },
   toggleRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
   },
   toggleButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 16, // Larger target
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#fff',
+    borderColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center',
   },
   toggleButtonActive: {
-    backgroundColor: '#0f172a',
-    borderColor: '#0f172a',
+    backgroundColor: PALETTE.electricTeal,
+    borderColor: PALETTE.electricTeal,
   },
   toggleText: {
-    fontSize: 16,
+    fontSize: 18, // Larger font
     fontWeight: '800',
-    color: '#0f172a',
+    color: THEME.colors.text,
   },
   toggleTextActive: {
-    color: '#fff',
+    color: PALETTE.oceanDark,
   },
   section: {
-    gap: 12,
+    gap: 14,
   },
   listHeader: {
     flexDirection: 'row',
@@ -227,44 +227,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#111',
+    ...THEME.typography.subHeader,
+    fontSize: 22,
   },
   activeHint: {
-    color: '#0f172a',
-    fontWeight: '700',
+    ...THEME.typography.label,
+    color: PALETTE.electricTeal,
+    fontSize: 14,
   },
   emptyText: {
-    color: '#4b5563',
-    fontSize: 15,
+    ...THEME.typography.body,
+    fontSize: 16,
+    fontStyle: 'italic',
   },
   separator: {
-    height: 12,
+    height: 14,
   },
   primaryButton: {
-    marginTop: 4,
-    backgroundColor: '#0f172a',
-    paddingVertical: 16,
-    borderRadius: 14,
+    marginTop: 8,
+    backgroundColor: PALETTE.electricTeal,
+    paddingVertical: 18, // Larger target
+    borderRadius: 16,
     alignItems: 'center',
   },
   primaryText: {
-    color: '#fff',
-    fontSize: 18,
+    color: PALETTE.oceanDark,
+    fontSize: 20,
     fontWeight: '800',
   },
   card: {
-    padding: 14,
-    borderRadius: 12,
+    padding: 16,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#fff',
-    gap: 6,
+    borderColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.05)', // Glass effect like Detail View
+    gap: 8,
   },
   cardActive: {
-    borderColor: '#0f172a',
-    backgroundColor: '#eef2ff',
+    borderColor: PALETTE.electricTeal,
+    backgroundColor: 'rgba(45, 212, 191, 0.1)',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -272,40 +273,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#0f172a',
+    ...THEME.typography.subHeader,
+    fontSize: 20,
+    color: THEME.colors.text,
   },
   cardMeta: {
-    color: '#0f172a',
-    fontWeight: '700',
+    ...THEME.typography.body,
+    fontSize: 16,
+    color: THEME.colors.textSecondary,
   },
   activeBadge: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
-    backgroundColor: '#0f172a',
-    color: '#fff',
+    backgroundColor: PALETTE.electricTeal,
+    color: PALETTE.oceanDark,
     fontWeight: '800',
     fontSize: 12,
   },
   thumbRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 6,
+    gap: 10,
+    marginTop: 8,
   },
   thumb: {
-    width: 72,
-    height: 72,
+    width: 80,
+    height: 80,
     borderRadius: 12,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   thumbPlaceholder: {
-    width: 72,
-    height: 72,
+    width: 80,
+    height: 80,
     borderRadius: 12,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
 });

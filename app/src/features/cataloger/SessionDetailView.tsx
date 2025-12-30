@@ -3,6 +3,10 @@ import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TouchableOpacity,
 import { getSession, listFinds, updateFindMetadata } from '../../shared/db';
 import { useSession } from '../../shared/SessionContext';
 import { FindRecord, Session } from '../../shared/types';
+import { GlassView } from '../../shared/components/GlassView';
+import { THEME, PALETTE } from '../../shared/theme';
+import { useSelection } from '../../shared/SelectionContext';
+import { FlipCard } from '../../shared/components/FlipCard';
 
 type Props = {
   sessionId: string;
@@ -19,6 +23,8 @@ export function SessionDetailView({ sessionId, refreshKey, onBack, onUpdated }: 
   const [loading, setLoading] = useState(false);
   const [ending, setEnding] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const { isSelectionMode, selectedIds, enterSelectionMode, toggleSelection } = useSelection();
+  const [flippedId, setFlippedId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -64,6 +70,21 @@ export function SessionDetailView({ sessionId, refreshKey, onBack, onUpdated }: 
     onUpdated?.();
   };
 
+  const onItemPress = (id: string) => {
+    if (isSelectionMode) {
+      toggleSelection(id);
+    } else {
+      setFlippedId((current) => (current === id ? null : id));
+    }
+  };
+
+  const onItemLongPress = (id: string) => {
+    if (!isSelectionMode) {
+      if (flippedId) setFlippedId(null);
+      enterSelectionMode(id);
+    }
+  };
+
   if (!session) {
     return (
       <View style={styles.container}>
@@ -81,16 +102,20 @@ export function SessionDetailView({ sessionId, refreshKey, onBack, onUpdated }: 
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
-        <Text style={styles.heading}>{session.name}</Text>
+        <View>
+          <Text style={styles.heading}>{session.name}</Text>
+          <Text style={styles.subtle}>
+            {new Date(session.startTime).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+          </Text>
+        </View>
       </View>
-      <Text style={styles.subtle}>
-        Started {new Date(session.startTime).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-      </Text>
+
       <View style={styles.metricsRow}>
         <Metric label="Finds" value={metrics.total.toString()} />
         <Metric label="Categories" value={metrics.categories.toString()} />
         <Metric label="Minutes" value={metrics.minutes.toString()} />
       </View>
+
       {session.status === 'active' ? (
         <TouchableOpacity style={styles.endButton} onPress={handleEndSession} disabled={ending}>
           {ending ? <ActivityIndicator color="#fff" /> : <Text style={styles.endText}>End Session</Text>}
@@ -98,39 +123,97 @@ export function SessionDetailView({ sessionId, refreshKey, onBack, onUpdated }: 
       ) : (
         <Text style={styles.subtle}>Completed</Text>
       )}
-      <View style={styles.toolbar}>
-        <Text style={styles.toolbarText}>Batch actions (stub)</Text>
-        <Text style={styles.toolbarHint}>Select items to run AI or make a poster later.</Text>
-      </View>
-      {loading ? <ActivityIndicator /> : null}
+
+      {!isSelectionMode ? (
+        <GlassView style={styles.toolbar} intensity={10}>
+          <Text style={styles.toolbarText}>Tip:</Text>
+          <Text style={styles.toolbarHint}>Tap to flip. Long press to select.</Text>
+        </GlassView>
+      ) : null}
+
+      {loading ? <ActivityIndicator color={THEME.colors.text} /> : null}
       {finds.length === 0 ? <Text style={styles.subtle}>No finds in this session yet.</Text> : null}
+
       <FlatList
         data={finds}
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={styles.gridRow}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Image source={{ uri: item.photoUri }} style={styles.thumb} />
-            <View style={styles.cardMeta}>
-              <Text style={styles.cardTitle}>{item.label || 'Unlabeled'}</Text>
-              <Text style={styles.cardTag}>{item.category || 'Unsorted'}</Text>
-              <View style={styles.cardRow}>
-                <Text style={[styles.badge, item.status === 'cataloged' ? styles.badgeCataloged : styles.badgeDraft]}>
-                  {item.status === 'cataloged' ? 'Cataloged' : 'Draft'}
-                </Text>
-                {item.favorite ? <Text style={styles.favoriteMark}>★</Text> : null}
-              </View>
-              <TouchableOpacity
-                style={[styles.favoriteButton, item.favorite && styles.favoriteButtonActive]}
-                onPress={() => toggleFavorite(item.id, !item.favorite)}
-                activeOpacity={0.9}
-              >
-                <Text style={[styles.favoriteButtonText, item.favorite && styles.favoriteButtonTextActive]}>{item.favorite ? 'Kept' : 'Keep'}</Text>
-              </TouchableOpacity>
+        renderItem={({ item }) => {
+          const isSelected = selectedIds.has(item.id);
+          const isFlipped = flippedId === item.id;
+
+          return (
+            <View style={{ flex: 1 }}>
+              <FlipCard
+                isFlipped={isFlipped && !isSelectionMode}
+                style={{ flex: 1, minHeight: 250 }}
+                front={
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={() => onItemPress(item.id)}
+                    onLongPress={() => onItemLongPress(item.id)}
+                    style={{ flex: 1 }}
+                  >
+                    <GlassView
+                      style={[styles.card, isSelected && styles.cardSelected]}
+                      intensity={isSelected ? 40 : 20}
+                    >
+                      <Image source={{ uri: item.photoUri }} style={styles.thumb} />
+                      <View style={styles.cardMeta}>
+                        <Text style={styles.cardTitle}>{item.label || 'Unlabeled'}</Text>
+                        <Text style={styles.cardTag}>{item.category || 'Unsorted'}</Text>
+                        <View style={styles.cardRow}>
+                          <View style={[styles.badge, item.status === 'cataloged' ? styles.badgeCataloged : styles.badgeDraft]}>
+                            <Text style={[styles.badgeText, item.status === 'cataloged' ? styles.badgeTextCataloged : styles.badgeTextDraft]}>
+                              {item.status === 'cataloged' ? 'Cataloged' : 'Draft'}
+                            </Text>
+                          </View>
+                          {item.favorite ? <Text style={styles.favoriteMark}>★</Text> : null}
+                        </View>
+                        {!isSelectionMode && (
+                          <TouchableOpacity
+                            style={[styles.favoriteButton, item.favorite && styles.favoriteButtonActive]}
+                            onPress={() => toggleFavorite(item.id, !item.favorite)}
+                            activeOpacity={0.9}
+                          >
+                            <Text style={[styles.favoriteButtonText, item.favorite && styles.favoriteButtonTextActive]}>{item.favorite ? 'Kept' : 'Keep'}</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                      {isSelected && (
+                        <View style={styles.checkOverlay}>
+                          <Text style={styles.checkMark}>✓</Text>
+                        </View>
+                      )}
+                    </GlassView>
+                  </TouchableOpacity>
+                }
+                back={
+                  <GlassView style={[styles.card, styles.aiCard]} intensity={50}>
+                    <View style={styles.aiHeader}>
+                       <Text style={styles.aiTitle}>Rock Buddy AI</Text>
+                       <Text style={styles.aiScore}>88% Match</Text>
+                    </View>
+                    <View style={styles.aiBody}>
+                       <Text style={styles.aiLabel}>Likely Agate</Text>
+                       <Text style={styles.aiDesc}>
+                         &quot;This specimen features characteristic chalcedony banding suitable for tumbling.&quot;
+                       </Text>
+                      <View style={styles.aiTags}>
+                          <Text style={styles.aiTag}>#quartz</Text>
+                          <Text style={styles.aiTag}>#banding</Text>
+                       </View>
+                    </View>
+                    <TouchableOpacity onPress={() => onItemPress(item.id)} activeOpacity={0.7}>
+                        <Text style={styles.flipHint}>Tap to flip back</Text>
+                    </TouchableOpacity>
+                  </GlassView>
+                }
+              />
             </View>
-          </View>
-        )}
+          );
+        }}
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
         scrollEnabled={false}
       />
@@ -143,42 +226,39 @@ export function SessionDetailView({ sessionId, refreshKey, onBack, onUpdated }: 
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <View style={styles.metric}>
+    <GlassView style={styles.metric} intensity={20}>
       <Text style={styles.metricValue}>{value}</Text>
       <Text style={styles.metricLabel}>{label}</Text>
-    </View>
+    </GlassView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    gap: 12,
+    gap: 16,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 16,
   },
   backButton: {
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#fff',
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   backText: {
-    fontWeight: '800',
-    color: '#0f172a',
+    ...THEME.typography.label,
+    color: THEME.colors.text,
   },
   heading: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#111',
+    ...THEME.typography.header,
+    fontSize: 24,
   },
   subtle: {
-    color: '#4b5563',
-    fontWeight: '700',
+    ...THEME.typography.body,
+    fontSize: 14,
   },
   metricsRow: {
     flexDirection: 'row',
@@ -186,76 +266,145 @@ const styles = StyleSheet.create({
   },
   metric: {
     flex: 1,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: '#f8fafc',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    padding: 16,
     alignItems: 'center',
+    // GlassView handles border/radius
   },
   metricValue: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#0f172a',
+    ...THEME.typography.header,
+    fontSize: 28,
+    color: PALETTE.electricTeal,
   },
   metricLabel: {
-    color: '#4b5563',
-    fontWeight: '700',
+    ...THEME.typography.label,
+    fontSize: 12,
+    color: THEME.colors.textSecondary,
+    marginTop: 4,
   },
   endButton: {
-    backgroundColor: '#0f172a',
+    backgroundColor: PALETTE.danger,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
   },
   endText: {
-    color: '#fff',
-    fontWeight: '800',
+    ...THEME.typography.label,
     fontSize: 16,
   },
   toolbar: {
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#fff',
+    padding: 16,
   },
   toolbarText: {
-    fontWeight: '800',
-    color: '#0f172a',
+    ...THEME.typography.subHeader,
+    fontSize: 18, // 16 -> 18
   },
   toolbarHint: {
-    color: '#4b5563',
-    fontSize: 13,
+    ...THEME.typography.body,
+    fontSize: 15, // 13 -> 15
   },
   gridRow: {
     gap: 12,
   },
   card: {
     flex: 1,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    height: '100%',
+    // GlassView handles radius/flow
     overflow: 'hidden',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)', // base tint
+  },
+  aiCard: {
+    backgroundColor: 'rgba(15, 23, 42, 0.95)', // Nearly opaque for text reading
+    padding: 12,
+    justifyContent: 'space-between',
+  },
+  aiHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  aiTitle: {
+    ...THEME.typography.label,
+    color: PALETTE.electricTeal,
+    fontSize: 14, // 12 -> 14
+  },
+  aiScore: {
+    ...THEME.typography.label,
+    color: PALETTE.softSand,
+    fontSize: 14, // 12 -> 14
+  },
+  aiBody: {
+    gap: 8,
+  },
+  aiLabel: {
+    ...THEME.typography.header, // bold
+    fontSize: 22, // 20 -> 22
+    color: '#fff',
+  },
+  aiDesc: {
+    ...THEME.typography.body,
+    fontSize: 16, // 12 -> 16 (Critical readability bump)
+    color: THEME.colors.textSecondary,
+    fontStyle: 'italic',
+    lineHeight: 22,
+  },
+  aiTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 4,
+  },
+  aiTag: {
+    fontSize: 12, // 10 -> 12
+    fontWeight: 'bold',
+    color: PALETTE.electricTeal,
+    backgroundColor: 'rgba(45, 212, 191, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  flipHint: {
+    textAlign: 'center',
+    fontSize: 12, // 10 -> 12
+    color: THEME.colors.textSecondary,
+    marginTop: 8,
+  },
+  cardSelected: {
+    borderWidth: 2,
+    borderColor: PALETTE.electricTeal,
+  },
+  checkOverlay: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 28, // 24 -> 28
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: PALETTE.electricTeal,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkMark: {
+    color: PALETTE.oceanDark,
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   thumb: {
     width: '100%',
     height: 160,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: 'rgba(0,0,0,0.2)',
   },
   cardMeta: {
     padding: 12,
-    gap: 6,
+    gap: 8, // 6 -> 8
   },
   cardTitle: {
-    fontWeight: '800',
-    color: '#0f172a',
-    fontSize: 16,
+    ...THEME.typography.subHeader,
+    fontSize: 18, // 16 -> 18
   },
   cardTag: {
-    color: '#4b5563',
-    fontWeight: '700',
+    ...THEME.typography.body,
+    fontSize: 14, // 12 -> 14
   },
   cardRow: {
     flexDirection: 'row',
@@ -263,47 +412,54 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
     overflow: 'hidden',
-    fontWeight: '800',
-    fontSize: 12,
   },
   badgeDraft: {
-    backgroundColor: '#fef3c7',
-    color: '#92400e',
+    backgroundColor: 'rgba(253, 230, 138, 0.2)', // Soft Sand low opacity
   },
   badgeCataloged: {
-    backgroundColor: '#ecfdf3',
-    color: '#166534',
+    backgroundColor: 'rgba(45, 212, 191, 0.2)', // Electric Teal low opacity
+  },
+  badgeText: {
+    ...THEME.typography.label,
+    fontSize: 12, // 10 -> 12
+  },
+  badgeTextDraft: {
+    color: PALETTE.softSand,
+  },
+  badgeTextCataloged: {
+    color: PALETTE.electricTeal,
   },
   favoriteMark: {
-    color: '#f59e0b',
-    fontWeight: '900',
+    color: PALETTE.softSand,
+    fontSize: 18,
   },
   favoriteButton: {
     marginTop: 4,
     paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: 'rgba(255,255,255,0.3)', // Higher contrast border
     alignItems: 'center',
   },
   favoriteButtonActive: {
-    backgroundColor: '#0f172a',
-    borderColor: '#0f172a',
+    backgroundColor: PALETTE.electricTeal,
+    borderColor: PALETTE.electricTeal,
   },
   favoriteButtonText: {
-    fontWeight: '800',
-    color: '#0f172a',
+    ...THEME.typography.label,
+    fontSize: 14, // 12 -> 14
   },
   favoriteButtonTextActive: {
-    color: '#fff',
+    color: PALETTE.oceanDark,
   },
   activeHint: {
-    color: '#0f172a',
-    fontWeight: '700',
+    ...THEME.typography.body,
+    textAlign: 'center',
+    marginTop: 12,
   },
 });

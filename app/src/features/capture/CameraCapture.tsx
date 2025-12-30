@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Vibration } from 'react-native';
-import { CameraView, useCameraPermissions, CameraCaptureError, CameraViewRef } from 'expo-camera';
+import { CameraView, useCameraPermissions, CameraViewRef } from 'expo-camera';
 import * as Location from 'expo-location';
 // Use legacy FileSystem API to avoid runtime errors in Expo 54 until the new API migration is done.
 import * as FileSystem from 'expo-file-system/legacy';
@@ -19,7 +19,7 @@ export function CameraCapture({ onSaved }: Props) {
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusKind, setStatusKind] = useState<'info' | 'success' | 'error'>('info');
-  const { activeSession, addFindToActiveSession } = useSession();
+  const { activeSession, startSession, addFindToActiveSession } = useSession();
 
   useEffect(() => {
     if (!permission?.granted) {
@@ -57,8 +57,9 @@ export function CameraCapture({ onSaved }: Props) {
     try {
       return await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
-        maximumAge: 10000,
-        timeout: 4000,
+        timeInterval: 10000,
+        // maximumAge not supported in new Expo Location type?
+        // timeout: 4000,
       });
     } catch (error) {
       console.warn('Location lookup failed', error);
@@ -91,6 +92,19 @@ export function CameraCapture({ onSaved }: Props) {
       setStatusMessage('Grabbing location...');
       const location = await getLocation();
 
+      // Ensure we have an active session ID
+      let currentSessionId = activeSession?.id;
+      if (!currentSessionId) {
+        // Auto-start a session if none exists!
+        try {
+           const newSession = await startSession();
+           currentSessionId = newSession.id;
+        } catch (e) {
+           console.error('Auto-start session failed', e);
+           // Fallback to null (orphan) but logs show it shouldn't happen
+        }
+      }
+
       const record: FindRecord = {
         id,
         photoUri: fileUri,
@@ -102,13 +116,13 @@ export function CameraCapture({ onSaved }: Props) {
         category: null,
         label: `Find ${new Date().toLocaleDateString()}`,
         status: 'draft',
-        sessionId: activeSession?.id ?? null,
+        sessionId: currentSessionId ?? null,
         favorite: false,
       };
 
       try {
         await insertFind(record);
-        if (activeSession) {
+        if (currentSessionId) {
           await addFindToActiveSession(record.id);
         }
         const locationNote = location ? '' : ' (no GPS - still saved)';
@@ -122,8 +136,7 @@ export function CameraCapture({ onSaved }: Props) {
         setStatusMessage("Couldn't save find. Try again.");
       }
     } catch (error) {
-      const captureError = error as CameraCaptureError;
-      console.error('Capture failed', captureError);
+      console.error('Capture failed', error);
       setStatusKind('error');
       setStatusMessage('Could not save. Try again.');
     } finally {

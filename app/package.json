@@ -13,9 +13,13 @@
     "build:test": "tsc -p tsconfig.test.json"
   },
   "dependencies": {
+    "@expo-google-fonts/outfit": "^0.4.3",
+    "@expo/vector-icons": "^15.0.3",
     "expo": "~54.0.30",
+    "expo-blur": "~15.0.8",
     "expo-camera": "~17.0.10",
     "expo-file-system": "~19.0.21",
+    "expo-linear-gradient": "~15.0.8",
     "expo-location": "~19.0.8",
     "expo-media-library": "~18.2.1",
     "expo-sqlite": "~16.0.10",

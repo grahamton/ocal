@@ -1,24 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { listFinds } from '../../shared/db';
 import { formatCoords } from '../../shared/format';
 import { FindRecord } from '../../shared/types';
 
-const spacing = 8;
+const spacing = 12; // Increased spacing for cleaner look
 const numColumns = 2;
+// Standard tile width
 const cardWidth = (Dimensions.get('window').width - 16 * 2 - spacing * (numColumns - 1)) / numColumns;
+// Inbox tile width (slightly smaller for horizontal scroll)
+const inboxCardWidth = 140;
 
 type Props = {
   refreshKey: number;
   onSelect?: (item: FindRecord) => void;
-  filter?: 'all' | 'draft';
 };
 
-// Context: Phase 2 list polish — add filter pills and grid/list toggle inspired by UI review.
-export function GalleryGrid({ refreshKey, onSelect, filter = 'all' }: Props) {
+export function GalleryGrid({ refreshKey, onSelect }: Props) {
   const [items, setItems] = useState<FindRecord[]>([]);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   useEffect(() => {
     let active = true;
@@ -31,27 +30,27 @@ export function GalleryGrid({ refreshKey, onSelect, filter = 'all' }: Props) {
     };
   }, [refreshKey]);
 
-  const categoryOptions = useMemo(() => {
-    const set = new Set<string>();
-    items.forEach((i) => {
-      if (i.category) set.add(i.category);
+  const { inbox, collection } = useMemo(() => {
+    const drafts: FindRecord[] = [];
+    const cataloged: FindRecord[] = [];
+
+    // Sort by date desc
+    const sorted = [...items].sort((a, b) =>
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+
+    sorted.forEach(item => {
+      if (item.status === 'draft') {
+        drafts.push(item);
+      } else {
+        cataloged.push(item);
+      }
     });
-    return ['all', ...Array.from(set), 'draft'];
+
+    return { inbox: drafts, collection: cataloged };
   }, [items]);
 
-  const filteredItems = useMemo(() => {
-    let result = filter === 'draft' ? items.filter((i) => i.status === 'draft') : items;
-    if (categoryFilter && categoryFilter !== 'all') {
-      if (categoryFilter === 'draft') {
-        result = result.filter((i) => i.status === 'draft');
-      } else {
-        result = result.filter((i) => (i.category ?? 'Unsorted') === categoryFilter);
-      }
-    }
-    return result;
-  }, [filter, items, categoryFilter]);
-
-  if (filteredItems.length === 0) {
+  if (items.length === 0) {
     return (
       <View style={styles.emptyBox}>
         <Text style={styles.emptyText}>No photos yet. Snap a find to see it here.</Text>
@@ -61,160 +60,147 @@ export function GalleryGrid({ refreshKey, onSelect, filter = 'all' }: Props) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.toolbar}>
-        <View style={styles.filterRow}>
-          {categoryOptions.map((c) => {
-            const active = categoryFilter === c;
-            const label = c === 'all' ? 'All' : c === 'draft' ? 'Draft' : c;
-            return (
-              <TouchableOpacity
-                key={c}
-                style={[styles.chip, active && styles.chipActive]}
-                onPress={() => setCategoryFilter(c)}
-                activeOpacity={0.85}
-              >
-                <Text style={[styles.chipText, active && styles.chipTextActive]} numberOfLines={1}>
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-        <View style={styles.viewToggle}>
-          {(['grid', 'list'] as const).map((mode) => {
-            const active = viewMode === mode;
-            return (
-              <TouchableOpacity
-                key={mode}
-                style={[styles.toggleButton, active && styles.toggleButtonActive]}
-                onPress={() => setViewMode(mode)}
-                activeOpacity={0.85}
-              >
-                <Text style={[styles.toggleText, active && styles.toggleTextActive]}>{mode === 'grid' ? 'Grid' : 'List'}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
 
-      {viewMode === 'grid' ? (
-        <FlatList
-          data={filteredItems}
-          keyExtractor={(item) => item.id}
-          numColumns={numColumns}
-          columnWrapperStyle={styles.row}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.tile} activeOpacity={0.85} onPress={() => onSelect?.(item)}>
-              <Image source={{ uri: item.photoUri }} style={styles.image} />
-              <View style={styles.cardBody}>
-                <View style={styles.cardHeader}>
-                  <Text style={styles.titleText} numberOfLines={1}>
-                    {item.label || 'Untitled'}
-                  </Text>
-                  <View style={[styles.badge, item.category ? styles.badgeTint : null]}>
-                    <Text style={[styles.badgeText, item.category ? styles.badgeTextTint : null]}>
-                      {(item.category || 'Unsorted').toUpperCase()}
-                    </Text>
-                  </View>
+      {/* INBOX SECTION */}
+      {inbox.length > 0 && (
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionHeader}>Inbox ({inbox.length})</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.inboxRow}>
+            {inbox.map(item => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.inboxTile}
+                activeOpacity={0.8}
+                onPress={() => onSelect?.(item)}
+              >
+                <Image source={{ uri: item.photoUri }} style={styles.inboxImage} />
+                <View style={styles.inboxOverlay}>
+                  <Text style={styles.inboxTime}>{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</Text>
                 </View>
-                <Text style={styles.metaText} numberOfLines={1}>
-                  {formatCoords(item.lat, item.long) || 'No location'}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          )}
-          scrollEnabled={false}
-        />
-      ) : (
-        <View style={styles.listContainer}>
-          {filteredItems.map((item) => (
-            <TouchableOpacity key={item.id} style={styles.listTile} activeOpacity={0.85} onPress={() => onSelect?.(item)}>
-              <Image source={{ uri: item.photoUri }} style={styles.listThumb} />
-              <View style={{ flex: 1, gap: 6 }}>
-                <View style={styles.listHeader}>
-                  <Text style={styles.titleText} numberOfLines={1}>
-                    {item.label || 'Untitled'}
-                  </Text>
-                  <View style={[styles.badge, item.category ? styles.badgeTint : null]}>
-                    <Text style={[styles.badgeText, item.category ? styles.badgeTextTint : null]}>
-                      {(item.category || 'Unsorted').toUpperCase()}
-                    </Text>
-                  </View>
-                </View>
-                <Text style={styles.metaText} numberOfLines={2}>
-                  {formatCoords(item.lat, item.long) || 'No location'}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
       )}
+
+      {/* COLLECTION SECTION */}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionHeader}>Collection</Text>
+        {collection.length === 0 ? (
+           <View style={styles.emptyCollection}>
+             <Text style={styles.emptySubText}>Nothing in your collection yet. Process your inbox!</Text>
+           </View>
+        ) : (
+          <View style={styles.grid}>
+            {collection.map(item => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.tile}
+                activeOpacity={0.85}
+                onPress={() => onSelect?.(item)}
+              >
+                <Image source={{ uri: item.photoUri }} style={styles.image} />
+                <View style={styles.cardBody}>
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.titleText} numberOfLines={1}>
+                      {item.label || 'Untitled'}
+                    </Text>
+                  </View>
+                  {/* Only show badge if it's a real category, not Unsorted */}
+                  {(item.category && item.category !== 'Unsorted') ? (
+                    <View style={styles.badge}>
+                        <Text style={styles.badgeText}>{item.category.toUpperCase()}</Text>
+                    </View>
+                  ) : null}
+                  <Text style={styles.metaText} numberOfLines={1}>
+                    {formatCoords(item.lat, item.long) || 'No location'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    gap: 10,
+    gap: 24,
   },
-  toolbar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  sectionContainer: {
+    gap: 12,
+  },
+  sectionHeader: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#fff', // High contrast on gradient
+    paddingHorizontal: 4,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  emptyBox: {
+    padding: 24,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 16,
     alignItems: 'center',
-    gap: 8,
   },
-  filterRow: {
-    flex: 1,
+  emptyText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyCollection: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptySubText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontStyle: 'italic',
+  },
+
+  // INBOX STYLES
+  inboxRow: {
+    gap: 12,
+    paddingRight: 16,
+  },
+  inboxTile: {
+    width: inboxCardWidth,
+    height: inboxCardWidth, // Square
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#000',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  inboxImage: {
+    width: '100%',
+    height: '100%',
+    opacity: 0.9,
+  },
+  inboxOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 8,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  inboxTime: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+
+  // GRID STYLES
+  grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#fff',
-  },
-  chipActive: {
-    backgroundColor: '#0f172a',
-    borderColor: '#0f172a',
-  },
-  chipText: {
-    color: '#0f172a',
-    fontWeight: '800',
-    fontSize: 12,
-  },
-  chipTextActive: {
-    color: '#fff',
-  },
-  viewToggle: {
-    flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  toggleButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  toggleButtonActive: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-  },
-  toggleText: {
-    color: '#475569',
-    fontWeight: '800',
-    fontSize: 12,
-  },
-  toggleTextActive: {
-    color: '#0f172a',
-  },
-  row: {
     gap: spacing,
-    marginBottom: spacing,
   },
   tile: {
     width: cardWidth,
@@ -223,84 +209,49 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#e5e7eb',
+    // Elevation for pop
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   image: {
     width: '100%',
-    height: cardWidth * 0.75,
-    backgroundColor: '#e5e7eb',
+    height: cardWidth * 0.85, // Slightly taller image area
+    backgroundColor: '#f1f5f9',
   },
   cardBody: {
-    padding: 10,
+    padding: 12,
     gap: 6,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
   },
   titleText: {
     fontWeight: '800',
-    fontSize: 15,
+    fontSize: 16, // Larger for seniors
     color: '#0f172a',
     flex: 1,
   },
   metaText: {
-    color: '#4b5563',
-    fontWeight: '700',
+    color: '#64748b',
+    fontWeight: '600',
     fontSize: 13,
   },
   badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    backgroundColor: '#f3f4f6',
-  },
-  badgeTint: {
-    backgroundColor: '#0f172a',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: '#0f172a', // Dark tag for contrast
+    marginBottom: 2,
   },
   badgeText: {
     fontWeight: '800',
     fontSize: 10,
-    color: '#475569',
-  },
-  badgeTextTint: {
-    color: '#fff',
-  },
-  emptyBox: {
-    padding: 16,
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  emptyText: {
-    color: '#0f172a',
-    fontSize: 15,
-  },
-  listContainer: {
-    gap: spacing,
-  },
-  listTile: {
-    flexDirection: 'row',
-    gap: 10,
-    padding: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#fff',
-    alignItems: 'center',
-  },
-  listThumb: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    backgroundColor: '#e5e7eb',
-  },
-  listHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
+    color: '#f8fafc',
   },
 });

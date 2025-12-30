@@ -1,20 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, StyleSheet, View } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import { identifyRock } from '../../ai/identifyRock';
 import { updateFindMetadata } from '../../shared/db';
-import { formatCoords } from '../../shared/format';
 import { FindRecord } from '../../shared/types';
-import { ChipSelector } from './components/ChipSelector';
-import { FooterActions } from './components/FooterActions';
-import { FavoriteToggle } from './components/FavoriteToggle';
-import { IdentifySection } from './components/IdentifySection';
-import { MetaSection } from './components/MetaSection';
-import { PresetRow } from './components/PresetRow';
 import { PosterPreviewModal } from './components/PosterPreviewModal';
-import { formatTimestamp } from './utils';
-import { findDetailStyles as styles } from './FindDetailModal.styles';
 import { AiResult } from './types';
+import { FlipCard } from '../../shared/components/FlipCard';
+import { CardFront } from './components/CardFront';
+import { CardBack } from './components/CardBack';
 
 type Props = {
   visible: boolean;
@@ -23,16 +17,6 @@ type Props = {
   onSaved: () => void;
 };
 
-const CATEGORY_OPTIONS = ['Unsorted', 'Agate', 'Jasper', 'Fossil', 'Driftwood', 'Other'].map((value) => ({
-  value,
-}));
-
-const STATUS_OPTIONS: Array<{ value: 'draft' | 'cataloged'; label: string }> = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'cataloged', label: 'Cataloged' },
-];
-
-// Context: Phase 2 - detail view, notes, manual categories.
 export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
   const [note, setNote] = useState('');
   const [category, setCategory] = useState<string | null>(null);
@@ -46,8 +30,11 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
   const [aiResult, setAiResult] = useState<AiResult | null>(null);
   const [posterVisible, setPosterVisible] = useState(false);
 
+  // Flip state
+  const [isFlipped, setIsFlipped] = useState(false);
+
   useEffect(() => {
-    if (item) {
+    if (item && visible) {
       setLabel(item.label ?? '');
       setNote(item.note ?? '');
       setCategory(item.category ?? null);
@@ -57,8 +44,9 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
       setAiError(null);
       setAiResult(null);
       setAiLoading(false);
+      setIsFlipped(false); // Always start showing the rock
     }
-  }, [item]);
+  }, [item, visible]);
 
   const handleSave = async () => {
     if (!item || saving) return;
@@ -72,8 +60,10 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
         favorite,
         sessionId,
       });
+      // Flip back to front to show "saved" state visually?
+      // Or just close? For now, standard save behavior.
+      setIsFlipped(false);
       onSaved();
-      onClose();
     } finally {
       setSaving(false);
     }
@@ -111,88 +101,72 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
     const best = aiResult.best_guess;
     if (best?.label) setLabel(best.label);
     if (aiResult.catalog_tags?.type?.[0]) setCategory(aiResult.catalog_tags.type[0]);
-    if (aiResult.observable_reasons?.[0]) setNote((prev) => prev || aiResult.observable_reasons.join('; '));
+    if (aiResult.observable_reasons?.[0]) setNote((prev) => prev || (aiResult.observable_reasons || []).join('; '));
   };
 
   if (!item) return null;
 
-  const timestampLabel = formatTimestamp(item.timestamp);
-  const coordsLabel = formatCoords(item.lat, item.long);
-
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
+    <Modal visible={visible} animationType="fade" onRequestClose={onClose} transparent>
       <View style={styles.backdrop}>
-        <View style={styles.sheet}>
-          <ScrollView contentContainerStyle={styles.content}>
-            <View style={styles.topBar}>
-              <TouchableOpacity style={styles.posterButton} onPress={() => setPosterVisible(true)}>
-                <Text style={styles.posterText}>Poster</Text>
-              </TouchableOpacity>
-            </View>
-            <MetaSection
-              photoUri={item.photoUri}
-              timestampLabel={timestampLabel}
-              coordsLabel={coordsLabel}
-              sessionId={sessionId}
-            />
-            <View style={styles.section}>
-              <Text style={styles.label}>Favorite</Text>
-              <FavoriteToggle favorite={favorite} onToggle={() => setFavorite((prev) => !prev)} />
-            </View>
-            <View style={styles.section}>
-              <Text style={styles.label}>Label</Text>
-              <TextInput
-                value={label}
-                onChangeText={setLabel}
-                placeholder="Name this find (e.g., Red agate)"
-                placeholderTextColor="#9ca3af"
-                style={styles.labelInput}
-                accessibilityLabel="Label for this find"
-              />
-            </View>
-            <PresetRow
-              saving={saving}
-              onSetAgate={() => {
-                setCategory('Agate');
-                setStatus('cataloged');
-                setLabel((prev) => (prev ? prev : 'Agate find'));
-                setNote((prev) => prev || 'Saved as Agate');
-              }}
-              onSetDraft={() => {
-                setCategory('Unsorted');
-                setStatus('draft');
-              }}
-            />
-            <IdentifySection aiResult={aiResult} aiError={aiError} aiLoading={aiLoading} onRun={runIdentify} onApply={applyTags} />
-            <View style={styles.section}>
-              <Text style={styles.label}>Notes</Text>
-              <TextInput
-                value={note}
-                onChangeText={setNote}
-                placeholder="What did you notice?"
-                placeholderTextColor="#9ca3af"
-                multiline
-                style={styles.input}
-                accessibilityLabel="Notes about this find"
-              />
-            </View>
-            <View style={styles.section}>
-              <Text style={styles.label}>Category</Text>
-              <ChipSelector options={CATEGORY_OPTIONS} selected={category ?? 'Unsorted'} onSelect={setCategory} />
-            </View>
-            <View style={styles.section}>
-              <Text style={styles.label}>Status</Text>
-              <ChipSelector
-                options={STATUS_OPTIONS}
-                selected={status}
-                onSelect={(value) => setStatus(value as 'draft' | 'cataloged')}
-              />
-            </View>
-            <FooterActions saving={saving} onClose={onClose} onSave={handleSave} />
-          </ScrollView>
+
+        {/* The Card Container */}
+        <View style={styles.cardContainer}>
+          <FlipCard
+            isFlipped={isFlipped}
+            style={{ flex: 1 }}
+            front={
+               <CardFront
+                  item={{...item, label, category, favorite}}
+                  onFlip={() => !isFlipped && setIsFlipped(true)}
+               />
+            }
+            back={
+               <CardBack
+                 item={item}
+                 sessionId={sessionId}
+                 label={label}
+                 setLabel={setLabel}
+                 category={category}
+                 setCategory={setCategory}
+                 status={status}
+                 setStatus={setStatus}
+                 note={note}
+                 setNote={setNote}
+                 favorite={favorite}
+                 setFavorite={setFavorite}
+                 aiResult={aiResult}
+                 aiError={aiError}
+                 aiLoading={aiLoading}
+                 onRunIdentify={runIdentify}
+                 onApplyTags={applyTags}
+                 onPoster={() => setPosterVisible(true)}
+                 onClose={onClose}
+                 onSave={handleSave}
+               />
+            }
+          />
         </View>
+
       </View>
       <PosterPreviewModal visible={posterVisible} item={item} onClose={() => setPosterVisible(false)} />
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)', // Darker cinematic backdrop
+    justifyContent: 'center',
+    padding: 16,
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+  cardContainer: {
+    flex: 1,
+    maxWidth: 600, // Tablet safe
+    alignSelf: 'center',
+    width: '100%',
+  },
+});
