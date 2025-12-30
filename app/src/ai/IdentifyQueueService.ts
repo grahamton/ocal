@@ -111,6 +111,7 @@ export class IdentifyQueueService {
 
        // 3. Call AI
        const result = await identifyRock({
+          provider: 'openai', // Using OpenAI for reliability
           imageDataUrls: [dataUrl],
           locationHint: find.lat && find.long ? `${find.lat}, ${find.long}` : null,
           contextNotes: find.note || find.label || 'Field find',
@@ -132,8 +133,8 @@ export class IdentifyQueueService {
        logger.add('ai', 'Queue item processed successfully', { findId: find.id });
 
     } catch (error) {
-      logger.error('Process Item Error', error);
       const msg = (error as Error).message;
+      logger.error('Process Item Error', error);
 
       // Update retry count
       const nextAttempts = item.attempts + 1;

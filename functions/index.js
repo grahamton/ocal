@@ -78,7 +78,7 @@ async function callGemini({ userPrompt, images }) {
 
   // Direct REST call to v1 Gemini to avoid client version issues.
   const apiKey = process.env.GEMINI_API_KEY;
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
   const contents = [{ parts: toGeminiParts({ userPrompt, images }) }];
 
   const resp = await fetch(url, {
@@ -172,10 +172,11 @@ exports.identify = onRequest(
 
       return res.json(parsed);
     } catch (err) {
-      console.error('Identify handler failed', err?.message || err);
+      const msg = err?.message || String(err);
+      console.error('Identify handler failed', err); // Make sure it hits Cloud Logs
       return res
         .status(500)
-        .json({ error: 'Identify failed', detail: err?.message ?? String(err), provider });
+        .json({ error: 'Identify failed', detail: msg, stack: err?.stack });
     }
   }
 );
