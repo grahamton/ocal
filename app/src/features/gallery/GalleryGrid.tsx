@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { listFinds } from '../../shared/db';
 import { formatLocationSync } from '../../shared/format';
@@ -20,8 +20,7 @@ type ViewMode = 'grid' | 'list';
 
 export function GalleryGrid({ refreshKey, onSelect }: Props) {
   const [items, setItems] = useState<FindRecord[]>([]);
-  const [filter, setFilter] = useState<'all' | 'analyzed' | 'review'>('all');
-  const [processing, setProcessing] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'favorites'>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   // Responsive Columns
@@ -52,15 +51,15 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
 
   const filteredItems = useMemo(() => {
     if (filter === 'all') return allItems;
-    if (filter === 'analyzed') return allItems.filter(item => item.aiData);
-    return allItems.filter(item => !item.aiData);
+    if (filter === 'favorites') return allItems.filter(item => item.favorite);
+    return allItems;
   }, [allItems, filter]);
 
   const unprocessedCount = allItems.filter(item => !item.aiData).length;
 
   // Auto-refresh when AI processing completes
   useEffect(() => {
-    if (unprocessedCount === 0 || processing) return;
+    if (unprocessedCount === 0) return;
     let mounted = true;
     const pollInterval = setInterval(async () => {
       if (!mounted) return;
@@ -74,20 +73,9 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
       }
     }, 3000);
     return () => { mounted = false; clearInterval(pollInterval); };
-  }, [allItems, unprocessedCount, processing]);
+  }, [allItems, unprocessedCount]);
 
-  const handleAnalyzeAll = async () => {
-    if (unprocessedCount === 0) return;
-    setProcessing(true);
-    try {
-      const unprocessed = allItems.filter(item => !item.aiData);
-      await Promise.all(unprocessed.map(item => IdentifyQueueService.addToQueue(item.id)));
-    } catch (error) {
-      console.error('Batch analyze failed:', error);
-    } finally {
-      setProcessing(false);
-    }
-  };
+
 
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -246,22 +234,6 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
               </TouchableOpacity>
             </View>
 
-            {unprocessedCount > 0 && (
-              <TouchableOpacity
-                style={[styles.analyzeAllBtn, { backgroundColor: colors.accent }]}
-                onPress={handleAnalyzeAll}
-                disabled={processing}
-              >
-                {processing ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <>
-                    <Ionicons name="sparkles" size={14} color="#fff" />
-                    <Text style={styles.analyzeAllText}>{unprocessedCount}</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            )}
           </View>
         </View>
 
@@ -276,19 +248,12 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.filterTab, filter === 'analyzed' && { backgroundColor: colors.accent }]}
-            onPress={() => setFilter('analyzed')}
+            style={[styles.filterTab, filter === 'favorites' && { backgroundColor: colors.accent }]}
+            onPress={() => setFilter('favorites')}
           >
-            <Text style={[styles.filterTabText, { color: filter === 'analyzed' ? '#fff' : colors.textSecondary }]}>
-              Analyzed ({allItems.filter(i => i.aiData).length})
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterTab, filter === 'review' && { backgroundColor: colors.accent }]}
-            onPress={() => setFilter('review')}
-          >
-            <Text style={[styles.filterTabText, { color: filter === 'review' ? '#fff' : colors.textSecondary }]}>
-              Review ({unprocessedCount})
+            <Ionicons name="star" size={12} color={filter === 'favorites' ? '#fff' : '#fbbf24'} style={{marginRight: 4}} />
+            <Text style={[styles.filterTabText, { color: filter === 'favorites' ? '#fff' : colors.textSecondary }]}>
+              Favorites ({allItems.filter(i => i.favorite).length})
             </Text>
           </TouchableOpacity>
         </View>
@@ -297,8 +262,7 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
           <View style={styles.emptyCollection}>
             <Text style={[styles.emptySubText, { color: colors.textSecondary }]}>
               {filter === 'all' ? 'No finds yet. Capture your first one!' :
-               filter === 'analyzed' ? 'No analyzed items yet.' :
-               'All items have been analyzed!'}
+               'No favorite finds yet. Tap the star to save one!'}
             </Text>
           </View>
         ) : viewMode === 'grid' ? (

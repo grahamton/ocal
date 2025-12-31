@@ -39,6 +39,40 @@ export function InboxList({ refreshKey, onUpdated }: Props) {
 
   const currentItem = items[index];
 
+  const handleIdentifyAll = async () => {
+    if (items.length === 0) return;
+
+    // Safety check
+    Alert.alert(
+        `Identify All ${items.length} Finds?`,
+        "This will queue them for analysis and move them to your collection.",
+        [
+            { text: "Cancel", style: "cancel" },
+            {
+                text: "Start Field Lab",
+                onPress: async () => {
+                    try {
+                        const currentIds = items.map(i => i.id);
+                        // Optimistic clear
+                        setItems([]);
+
+                        // Process
+                        await Promise.all(currentIds.map(async (id) => {
+                             await IdentifyQueueService.addToQueue(id);
+                             await updateFindMetadata(id, { status: 'cataloged' });
+                        }));
+
+                        onUpdated?.();
+                    } catch (e) {
+                        logger.error('Batch failed', e);
+                        load(); // revert
+                    }
+                }
+            }
+        ]
+    );
+  };
+
   const handleKeep = async () => {
     if (!currentItem) return;
     try {
@@ -64,10 +98,13 @@ export function InboxList({ refreshKey, onUpdated }: Props) {
 
   const handleTrash = () => {
     if (!currentItem) return;
-    Alert.alert('Delete?', 'Throw this rock back?', [
+    Alert.alert(
+      "Delete this find?",
+      "This cannot be undone.",
+      [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Throw Back',
+        text: 'Delete',
         style: 'destructive',
         onPress: async () => {
             try {
@@ -110,6 +147,15 @@ export function InboxList({ refreshKey, onUpdated }: Props) {
         <Text style={[styles.counterText, { color: colors.textSecondary }]}>
           {items.length} LEFT TO REVIEW
         </Text>
+        {items.length > 0 && (
+            <TouchableOpacity
+                onPress={handleIdentifyAll}
+                style={[styles.batchButton, { backgroundColor: colors.accent + '20' }]} // 20 opacity hex
+            >
+                <Ionicons name="flash" size={16} color={colors.accent} />
+                <Text style={[styles.batchButtonText, { color: colors.accent }]}>Identify All {items.length} Finds</Text>
+            </TouchableOpacity>
+        )}
       </View>
 
       <View style={[styles.deckContainer, { borderColor: colors.border, borderWidth: mode === 'high-contrast' ? 2 : 1 }]}>
@@ -158,13 +204,27 @@ const styles = StyleSheet.create({
   },
   header: {
     marginTop: 10,
+    alignItems: 'center',
+    gap: 8,
   },
   counterText: {
     fontSize: 16,
-    fontWeight: '800',
     fontFamily: 'Outfit_700Bold',
     letterSpacing: 1,
   },
+  batchButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  batchButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
   deckContainer: {
     width: CARD_WIDTH,
     height: CARD_WIDTH * 1.1,

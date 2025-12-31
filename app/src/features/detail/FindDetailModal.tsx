@@ -92,11 +92,28 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
     }
   };
 
-  const handleDelete = async () => {
-    if (!item) return;
-    await deleteFind(item.id);
-    onSaved();
-    onClose();
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete this find?",
+      "This cannot be undone.",
+      [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+            try {
+                // Safe access
+                if (item?.id) {
+                    await deleteFind(item.id);
+                    onClose?.();
+                }
+            } catch {
+                Alert.alert("Error", "Could not delete");
+            }
+        }
+      }
+    ]);
   };
 
   const handleShare = async () => {
@@ -132,10 +149,10 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
     });
   };
 
-  const getConfidenceColor = (conf: number) => {
-    if (conf > 0.8) return '#15803d'; // Green
-    if (conf > 0.5) return '#d97706'; // Amber
-    return '#b91c1c'; // Red
+  const getConfidenceLabel = (conf: number) : { label: string, color: string } => {
+    if (conf >= 0.9) return { label: 'High Confidence', color: '#15803d' }; // emerald-700
+    if (conf >= 0.7) return { label: 'Likely Match', color: '#d97706' }; // amber-600
+    return { label: 'Uncertain', color: '#b91c1c' }; // red-700
   };
 
   if (!item) return null;
@@ -145,15 +162,14 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
 
         {/* Close Button (Absolute) */}
-        <TouchableOpacity style={styles.closeBtn} onPress={onClose} zIndex={50}>
+        <TouchableOpacity style={[styles.closeBtn, { zIndex: 50 }]} onPress={onClose}>
            <Ionicons name="close" size={28} color="#fff" />
         </TouchableOpacity>
 
         {/* Hero Image */}
         <View style={styles.heroContainer}>
           <Image source={{ uri: item.photoUri }} style={styles.heroImage} resizeMode="cover" />
-          <View style={StyleSheet.absoluteFillObject} pointerEvents="none"
-            backgroundColor="rgba(0,0,0,0.1)" />
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.1)' }]} pointerEvents="none" />
         </View>
 
         {/* Content Scroll */}
@@ -230,7 +246,9 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
                 {aiResult.best_guess?.confidence && (
                   <View style={styles.meterContainer}>
                     <View style={styles.meterRow}>
-                      <Text style={[styles.meterLabel, { color: colors.textSecondary }]}>Confidence</Text>
+                      <Text style={[styles.meterLabel, { color: colors.textSecondary }]}>
+                        Confidence: <Text style={{color: getConfidenceLabel(aiResult.best_guess.confidence).color}}>{getConfidenceLabel(aiResult.best_guess.confidence).label}</Text>
+                      </Text>
                       <Text style={[styles.meterValue, { color: colors.accent }]}>
                         {Math.round(aiResult.best_guess.confidence * 100)}%
                       </Text>
@@ -239,7 +257,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
                       <View
                         style={[styles.meterFill, {
                           width: `${aiResult.best_guess.confidence * 100}%`,
-                          backgroundColor: getConfidenceColor(aiResult.best_guess.confidence)
+                          backgroundColor: getConfidenceLabel(aiResult.best_guess.confidence).color
                         }]}
                       />
                     </View>
@@ -285,8 +303,9 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
           )}
 
           {/* Notes Field */}
+
           <View style={styles.notesSection}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Notes</Text>
+            <Text style={[styles.metadata, { color: colors.text }]}>Your Notes</Text>
             <TextInput
               value={note}
               onChangeText={setNote}

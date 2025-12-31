@@ -9,6 +9,7 @@ import { createId } from '../../shared/id';
 import { FindRecord } from '../../shared/types';
 import { useSession } from '../../shared/SessionContext';
 import { logger } from '../../shared/LogService';
+import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
 
 type Props = {
   onSaved: () => void;
@@ -142,6 +143,11 @@ export function CameraCapture({ onSaved }: Props) {
 
       await insertFind(record);
       await addFindToActiveSession(record.id, session.id);
+
+      // Auto-Pilot: Queue for AI immediately
+      IdentifyQueueService.addToQueue(record.id).catch(err => {
+          logger.error("Capture: Auto-queue failed", err);
+      });
 
       setStatusKind('success');
       setStatusMessage('Saved!');

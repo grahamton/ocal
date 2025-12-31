@@ -11,7 +11,7 @@ import { FindDetailModal } from './src/features/detail/FindDetailModal';
 import { setupDatabase, deleteFind } from './src/shared/db';
 import { FindRecord } from './src/shared/types';
 import { SessionProvider, useSession } from './src/shared/SessionContext';
-import { InboxList } from './src/features/list/InboxList'; // Updated import
+// import { InboxList } from './src/features/list/InboxList'; // Removed for Auto-Pilot
 // Removed Cataloger imports to clean up unused code if possible, or keeping them if needed for other things.
 // Actually I removed usage in AppContent, so I should remove imports.
 
@@ -200,11 +200,7 @@ import { logger } from './src/shared/LogService';
           </View>
         ) : null}
 
-        {view === 'inbox' ? (
-          <View style={styles.section}>
-             <InboxList refreshKey={refreshKey} onUpdated={handleRefresh} />
-          </View>
-        ) : null}
+
 
         {view === 'gallery' ? (
           <View style={styles.section}>
@@ -249,7 +245,6 @@ import { logger } from './src/shared/LogService';
           <View style={styles.floatingTabs}>
             {[
               { key: 'capture', label: 'Capture', icon: 'camera' },
-              { key: 'inbox', label: 'Inbox', icon: 'file-tray-full' },
               { key: 'gallery', label: 'Gallery', icon: 'grid' },
             ].map((tab) => {
               const active = view === tab.key;
