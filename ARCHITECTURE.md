@@ -224,10 +224,8 @@ src/
 │   ├── gallery/
 │   │   └── GalleryGrid.tsx (grid/list views)
 │   ├── detail/
-│   │   ├── FindDetailModal.tsx
-│   │   ├── components/
-│   │   │   ├── CardFront.tsx (photo view)
-│   │   │   └── CardBack.tsx (logbook)
+│   │   ├── FindDetailModal.tsx (Scientist View / Field Lab)
+│   │   └── components/ (Deleted legacy CardFront/Back)
 │   └── insights/
 │       └── InsightsView.tsx (analytics)
 ├── shared/

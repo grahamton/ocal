@@ -81,43 +81,58 @@
 
 **Steps**:
 
-1. **Open Gallery**
+1. **Inbox Review ("Deck of Cards")**
 
-   - See all 15 finds from morning walk
-   - Thumbnails show photos clearly
-   - Status badges: "NEW" (blue) for unprocessed
+   - Tap "Inbox" tab
+   - See "Unsorted" finds as a deck of large cards
+   - Swipe left (Trash) or tap "Keep" (Catalog)
+   - "Keep" automatically queues the item for AI analysis
 
-2. **Batch Analyze**
+2. **Wait for Logic ("Field Lab")**
 
-   - Tap "Analyze All (15)" button
-   - AI processes all finds in background
-   - Continue browsing while processing
+   - Go to Gallery
+   - Watch as "Processing..." labels flip to real names (e.g., "Banded Agate")
+   - No need to refresh manually (but can pull-to-refresh if impatient)
 
-3. **Review Results**
+3. **Scientist View ("Deep Dive")**
 
-   - Gallery auto-updates as AI completes
-   - Badges change: "NEW" → "Analyzed" (green)
-   - See confidence % on each card
+   - Tap a find to open Detail View
+   - See "Field Lab Analysis" card
+   - Check "Confidence Meter" (e.g., 87% Green)
+   - Read "Visual Cues" to understand _why_ it's an agate
+   - See "Alternative IDs" if not sure
 
-4. **Check Individual Finds**
-
-   - Tap interesting one
-   - See AI identification: "Banded Agate (87% confident)"
-   - Read description, characteristics
-   - Tap "Apply to Logbook" to use AI name
-
-5. **Add Personal Notes**
-   - Tap "+ Add notes"
-   - Type: "Found near the pier, beautiful banding"
-   - Mark as favorite ⭐
-   - Save
+4. **Curate**
+   - Tap "Favorite" (Star) for the best ones
+   - Add notes: "Found near the pier, beautiful banding"
 
 **Success Criteria**:
 
 - ✅ AI identifies rocks accurately
-- ✅ Batch processing (don't do one-by-one)
-- ✅ Clear confidence levels
+- ✅ "Silent Partner" workflow (Keep -> Auto-Analyze)
+- ✅ Transparency (Scientific reasoning exposed)
 - ✅ Easy to add personal context
+
+---
+
+### Journey 3: Sharing the Discovery
+
+**Context**: Sending a digital postcard to family.
+
+**Steps**:
+
+1. **Open Find**
+   - Select the best agate from the Gallery
+2. **Share**
+   - Tap "Share" icon in the footer
+   - Choose Message/Email
+3. **Send**
+   - Image serves as a high-res "Postcard" from the beach
+
+**Success Criteria**:
+
+- ✅ Native sharing integration
+- ✅ High-quality image export
 
 ---
 
