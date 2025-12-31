@@ -20,18 +20,16 @@ Quick, forgiving field logger for rockhounds. Capture finds in seconds on the be
 
 **Sorting Table (home/coffee shop)**
 
-- Review **Unsorted** list with thumbnails.
-- Tap **Identify** to run Rock Buddy AI on photos + location.
-- AI output: `Primary Guess`, `Confidence (Low/Med/High)`, `Visual cues`, `Fun Fact`.
-- User can accept suggestion or enter a custom label (e.g., "The big red one").
-- Add notes by typing or dictation (e.g., "Found near the big log at Yachats.").
-- Change status from `draft` to `cataloged` when done.
+- **Inbox Deck**: Swipe through finds. "Keep" auto-queues them for background AI processing.
+- **Scientist View**: "Field Lab" analysis shows AI confidence, visual evidence (e.g., "conchoidal fracture"), and alternative IDs.
+- **Social**: Share finds directly to friends/family via native share sheet.
+- **Edit**: Tap to rename or add notes. Changes persist offline.
 
 **Trophy Room (gallery)**
 
-- Map view: clustered pins along the Oregon coast.
-- Calendar view: filter by month (e.g., "Finds from October 2025").
-- Grid view: masonry layout of photos.
+- **Specimen Tiles**: Clean, "Jewelry Store" layout with shadows and minimal metadata.
+- **Pull-to-Refresh**: Manual sync control.
+- **Map view**: (Planned) clustered pins along the Oregon coast.
 
 ## Implementation Notes (React Native / Expo)
 

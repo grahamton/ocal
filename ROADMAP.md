@@ -27,17 +27,18 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Status: **Complete**. Refactored from Glassmorphism to "Field Journal" aesthetic (Cream/Ink). Session logic is stable.
 - Risks: "Card Flip" interaction conflicts with scrolling (mitigated by CardBack specific non-flip zones).
 
-## Phase 3 - Rock Buddy (AI) **In Progress**
+## Phase 3 - Rock Buddy (AI) & Engagement **Complete**
 
-- Scope: Vision API suggestions using photos + GPS; iterate on session detail batch actions (AI on selections).
+- Scope: Vision API suggestions, "Scientist View" analysis, and Social Sharing.
 - Milestones:
   - [x] Scaffolding: `identifyRock` client function & `RockIdResult` schema.
-  - [x] UI: `IdentifySection` in CardBack (Analyze/Apply buttons, Confidence display).
-  - [_] Queue system: Queue image+GPS for cloud call; retry/sync strategy (currently direct fetch).
-  - [_] Backend: Deploy cloud function (currently placeholder URL).
-  - [_] Batch/Deck Integration: Allow AI pass from the Inbox Deck (currently alert stub).
-- Tests/QA: Mocked AI responses; retry/backoff logic; UI shows suggestion and override path.
-- Risks: Latency offline + ensure queue; model accuracy; cost controls.
+  - [x] UI: "Scientist View" (Field Lab) with Confidence Meter & Visual Cues.
+  - [x] Queue system: robust `IdentifyQueueService` for background processing.
+  - [x] Backend: Firebase Cloud Functions (local simulator verified).
+  - [x] Workflow: "Deck of Cards" Inbox with auto-queueing on "Keep".
+  - [x] Social: Native Share functionality.
+- Tests/QA: Polling logic for queue; Schema validation relaxed for robustness; Pull-to-Refresh added.
+- Risks: Latency offline (mitigated by queue); model accuracy (mitigated by "Scientist View" transparency).
 
 ## Phase 4 - Poster
 
