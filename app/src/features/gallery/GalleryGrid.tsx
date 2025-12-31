@@ -1,25 +1,35 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { listFinds } from '../../shared/db';
-import { formatCoords } from '../../shared/format';
+import { formatLocationSync } from '../../shared/format';
 import { FindRecord } from '../../shared/types';
 import { useTheme } from '../../shared/ThemeContext';
 import { useSelection } from '../../shared/SelectionContext';
 import { Ionicons } from '@expo/vector-icons';
+import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
 
-const spacing = 12; // Increased spacing for cleaner look
-const numColumns = 2;
-// Standard tile width
-const cardWidth = (Dimensions.get('window').width - 16 * 2 - spacing * (numColumns - 1)) / numColumns;
-// Inbox tile width (slightly smaller for horizontal scroll)
-const inboxCardWidth = 140;
+const spacing = 12;
 
 type Props = {
   refreshKey: number;
   onSelect?: (item: FindRecord) => void;
 };
+
+type ViewMode = 'grid' | 'list';
+
 export function GalleryGrid({ refreshKey, onSelect }: Props) {
   const [items, setItems] = useState<FindRecord[]>([]);
+  const [filter, setFilter] = useState<'all' | 'analyzed' | 'review'>('all');
+  const [processing, setProcessing] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+
+  // Responsive Columns
+  const { width } = useWindowDimensions();
+  const numColumns = width > 600 ? 3 : 2; // Tablet = 3, Phone = 2
+  // Subtracting 48 instead of 32 to account for potential parent padding variation (safe buffer)
+  const cardWidth = (width - 48 - spacing * (numColumns - 1)) / numColumns;
+
   const { colors } = useTheme();
   const { isSelectionMode, selectedIds, toggleSelection, enterSelectionMode } = useSelection();
 
@@ -34,242 +44,380 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
     };
   }, [refreshKey]);
 
-  const { inbox, collection } = useMemo(() => {
-    const drafts: FindRecord[] = [];
-    const cataloged: FindRecord[] = [];
-
-    // Sort by date desc
-    const sorted = [...items].sort((a, b) =>
+  const allItems = useMemo(() => {
+    return [...items].sort((a, b) =>
       new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
-
-    sorted.forEach(item => {
-      if (item.status === 'draft') {
-        drafts.push(item);
-      } else {
-        cataloged.push(item);
-      }
-    });
-
-    return { inbox: drafts, collection: cataloged };
   }, [items]);
+
+  const filteredItems = useMemo(() => {
+    if (filter === 'all') return allItems;
+    if (filter === 'analyzed') return allItems.filter(item => item.aiData);
+    return allItems.filter(item => !item.aiData);
+  }, [allItems, filter]);
+
+  const unprocessedCount = allItems.filter(item => !item.aiData).length;
+
+  // Auto-refresh when AI processing completes
+  useEffect(() => {
+    if (unprocessedCount === 0 || processing) return;
+    let mounted = true;
+    const pollInterval = setInterval(async () => {
+      if (!mounted) return;
+      const hasProcessing = await Promise.all(
+        allItems.filter(item => !item.aiData).slice(0, 5).map(item => IdentifyQueueService.getQueueStatus(item.id))
+      );
+      const anyCompleted = hasProcessing.some(q => q && q.status === "completed");
+      if (anyCompleted && mounted) {
+        const rows = await listFinds();
+        if (mounted) setItems(rows);
+      }
+    }, 3000);
+    return () => { mounted = false; clearInterval(pollInterval); };
+  }, [allItems, unprocessedCount, processing]);
+
+  const handleAnalyzeAll = async () => {
+    if (unprocessedCount === 0) return;
+    setProcessing(true);
+    try {
+      const unprocessed = allItems.filter(item => !item.aiData);
+      await Promise.all(unprocessed.map(item => IdentifyQueueService.addToQueue(item.id)));
+    } catch (error) {
+      console.error('Batch analyze failed:', error);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const formatDate = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return 'Today';
+    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
+
+  const renderGridItem = (item: FindRecord) => {
+    const isSelected = selectedIds.has(item.id);
+
+    return (
+      <TouchableOpacity
+        key={item.id}
+        style={[
+          styles.tile,
+          {
+            width: cardWidth,
+            backgroundColor: colors.card,
+            borderColor: isSelected ? colors.accent : colors.border
+          },
+          isSelected && { borderWidth: 3 }
+        ]}
+        activeOpacity={0.85}
+        onLongPress={() => enterSelectionMode(item.id)}
+        onPress={() => {
+          if (isSelectionMode) {
+            toggleSelection(item.id);
+          } else {
+            onSelect?.(item);
+          }
+        }}
+      >
+        <Image source={{ uri: item.photoUri }} style={styles.image} />
+
+        {/* Subtle Gradient Overlay for depth */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.3)']}
+          style={styles.gradientOverlay}
+        />
+
+        {/* Favorite Star (Top-Left) */}
+        {item.favorite && (
+          <View style={styles.favoriteBadge}>
+            <Ionicons name="star" size={16} color="#fbbf24" />
+          </View>
+        )}
+
+        {isSelected && (
+          <View style={styles.selectionOverlay}>
+            <Ionicons name="checkmark-circle" size={32} color={colors.accent} />
+          </View>
+        )}
+
+        <View style={styles.cardBody}>
+          {/* Title */}
+          <Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1}>
+            {item.label || item.aiData?.best_guess?.label || 'Unknown'}
+          </Text>
+
+          {/* Location */}
+          <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
+            {formatLocationSync(item.lat, item.long)}
+          </Text>
+
+          {/* Session/Date */}
+          <Text style={[styles.sessionText, { color: colors.textSecondary }]} numberOfLines={1}>
+            {formatDate(item.timestamp)}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderListItem = (item: FindRecord) => {
+    const isSelected = selectedIds.has(item.id);
+
+    return (
+      <TouchableOpacity
+        key={item.id}
+        style={[
+          styles.listItem,
+          { backgroundColor: colors.card, borderColor: isSelected ? colors.accent : colors.border },
+          isSelected && { borderLeftWidth: 4 }
+        ]}
+        activeOpacity={0.85}
+        onLongPress={() => enterSelectionMode(item.id)}
+        onPress={() => {
+          if (isSelectionMode) {
+            toggleSelection(item.id);
+          } else {
+            onSelect?.(item);
+          }
+        }}
+      >
+        <Image source={{ uri: item.photoUri }} style={styles.listImage} />
+
+        <View style={styles.listContent}>
+          <View style={styles.listTitleRow}>
+            {item.favorite && (
+              <Ionicons name="star" size={16} color="#fbbf24" style={{ marginRight: 4 }} />
+            )}
+            <Text style={[styles.listTitle, { color: colors.text }]} numberOfLines={1}>
+              {item.label || item.aiData?.best_guess?.label || 'Unknown'}
+            </Text>
+          </View>
+
+          <Text style={[styles.listMeta, { color: colors.textSecondary }]} numberOfLines={1}>
+            {formatLocationSync(item.lat, item.long)} • {formatDate(item.timestamp)}
+          </Text>
+        </View>
+
+        {isSelected && (
+          <Ionicons name="checkmark-circle" size={24} color={colors.accent} />
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   if (items.length === 0) {
     return (
       <View style={[styles.emptyBox, { backgroundColor: colors.card }]}>
-        <Text style={[styles.emptyText, { color: colors.text }]}>No photos yet. Snap a find to see it here.</Text>
+        <Ionicons name="camera-outline" size={48} color={colors.accent} style={{ marginBottom: 16 }} />
+        <Text style={[styles.emptyText, { color: colors.text }]}>Your collection is empty.</Text>
+        <Text style={[styles.emptySubText, { color: colors.textSecondary, marginTop: 8 }]}>
+          Ready for a walk? Tap Capture to start finding treasures.
+        </Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-
-      {/* INBOX SECTION */}
-      {inbox.length > 0 && (
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionHeader, { color: colors.text }]}>Inbox ({inbox.length})</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.inboxRow}>
-            {inbox.map(item => (
-              <TouchableOpacity
-                key={item.id}
-                style={[styles.inboxTile, { borderColor: colors.border, backgroundColor: colors.card }]} // Updated
-                activeOpacity={0.8}
-                onPress={() => onSelect?.(item)}
-              >
-                <Image source={{ uri: item.photoUri }} style={styles.inboxImage} />
-                <View style={styles.inboxOverlay}>
-                  <Text style={styles.inboxTime}>{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {/* COLLECTION SECTION */}
       <View style={styles.sectionContainer}>
-        <Text style={[styles.sectionHeader, { color: colors.text }]}>Collection</Text>
-        {collection.length === 0 ? (
-           <View style={styles.emptyCollection}>
-             <Text style={[styles.emptySubText, { color: colors.textSecondary }]}>Nothing in your collection yet. Process your inbox!</Text>
-           </View>
-        ) : (
-          <View style={styles.grid}>
-            {collection.map(item => {
-              const isSelected = selectedIds.has(item.id);
-              return (
+        <View style={styles.collectionHeader}>
+          <Text style={[styles.sectionHeader, { color: colors.text }]}>Your Finds ({allItems.length})</Text>
+
+          <View style={styles.headerActions}>
+            {/* View Mode Switcher */}
+            <View style={styles.viewSwitcher}>
               <TouchableOpacity
-                key={item.id}
-                style={[
-                    styles.tile,
-                    { backgroundColor: colors.card, borderColor: isSelected ? colors.accent : colors.border },
-                    isSelected && { borderWidth: 3 }
-                ]}
-                activeOpacity={0.85}
-                onLongPress={() => enterSelectionMode(item.id)}
-                onPress={() => {
-                    if (isSelectionMode) {
-                        toggleSelection(item.id);
-                    } else {
-                        onSelect?.(item);
-                    }
-                }}
+                style={[styles.viewBtn, viewMode === 'grid' && { backgroundColor: colors.accent }]}
+                onPress={() => setViewMode('grid')}
               >
-                <Image source={{ uri: item.photoUri }} style={styles.image} />
-                {isSelected && (
-                    <View style={styles.selectionOverlay}>
-                        <Ionicons name="checkmark-circle" size={32} color={colors.accent} />
-                    </View>
-                )}
-                <View style={styles.cardBody}>
-                  <View style={styles.cardHeader}>
-                    <Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1}>
-                      {item.label || 'Untitled'}
-                    </Text>
-                  </View>
-                  {/* Only show badge if it's a real category, not Unsorted */}
-                  {(item.category && item.category !== 'Unsorted') ? (
-                    <View style={[styles.badge, { backgroundColor: colors.text }]}>
-                        <Text style={[styles.badgeText, { color: colors.background }]}>{item.category.toUpperCase()}</Text>
-                    </View>
-                  ) : null}
-                  <Text style={[styles.metaText, { color: colors.textSecondary }]} numberOfLines={1}>
-                    {formatCoords(item.lat, item.long) || 'No location'}
-                  </Text>
-                </View>
+                <Ionicons name="grid" size={16} color={viewMode === 'grid' ? '#fff' : colors.textSecondary} />
               </TouchableOpacity>
-            )})}
+              <TouchableOpacity
+                style={[styles.viewBtn, viewMode === 'list' && { backgroundColor: colors.accent }]}
+                onPress={() => setViewMode('list')}
+              >
+                <Ionicons name="list" size={16} color={viewMode === 'list' ? '#fff' : colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {unprocessedCount > 0 && (
+              <TouchableOpacity
+                style={[styles.analyzeAllBtn, { backgroundColor: colors.accent }]}
+                onPress={handleAnalyzeAll}
+                disabled={processing}
+              >
+                {processing ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="sparkles" size={14} color="#fff" />
+                    <Text style={styles.analyzeAllText}>{unprocessedCount}</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Filter Tabs */}
+        <View style={styles.filterTabs}>
+          <TouchableOpacity
+            style={[styles.filterTab, filter === 'all' && { backgroundColor: colors.accent }]}
+            onPress={() => setFilter('all')}
+          >
+            <Text style={[styles.filterTabText, { color: filter === 'all' ? '#fff' : colors.textSecondary }]}>
+              All ({allItems.length})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterTab, filter === 'analyzed' && { backgroundColor: colors.accent }]}
+            onPress={() => setFilter('analyzed')}
+          >
+            <Text style={[styles.filterTabText, { color: filter === 'analyzed' ? '#fff' : colors.textSecondary }]}>
+              Analyzed ({allItems.filter(i => i.aiData).length})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterTab, filter === 'review' && { backgroundColor: colors.accent }]}
+            onPress={() => setFilter('review')}
+          >
+            <Text style={[styles.filterTabText, { color: filter === 'review' ? '#fff' : colors.textSecondary }]}>
+              Review ({unprocessedCount})
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {filteredItems.length === 0 ? (
+          <View style={styles.emptyCollection}>
+            <Text style={[styles.emptySubText, { color: colors.textSecondary }]}>
+              {filter === 'all' ? 'No finds yet. Capture your first one!' :
+               filter === 'analyzed' ? 'No analyzed items yet.' :
+               'All items have been analyzed!'}
+            </Text>
+          </View>
+        ) : viewMode === 'grid' ? (
+          <View style={styles.grid}>
+            {filteredItems.map(renderGridItem)}
+          </View>
+        ) : (
+          <View style={styles.listContainer}>
+            {filteredItems.map(renderListItem)}
           </View>
         )}
       </View>
-
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    gap: 24,
+    flex: 1,
   },
   sectionContainer: {
     gap: 12,
   },
-  sectionHeader: {
-    fontSize: 18,
-    fontWeight: '800',
-    // color removed, handled inline
+  collectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 4,
   },
-  emptyBox: {
-    padding: 24,
-    borderRadius: 16,
-    alignItems: 'center',
-    // bg handled inline
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    // color handled inline
-  },
-  emptyCollection: {
-    padding: 20,
+  headerActions: {
+    flexDirection: 'row',
+    gap: 8,
     alignItems: 'center',
   },
-  emptySubText: {
-    fontStyle: 'italic',
-    // color handled inline
+  viewSwitcher: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 8,
+    padding: 2,
   },
-
-  // INBOX STYLES
-  inboxRow: {
-    gap: 12,
-    paddingRight: 16,
+  viewBtn: {
+    padding: 6,
+    borderRadius: 6,
   },
-  inboxTile: {
-    width: inboxCardWidth,
-    height: inboxCardWidth, // Square
+  sectionHeader: {
+    fontSize: 20,
+    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
+  },
+  analyzeAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    // colors handled inline
   },
-  inboxImage: {
-    width: '100%',
-    height: '100%',
-    opacity: 0.9,
-  },
-  inboxOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 8,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  inboxTime: {
+  analyzeAllText: {
     color: '#fff',
     fontSize: 12,
     fontWeight: '700',
-    textAlign: 'center',
   },
-
-  // GRID STYLES
+  filterTabs: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 4,
+  },
+  filterTab: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  filterTabText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  // Grid View Styles
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing,
+    paddingHorizontal: 4,
+    marginBottom: 40, // Extra space at bottom
   },
   tile: {
-    width: cardWidth,
+    // width handled inline
     borderRadius: 16,
     overflow: 'hidden',
-    borderWidth: 1,
-    // colors handled inline
-    // Elevation for pop
+    borderWidth: 2,
+    backgroundColor: '#fff', // Fallback for transparency
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '40%', // Subtle darkened bottom
   },
   image: {
     width: '100%',
-    height: cardWidth * 0.85, // Slightly taller image area
-    backgroundColor: '#f1f5f9',
+    aspectRatio: 1,
   },
-  cardBody: {
-    padding: 12,
-    gap: 6,
-  },
-  cardHeader: {
-    flexDirection: 'row',
+  favoriteBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.6)',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  titleText: {
-    fontWeight: '800',
-    fontSize: 16, // Larger for seniors
-    flex: 1,
-    // color inline
-  },
-  metaText: {
-    fontWeight: '600',
-    fontSize: 13,
-    // color inline
-  },
-  badge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginBottom: 2,
-    // bg inline
-  },
-  badgeText: {
-    fontWeight: '800',
-    fontSize: 10,
-    // color inline
+    justifyContent: 'center',
+    zIndex: 5,
   },
   selectionOverlay: {
     position: 'absolute',
@@ -278,5 +426,74 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 20,
     zIndex: 10,
+  },
+  cardBody: {
+    padding: 12,
+    gap: 4,
+  },
+  titleText: {
+    fontWeight: '800',
+    fontSize: 18,
+    fontFamily: 'Outfit_800ExtraBold',
+  },
+  locationText: {
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  sessionText: {
+    fontWeight: '500',
+    fontSize: 12,
+  },
+  // List View Styles
+  listContainer: {
+    gap: 8,
+    paddingHorizontal: 4,
+  },
+  listItem: {
+    flexDirection: 'row',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+    alignItems: 'center',
+  },
+  listImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+  },
+  listContent: {
+    flex: 1,
+    gap: 4,
+  },
+  listTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  listTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    flex: 1,
+  },
+  listMeta: {
+    fontSize: 13,
+  },
+  // Empty States
+  emptyBox: {
+    padding: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    fontStyle: 'italic',
+  },
+  emptyCollection: {
+    padding: 32,
+    alignItems: 'center',
+  },
+  emptySubText: {
+    fontSize: 14,
+    fontStyle: 'italic',
   },
 });

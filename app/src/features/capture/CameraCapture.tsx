@@ -134,7 +134,7 @@ export function CameraCapture({ onSaved }: Props) {
         synced: false,
         note: null,
         category: null,
-        label: `Find ${new Date().toLocaleDateString()}`,
+        label: null,
         status: 'draft',
         sessionId: session.id,
         favorite: false,

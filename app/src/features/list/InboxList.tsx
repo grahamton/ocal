@@ -20,7 +20,6 @@ export function InboxList({ refreshKey, onUpdated }: Props) {
   const [items, setItems] = useState<FindRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [index, setIndex] = useState(0);
-  const [queued, setQueued] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -40,30 +39,22 @@ export function InboxList({ refreshKey, onUpdated }: Props) {
 
   const currentItem = items[index];
 
-  // Reset local queued state when item changes
-  useEffect(() => {
-    setQueued(false);
-    if (currentItem?.aiData) {
-        setQueued(true); // Already has data
-    } else if (currentItem) {
-        // Check if pending?
-        IdentifyQueueService.getQueueStatus(currentItem.id).then(q => {
-            if (q && q.status !== 'failed') setQueued(true);
-        });
-    }
-  }, [currentItem]);
-
   const handleKeep = async () => {
     if (!currentItem) return;
     try {
+      // 1. Queue for AI Analysis (auto-runs if online)
+      logger.add('user', 'Inbox: Allowed - Queueing AI', { id: currentItem.id });
+      await IdentifyQueueService.addToQueue(currentItem.id);
+
+      // 2. Mark as cataloged
       await updateFindMetadata(currentItem.id, {
         status: 'cataloged',
       });
-      // "Next" logic: Remove from list locally for instant feedback
+
+      // 3. Advance List
       const nextItems = items.filter(i => i.id !== currentItem.id);
       setItems(nextItems);
       onUpdated?.();
-      // Index stays same (next item slides into place) unless we were at end
       if (index >= nextItems.length) setIndex(Math.max(0, nextItems.length - 1));
     } catch (e) {
         logger.error('Keep failed', e);
@@ -91,20 +82,6 @@ export function InboxList({ refreshKey, onUpdated }: Props) {
     ]);
   };
 
-
-  const handleIdentify = async () => {
-    if (!currentItem || queued) return;
-    try {
-        setQueued(true);
-        logger.add('user', 'Inbox: Added to ID Queue', { id: currentItem.id });
-        await IdentifyQueueService.addToQueue(currentItem.id);
-    } catch (e) {
-          logger.error('Identify queue failed', e);
-        setQueued(false);
-        Alert.alert('Error', 'Could not queue for identification.');
-    }
-  };
-
   if (loading && items.length === 0) {
     return (
         <View style={styles.centerContainer}>
@@ -116,14 +93,16 @@ export function InboxList({ refreshKey, onUpdated }: Props) {
   if (items.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons name="checkmark-circle-outline" size={80} color={colors.accent} />
+        <Ionicons name="sparkles-outline" size={80} color={colors.accent} />
         <Text style={[styles.emptyTitle, { color: colors.text }]}>All Caught Up!</Text>
-        <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Go outside and find some treasures.</Text>
+        <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+          Your inbox is empty. Time to go back to the beach?
+        </Text>
       </View>
     );
   }
 
-  if (!currentItem) return null; // Should be handled by empty check but safety first
+  if (!currentItem) return null;
 
   return (
     <View style={styles.container}>
@@ -155,17 +134,6 @@ export function InboxList({ refreshKey, onUpdated }: Props) {
               <Text style={styles.btnLabelSuccess}>KEEP</Text>
           </TouchableOpacity>
       </View>
-
-      <TouchableOpacity
-          style={[styles.idButton, queued && styles.idButtonDisabled]}
-          onPress={handleIdentify}
-          disabled={queued}
-      >
-          <Ionicons name={queued ? "cloud-upload" : "sparkles"} size={24} color={queued ? colors.success : "#c084fc"} />
-          <Text style={[styles.idText, { color: queued ? colors.success : "#c084fc" }]}>
-              {queued ? "Queued for Analysis" : "Identify with AI"}
-          </Text>
-      </TouchableOpacity>
 
     </View>
   );
@@ -281,19 +249,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     lineHeight: 26,
-  },
-  idButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    padding: 12,
-  },
-  idText: {
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Outfit_700Bold',
-  },
-  idButtonDisabled: {
-    opacity: 0.8,
   },
 });

@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts, Outfit_400Regular, Outfit_700Bold, Outfit_800ExtraBold } from '@expo-google-fonts/outfit';
 import { CameraCapture } from './src/features/capture/CameraCapture';
 import { GalleryGrid } from './src/features/gallery/GalleryGrid';
+import { InsightsView } from './src/features/insights/InsightsView';
 
 import { FindDetailModal } from './src/features/detail/FindDetailModal';
-import { setupDatabase } from './src/shared/db';
+import { setupDatabase, deleteFind } from './src/shared/db';
 import { FindRecord } from './src/shared/types';
 import { SessionProvider, useSession } from './src/shared/SessionContext';
 import { InboxList } from './src/features/list/InboxList'; // Updated import
@@ -88,6 +89,7 @@ import { logger } from './src/shared/LogService';
   const [selectedFind, setSelectedFind] = useState<FindRecord | null>(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [sessionModalVisible, setSessionModalVisible] = useState(false);
+  const [insightsVisible, setInsightsVisible] = useState(false);
 
   // Navigation State
   const [view, setView] = useState<'capture' | 'inbox' | 'gallery'>('capture');
@@ -99,17 +101,53 @@ import { logger } from './src/shared/LogService';
 
   const { activeSession } = useSession();
 
-  const { isSelectionMode } = useSelection();
+  const { isSelectionMode, selectedIds, exitSelectionMode } = useSelection();
 
-  const handleRefresh = () => {
-    setRefreshKey((n) => n + 1);
+  const handleBatchDelete = async () => {
+    const count = selectedIds.size;
+    if (count === 0) return;
+
+    Alert.alert(
+      'Delete Items',
+      `Delete ${count} item${count > 1 ? 's' : ''}? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await Promise.all(Array.from(selectedIds).map(id => deleteFind(id)));
+              exitSelectionMode();
+              handleRefresh();
+              logger.add('user', `Deleted ${count} items`);
+            } catch (error) {
+              logger.error('Batch delete failed', error);
+              Alert.alert('Error', 'Failed to delete some items');
+            }
+          },
+        },
+      ]
+    );
   };
+
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(prev => prev + 1);
+  }, []);
 
   const openDetail = (item: FindRecord) => {
     logger.add('nav', 'Opened detail view', { id: item.id });
     setSelectedFind(item);
     setDetailVisible(true);
   };
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleManualRefresh = useCallback(async () => {
+    setRefreshing(true);
+    handleRefresh(); // existing refresh logic
+    setTimeout(() => setRefreshing(false), 1000);
+  }, [handleRefresh]);
 
 
 
@@ -120,6 +158,9 @@ import { logger } from './src/shared/LogService';
         style={styles.pageScroll}
         contentContainerStyle={[styles.pageContent, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleManualRefresh} tintColor={colors.accent} />
+        }
       >
         <View style={styles.header}>
           <View style={styles.headerRow}>
@@ -135,6 +176,10 @@ import { logger } from './src/shared/LogService';
               </TouchableOpacity>
             ) : null}
             <View style={{ flex: 1 }} />
+
+            <TouchableOpacity onPress={() => setInsightsVisible(true)} style={{ padding: 8 }}>
+                <Ionicons name="analytics-outline" size={24} color={colors.text} />
+            </TouchableOpacity>
 
             <TouchableOpacity onPress={toggleTheme} style={{ padding: 8 }}>
                 <Ionicons name={mode === 'high-contrast' ? 'contrast' : 'contrast-outline'} size={24} color={colors.text} />
@@ -171,6 +216,20 @@ import { logger } from './src/shared/LogService';
         ) : null}
       </ScrollView>
 
+      {/* Insights Modal */}
+      <Modal visible={insightsVisible} animationType="slide" onRequestClose={() => setInsightsVisible(false)}>
+        <View style={[styles.safe, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+          <View style={[styles.header, { paddingHorizontal: 16 }]}>
+            <TouchableOpacity onPress={() => setInsightsVisible(false)} style={{ padding: 8 }}>
+              <Ionicons name="close" size={28} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[styles.title, { color: colors.text }]}>Insights</Text>
+            <View style={{ width: 44 }} />
+          </View>
+          <InsightsView />
+        </View>
+      </Modal>
+
       {/* Floating Glass Tab Bar OR Batch Action Bar */}
       {/* Floating Glass Tab Bar OR Batch Action Bar */}
       <View style={[
@@ -183,8 +242,8 @@ import { logger } from './src/shared/LogService';
       ]}>
         {isSelectionMode ? (
           <BatchActionBar
-            onPoster={() => Alert.alert('Poster', 'Batch poster stub')}
-            onDelete={() => Alert.alert('Delete', 'Batch delete stub')}
+            onPoster={() => Alert.alert('Poster', 'Batch poster coming soon')}
+            onDelete={handleBatchDelete}
           />
         ) : (
           <View style={styles.floatingTabs}>

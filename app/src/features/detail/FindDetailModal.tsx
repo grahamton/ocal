@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-// import { identifyRock } from '../../ai/identifyRock';
-import { updateFindMetadata, getFind } from '../../shared/db';
+import { Modal, StyleSheet, Text, TouchableOpacity, View, ScrollView, Image, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Sharing from 'expo-sharing';
+import { updateFindMetadata, getFind, deleteFind } from '../../shared/db';
 import { FindRecord } from '../../shared/types';
 import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
-
 import { RockIdResult } from '../../ai/rockIdSchema';
-import { FlipCard } from '../../shared/components/FlipCard';
-import { CardFront } from './components/CardFront';
-import { CardBack } from './components/CardBack';
+import { formatLocationSync } from '../../shared/format';
+import { useTheme } from '../../shared/ThemeContext';
 
 type Props = {
   visible: boolean;
@@ -19,37 +17,27 @@ type Props = {
 };
 
 export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
+  const { colors } = useTheme();
   const [note, setNote] = useState('');
-  const [category, setCategory] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState<'draft' | 'cataloged'>('draft');
   const [label, setLabel] = useState('');
   const [favorite, setFavorite] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<RockIdResult | null>(null);
-
-
-  // Flip state
-  const [isFlipped, setIsFlipped] = useState(false);
 
   useEffect(() => {
     if (item && visible) {
       setLabel(item.label ?? '');
       setNote(item.note ?? '');
-      setCategory(item.category ?? null);
-      setStatus(item.status);
       setFavorite(item.favorite);
-      setSessionId(item.sessionId ?? null);
       setAiError(null);
       setAiResult(item.aiData || null);
       setAiLoading(false);
-      setIsFlipped(false); // Always start showing the rock
     }
   }, [item, visible]);
 
-  // Poll for queue updates if we are waiting for AI or checking status
+  // Poll for queue updates if waiting for AI
   useEffect(() => {
     if (!visible || !item || aiResult) return;
 
@@ -61,20 +49,24 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
 
       if (qItem && (qItem.status === 'pending' || qItem.status === 'processing')) {
         setAiLoading(true);
-        setTimeout(checkQueue, 2000); // Poll again
+        setTimeout(checkQueue, 2000);
       } else if (qItem && qItem.status === 'completed') {
-        // Reload data!
         const fresh = await getFind(item.id);
         if (fresh && fresh.aiData && mounted) {
-           setAiResult(fresh.aiData);
-           setAiLoading(false);
+          setAiResult(fresh.aiData);
+          setAiLoading(false);
         }
       } else if (qItem && qItem.status === 'failed') {
-         setAiError(qItem.error || 'Request failed');
-         setAiLoading(false);
+        setAiError(qItem.error || 'Request failed');
+        setAiLoading(false);
       } else {
-         // No queue item, and no result. stop polling.
-         setAiLoading(false);
+        // Not in queue? It might have just finished (row deleted).
+        // Check the main table one last time.
+        const fresh = await getFind(item.id);
+        if (fresh && fresh.aiData) {
+          setAiResult(fresh.aiData);
+        }
+        setAiLoading(false);
       }
     };
 
@@ -90,20 +82,36 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
       await updateFindMetadata(item.id, {
         label: label.trim() || null,
         note: note.trim() || null,
-        category: category === 'Unsorted' ? null : category,
-        status: 'cataloged', // Force cataloged on "File It"
+        status: 'cataloged',
         favorite,
-        sessionId,
       });
-      // Close handled by parent callback usually
-      setIsFlipped(false);
       onSaved();
+      onClose();
     } finally {
       setSaving(false);
     }
   };
 
+  const handleDelete = async () => {
+    if (!item) return;
+    await deleteFind(item.id);
+    onSaved();
+    onClose();
+  };
 
+  const handleShare = async () => {
+    if (!item) return;
+    try {
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(item.photoUri);
+      } else {
+        Alert.alert('Sharing not available', 'Sharing is not supported on this device/simulator.');
+      }
+    } catch (error) {
+      console.error('Share failed', error);
+      Alert.alert('Error', 'Could not share image.');
+    }
+  };
 
   const runIdentify = async () => {
     if (!item || aiLoading) return;
@@ -111,134 +119,432 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
     setAiError(null);
     try {
       await IdentifyQueueService.addToQueue(item.id);
-      // Logic handled by polling effect now
-    } catch (err) {
-      setAiError((err as Error)?.message || 'Queue failed');
+    } catch (e) {
+      setAiError('Could not start analysis.');
       setAiLoading(false);
     }
   };
 
-  const applyTags = () => {
-    if (!aiResult) return;
-    const best = aiResult.best_guess;
-    if (best?.label) setLabel(best.label);
-    if (aiResult.catalog_tags?.type?.[0]) setCategory(aiResult.catalog_tags.type[0]);
-    if (aiResult.observable_reasons?.[0]) setNote((prev) => prev || (aiResult.observable_reasons || []).join('; '));
+  const formatDate = (timestamp: string) => {
+    return new Date(timestamp).toLocaleString(undefined, {
+      month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  };
+
+  const getConfidenceColor = (conf: number) => {
+    if (conf > 0.8) return '#15803d'; // Green
+    if (conf > 0.5) return '#d97706'; // Amber
+    return '#b91c1c'; // Red
   };
 
   if (!item) return null;
 
   return (
-    <Modal visible={visible} animationType="fade" onRequestClose={onClose} transparent>
-      <View style={styles.backdrop}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
 
-        {/* The Card Container */}
-        <View style={styles.cardContainer}>
-          <View style={styles.floatingControls}>
-             <TouchableOpacity
-                style={styles.floatingBtn}
-                onPress={() => setIsFlipped(p => !p)}
-                activeOpacity={0.8}
-             >
-                <Text style={styles.floatingBtnText}>Flip</Text>
-             </TouchableOpacity>
-             <TouchableOpacity
-                style={[styles.floatingBtn, styles.floatingBtnClose]}
-                onPress={onClose}
-                hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
-             >
-                <Text style={styles.floatingBtnText}>✕</Text>
-             </TouchableOpacity>
-          </View>
+        {/* Close Button (Absolute) */}
+        <TouchableOpacity style={styles.closeBtn} onPress={onClose} zIndex={50}>
+           <Ionicons name="close" size={28} color="#fff" />
+        </TouchableOpacity>
 
-          <FlipCard
-            isFlipped={isFlipped}
-            style={{ flex: 1 }}
-            front={
-               <CardFront
-                  item={{...item, label, category, favorite}}
-                  onFlip={() => setIsFlipped(true)}
-               />
-            }
-            back={
-               <CardBack
-                 item={item}
-                 sessionId={sessionId}
-                 label={label}
-                 setLabel={setLabel}
-                 category={category}
-                 setCategory={setCategory}
-                 status={status}
-                 setStatus={setStatus}
-                 note={note}
-                 setNote={setNote}
-                 favorite={favorite}
-                 setFavorite={setFavorite}
-                 aiResult={aiResult}
-                 aiError={aiError}
-                 aiLoading={aiLoading}
-                 onRunIdentify={runIdentify}
-                 onApplyTags={applyTags}
-
-                 onClose={onClose} // Passed but handled by parent too
-                 onSave={handleSave}
-                 onFlipBack={() => setIsFlipped(false)}
-               />
-            }
-          />
+        {/* Hero Image */}
+        <View style={styles.heroContainer}>
+          <Image source={{ uri: item.photoUri }} style={styles.heroImage} resizeMode="cover" />
+          <View style={StyleSheet.absoluteFillObject} pointerEvents="none"
+            backgroundColor="rgba(0,0,0,0.1)" />
         </View>
 
-      </View>
+        {/* Content Scroll */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* State A: Unanalyzed */}
+          {!aiResult && !aiLoading && (
+            <TouchableOpacity
+              style={[styles.analyzeButton, { backgroundColor: colors.accent }]}
+              onPress={runIdentify}
+            >
+              <Ionicons name="sparkles" size={24} color="#fff" />
+              <Text style={styles.analyzeButtonText}>Identify Rock Buddy</Text>
+            </TouchableOpacity>
+          )}
 
+          {/* Loading State */}
+          {aiLoading && (
+            <View style={[styles.loadingCard, { backgroundColor: colors.card }]}>
+              <ActivityIndicator size="large" color={colors.accent} />
+              <Text style={[styles.loadingText, { color: colors.text }]}>Analyzing your find...</Text>
+            </View>
+          )}
+
+          {/* Error State */}
+          {aiError && (
+            <View style={[styles.errorCard, { backgroundColor: '#fef2f2', borderColor: '#ef4444' }]}>
+              <Ionicons name="alert-circle" size={24} color="#ef4444" />
+              <Text style={styles.errorText}>{aiError}</Text>
+              <TouchableOpacity onPress={runIdentify}>
+                <Text style={[styles.retryText, { color: colors.accent }]}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* State B: Analyzed - Info Dock */}
+          {aiResult && (
+            <>
+              <View style={[styles.infoDock, { backgroundColor: colors.card }]}>
+                {/* Title Row */}
+                <View style={styles.titleRow}>
+                  <Text
+                    style={[styles.title, { color: colors.text }]}
+                    accessibilityRole="header"
+                  >
+                    {label || aiResult.best_guess?.label || 'Unknown Rock'}
+                  </Text>
+                  <TouchableOpacity onPress={() => setFavorite(p => !p)}>
+                    <Ionicons
+                      name={favorite ? "star" : "star-outline"}
+                      size={32}
+                      color={favorite ? "#fbbf24" : colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Metadata Row */}
+                <Text style={[styles.metadata, { color: colors.textSecondary }]}>
+                  {formatLocationSync(item.lat, item.long)} • {formatDate(item.timestamp)}
+                </Text>
+              </View>
+
+              {/* Scientist View / Field Lab */}
+              <View style={[styles.labCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.labHeader}>
+                   <Ionicons name="beaker" size={20} color={colors.accent} />
+                   <Text style={[styles.labTitle, { color: colors.text }]}>Field Lab Analysis</Text>
+                </View>
+
+                {/* Confidence Meter */}
+                {aiResult.best_guess?.confidence && (
+                  <View style={styles.meterContainer}>
+                    <View style={styles.meterRow}>
+                      <Text style={[styles.meterLabel, { color: colors.textSecondary }]}>Confidence</Text>
+                      <Text style={[styles.meterValue, { color: colors.accent }]}>
+                        {Math.round(aiResult.best_guess.confidence * 100)}%
+                      </Text>
+                    </View>
+                    <View style={[styles.meterTrack, { backgroundColor: colors.border }]}>
+                      <View
+                        style={[styles.meterFill, {
+                          width: `${aiResult.best_guess.confidence * 100}%`,
+                          backgroundColor: getConfidenceColor(aiResult.best_guess.confidence)
+                        }]}
+                      />
+                    </View>
+                  </View>
+                )}
+
+                {/* Visual Cues */}
+                {aiResult.observable_reasons && aiResult.observable_reasons.length > 0 && (
+                  <View style={styles.labSection}>
+                    <Text style={[styles.labSectionTitle, { color: colors.textSecondary }]}>OBSERVABLE EVIDENCE</Text>
+                    {aiResult.observable_reasons.map((reason, i) => (
+                      <View key={i} style={styles.evidenceItem}>
+                        <Ionicons name="eye-outline" size={14} color={colors.textSecondary} style={{marginTop: 2}} />
+                        <Text style={[styles.evidenceText, { color: colors.text }]}>{reason}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Alternatives */}
+                {aiResult.alternatives && aiResult.alternatives.length > 0 && (
+                  <View style={styles.labSection}>
+                    <Text style={[styles.labSectionTitle, { color: colors.textSecondary }]}>ALTERNATIVES</Text>
+                    {aiResult.alternatives.slice(0, 3).map((alt, i) => (
+                      <View key={i} style={styles.altRow}>
+                        <Text style={[styles.altName, { color: colors.text }]}>{alt.label}</Text>
+                        <Text style={[styles.altProb, { color: colors.textSecondary }]}>{Math.round(alt.confidence * 100)}%</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Raw Field Data */}
+                <View style={styles.labSection}>
+                   <Text style={[styles.labSectionTitle, { color: colors.textSecondary }]}>FIELD DATA</Text>
+                   <Text style={[styles.monoText, { color: colors.textSecondary }]}>ID: {item.id}</Text>
+                   <Text style={[styles.monoText, { color: colors.textSecondary }]}>
+                     GPS: {item.lat?.toFixed(6)}, {item.long?.toFixed(6)}
+                   </Text>
+                </View>
+              </View>
+            </>
+          )}
+
+          {/* Notes Field */}
+          <View style={styles.notesSection}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Notes</Text>
+            <TextInput
+              value={note}
+              onChangeText={setNote}
+              style={[styles.notesInput, {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                color: colors.text
+              }]}
+              placeholder="Add your story about this find..."
+              placeholderTextColor={colors.textSecondary}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+          </View>
+
+          {/* Bottom padding for sticky footer */}
+          <View style={{ height: 80 }} />
+        </ScrollView>
+
+        {/* Sticky Action Footer */}
+        <View style={[styles.actionFooter, {
+          backgroundColor: colors.background,
+          borderTopColor: colors.border
+        }]}>
+          <TouchableOpacity
+            style={[styles.iconButton, { borderColor: colors.border }]}
+            onPress={handleShare}
+          >
+             <Ionicons name="share-outline" size={24} color={colors.text} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.iconButton, { borderColor: '#ef4444' }]}
+            onPress={handleDelete}
+          >
+            <Ionicons name="trash-outline" size={24} color="#ef4444" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.saveButton, { backgroundColor: colors.accent }]}
+            onPress={handleSave}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                <Text style={styles.saveText}>Save</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
+  container: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.85)', // Darker cinematic backdrop
-    justifyContent: 'center',
-    padding: 16,
-    paddingTop: 60,
-    paddingBottom: 40,
   },
-  cardContainer: {
-    flex: 1,
-    maxWidth: 600, // Tablet safe
-    alignSelf: 'center',
+  heroContainer: {
+    height: '42%',
+    position: 'relative',
+  },
+  heroImage: {
     width: '100%',
-    position: 'relative', // Context for floating buttons
+    height: '100%',
   },
-  floatingControls: {
+  closeBtn: {
     position: 'absolute',
-    top: -60,
-    right: 0,
-    flexDirection: 'row',
-    gap: 12,
-    zIndex: 20,
-  },
-  floatingBtn: {
+    top: 50,
+    right: 16,
+    width: 44,
     height: 44,
-    minWidth: 44,
-    paddingHorizontal: 16,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    gap: 20,
+  },
+  analyzeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 16,
+    borderRadius: 16,
+  },
+  analyzeButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
+  },
+  loadingCard: {
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  errorCard: {
+    padding: 16,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    gap: 8,
+    alignItems: 'center',
   },
-  floatingBtnClose: {
-     paddingHorizontal: 0,
-     width: 44,
-     backgroundColor: 'rgba(239, 68, 68, 0.4)', // Subtle red tint for close
-     borderColor: 'rgba(239, 68, 68, 0.5)',
+  errorText: {
+    color: '#ef4444',
+    fontSize: 14,
+    textAlign: 'center',
   },
-  floatingBtnText: {
+  retryText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  infoDock: {
+    padding: 20,
+    borderRadius: 16,
+    gap: 12,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    fontFamily: 'Outfit_800ExtraBold',
+    flex: 1,
+  },
+  metadata: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+
+  // Scientist View Styles
+  labCard: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 16,
+  },
+  labHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  labTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  meterContainer: {
+    gap: 6,
+  },
+  meterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  meterLabel: { fontSize: 13, fontWeight: '600' },
+  meterValue: { fontSize: 13, fontWeight: '700' },
+  meterTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  meterFill: { height: '100%', borderRadius: 3 },
+
+  labSection: {
+    gap: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+    paddingTop: 12,
+  },
+  labSectionTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  evidenceItem: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'flex-start',
+  },
+  evidenceText: {
+    fontSize: 14,
+    lineHeight: 20,
+    flex: 1,
+  },
+  altRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  altName: { fontSize: 14, fontWeight: '500' },
+  altProb: { fontSize: 14 },
+
+  monoText: {
+    fontFamily: 'monospace',
+    fontSize: 11,
+  },
+
+  notesSection: {
+    gap: 8,
+  },
+  notesInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    minHeight: 120,
+  },
+  actionFooter: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    padding: 16,
+    gap: 12,
+    borderTopWidth: 1,
+  },
+  iconButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  saveText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '800',
-    fontFamily: 'Outfit_700Bold', // Ensure font is loaded in App
+    fontWeight: '700',
   },
+  deleteButton: {
+    // Legacy mapping if needed, but handled by iconButton now
+  }
 });

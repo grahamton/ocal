@@ -72,8 +72,9 @@ export class IdentifyQueueService {
       await this.processItem(item);
 
       // Keep processing if there are more
+      // Keep processing if there are more, with a small delay to respect rate limits
       this.isProcessing = false;
-      this.processQueue();
+      setTimeout(() => this.processQueue(), 1000);
 
     } catch (e) {
       logger.error('Queue processing error', e);
@@ -111,7 +112,7 @@ export class IdentifyQueueService {
 
        // 3. Call AI
        const result = await identifyRock({
-          provider: 'openai', // Using OpenAI for reliability
+          provider: 'gemini', // OpenAI quota exceeded, using Gemini
           imageDataUrls: [dataUrl],
           locationHint: find.lat && find.long ? `${find.lat}, ${find.long}` : null,
           contextNotes: find.note || find.label || 'Field find',
@@ -133,8 +134,8 @@ export class IdentifyQueueService {
        logger.add('ai', 'Queue item processed successfully', { findId: find.id });
 
     } catch (error) {
-      const msg = (error as Error).message;
-      logger.error('Process Item Error', error);
+      const msg = (error as Error).message || String(error);
+      logger.error(`Process Item Error: ${msg}`, error);
 
       // Update retry count
       const nextAttempts = item.attempts + 1;

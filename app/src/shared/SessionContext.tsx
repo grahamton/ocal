@@ -35,7 +35,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const startSession = useCallback(
     async (name?: string, locationName?: string) => {
       const now = Date.now();
-      const fallbackName = `Beach session ${new Date(now).toLocaleDateString()}`;
+
+      let fallbackName = `Beach Session ${new Date(now).toLocaleDateString()}`;
+      if (!name) {
+        const hour = new Date(now).getHours();
+        const dateStr = new Date(now).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+        if (hour < 12) fallbackName = `Morning Walk (${dateStr})`;
+        else if (hour < 17) fallbackName = `Afternoon Walk (${dateStr})`;
+        else fallbackName = `Evening Walk (${dateStr})`;
+      }
+
       const sessionName = name?.trim() || fallbackName;
       const newSession: Session = {
         id: createId('session'),

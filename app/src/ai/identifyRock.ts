@@ -31,7 +31,9 @@ export async function identifyRock(input: IdentifyInput): Promise<RockIdResult> 
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    const detail = err?.detail ? ` - ${err.detail}` : '';
+    const detail = err?.detail
+      ? ` - ${typeof err.detail === 'object' ? JSON.stringify(err.detail) : err.detail}`
+      : '';
     throw new Error(`${err?.error || 'Identify request failed'}${detail}`);
   }
 

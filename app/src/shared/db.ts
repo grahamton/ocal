@@ -207,25 +207,24 @@ export async function listFinds(options?: { sessionId?: string | null; status?: 
     favorite: row.favorite === 1,
     aiData: row.aiData ? JSON.parse(row.aiData) : null,
   }));
-  return result.map((row) => ({
-    id: row.id,
-    photoUri: row.photoUri,
-    lat: row.lat,
-    long: row.long,
-    timestamp: row.timestamp,
-    synced: row.synced === 1,
-    note: row.note,
-    category: row.category,
-    label: row.label,
-    status: (row.status as 'draft' | 'cataloged') ?? 'draft',
-    sessionId: row.sessionId ?? null,
-    favorite: row.favorite === 1,
-    aiData: row.aiData ? JSON.parse(row.aiData) : null,
-  }));
 }
 
 export async function getFind(id: string): Promise<FindRecord | null> {
-  const rows = await db.getAllAsync<any>('SELECT * FROM finds WHERE id = ? LIMIT 1', id);
+  const rows = await db.getAllAsync<{
+    id: string;
+    photoUri: string;
+    lat: number | null;
+    long: number | null;
+    timestamp: string;
+    synced: number;
+    note: string | null;
+    category: string | null;
+    label: string | null;
+    status: 'draft' | 'cataloged' | null;
+    sessionId: string | null;
+    favorite: number | null;
+    aiData: string | null;
+  }>('SELECT * FROM finds WHERE id = ? LIMIT 1', id);
   if (!rows[0]) return null;
   const row = rows[0];
   return {
