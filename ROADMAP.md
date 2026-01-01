@@ -71,6 +71,17 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Status: **Research complete** - See `docs/ui_tooltips_feedback_research.md`
 - Risks: Tooltip design must respect "Silent Partner" philosophy; feedback requires email setup
 
+## Phase 7 - iOS Version (Backlog)
+
+- Scope: Build and distribute iOS version for iPhone/iPad testing
+- Milestones:
+  - Validate iOS compatibility with Expo Go
+  - Enroll in Apple Developer Program
+  - Build IPA with EAS Build
+  - Distribute via TestFlight
+- Status: **Research complete** - See `docs/ios_version_research.md`
+- Risks: $99/year Apple Developer cost; potential iOS-specific bugs
+
 ## Future Considerations
 
 - **Cloud Sync**: Cross-device access and real-time sync (see `docs/desktop_access_research.md`)
