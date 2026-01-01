@@ -82,6 +82,17 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Status: **Research complete** - See `docs/ios_version_research.md`
 - Risks: $99/year Apple Developer cost; potential iOS-specific bugs
 
+## Phase 8 - Database Enhancements (Backlog)
+
+- Scope: Advanced data storage, cross-device sync, and user data control
+- Milestones:
+  - Phase 8.1: Migrate to SQLite with advanced querying and export (CSV/JSON)
+  - Phase 8.2: Optional Firebase sync for cross-device access
+  - Phase 8.3: Custom table builder and data manipulation tools
+  - Phase 8.4: Self-hosting option for privacy-focused users
+- Status: **Research complete** - See `docs/database_enhancements_research.md`
+- Risks: Sync conflicts; cloud costs; complexity of dual storage paths; user privacy expectations
+
 ## Future Considerations
 
 - **Cloud Sync**: Cross-device access and real-time sync (see `docs/desktop_access_research.md`)
