@@ -6,6 +6,7 @@ import { formatLocationSync } from '../../shared/format';
 import { FindRecord } from '../../shared/types';
 import { useTheme } from '../../shared/ThemeContext';
 import { useSelection } from '../../shared/SelectionContext';
+import { useSession } from '../../shared/SessionContext';
 import { Ionicons } from '@expo/vector-icons';
 
 import { StatusIcon } from '../../../components/StatusIcon';
@@ -22,8 +23,10 @@ type ViewMode = 'grid' | 'list';
 
 export function GalleryGrid({ refreshKey, onSelect }: Props) {
   const [items, setItems] = useState<FindRecord[]>([]);
-  const [filter, setFilter] = useState<'all' | 'favorites'>('all');
+  const [filter, setFilter] = useState<'all' | 'favorites' | 'session'>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+
+  const { activeSession } = useSession();
 
   // Responsive Columns
   const { width } = useWindowDimensions();
@@ -54,8 +57,9 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
   const filteredItems = useMemo(() => {
     if (filter === 'all') return allItems;
     if (filter === 'favorites') return allItems.filter(item => item.favorite);
+    if (filter === 'session' && activeSession) return allItems.filter(item => item.sessionId === activeSession.id);
     return allItems;
-  }, [allItems, filter]);
+  }, [allItems, filter, activeSession]);
 
 
 
@@ -256,6 +260,17 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
 
         {/* Filter Tabs */}
         <View style={styles.filterTabs}>
+          {activeSession && (
+             <TouchableOpacity
+                style={[styles.filterTab, filter === 'session' && { backgroundColor: colors.accent }]}
+                onPress={() => setFilter('session')}
+              >
+                <Text style={[styles.filterTabText, { color: filter === 'session' ? '#fff' : colors.textSecondary }]}>
+                  Current Walk ({allItems.filter(i => i.sessionId === activeSession.id).length})
+                </Text>
+              </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             style={[styles.filterTab, filter === 'all' && { backgroundColor: colors.accent }]}
             onPress={() => setFilter('all')}

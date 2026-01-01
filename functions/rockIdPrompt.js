@@ -37,19 +37,31 @@ Rules:
   3. special_care: Optional tips (e.g. "Use plastic pellets to prevent bruising").
 - Safety: If the item looks heavy, metallic, or crumbling, add a safety brief in the fact or identification.
 - Location: Use provided location to infer specific formations (e.g. Waldport -> Alsea/Astoria formations).
+- Session Context:
+  1. Use "session_time" (Morning/Evening) to account for lighting/shadows in your visual analysis.
+  2. Use "session_location" effectively if generic coordinates are missing.
+  3. If "session_name" suggests a specific activity (e.g. "River Hike"), bias towards relevant rock types (e.g. river tumbled).
 `.trim();
 
 function buildRockIdUserPrompt(params = {}) {
-  const { location_hint, context_notes, user_goal } = params;
-  return (
-    [
-      'Identify this specimen for cataloging.',
-      `location_hint: ${location_hint ?? ''}`,
-      `context_notes: ${context_notes ?? ''}`,
-      `user_goal: ${user_goal ?? ''}`,
-      'Return JSON only.',
-    ].join('\n')
-  );
+  const { location_hint, context_notes, user_goal, session_context } = params;
+
+  let prompt = [
+    'Identify this specimen for cataloging.',
+    `location_hint: ${location_hint ?? ''}`,
+    `context_notes: ${context_notes ?? ''}`,
+    `user_goal: ${user_goal ?? ''}`
+  ];
+
+  if (session_context) {
+     if (session_context.sessionName) prompt.push(`session_name: ${session_context.sessionName}`);
+     if (session_context.sessionLocation) prompt.push(`session_location: ${session_context.sessionLocation}`);
+     if (session_context.sessionTime) prompt.push(`session_time: ${session_context.sessionTime}`);
+  }
+
+  prompt.push('Return JSON only.');
+
+  return prompt.join('\n');
 }
 
 module.exports = {

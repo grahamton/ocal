@@ -83,7 +83,7 @@ function toGeminiParts({ userPrompt, images }) {
   return parts;
 }
 
-async function callGemini({ userPrompt, images }) {
+async function callGemini({ systemPrompt, userPrompt, images, schema = RockIdSchema }) {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error("Missing GEMINI_API_KEY secret");
   }
@@ -91,12 +91,40 @@ async function callGemini({ userPrompt, images }) {
   // Direct REST call to v1 Gemini to avoid client version issues.
   const apiKey = process.env.GEMINI_API_KEY;
   const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-  const contents = [{ parts: toGeminiParts({ userPrompt, images }) }];
+  const parts = [
+    { text: `SYSTEM:\n${systemPrompt}` },
+    { text: `SCHEMA:\n${JSON.stringify(schema.schema)}` },
+    { text: `USER:\n${userPrompt}` },
+  ];
+
+  for (const img of images) {
+    if (typeof img === "string" && img.startsWith("data:")) {
+      const match = img.match(/^data:(.+?);base64,(.*)$/);
+      if (match) {
+        const mimeType = match[1];
+        const data = match[2];
+        parts.push({ inlineData: { data, mimeType } });
+        continue;
+      }
+    }
+    parts.push({ text: `image_url: ${img}` });
+  }
+  parts.push({
+    text: "Return JSON only matching the provided schema. Keep confidence monotonic.",
+  });
+
+  const contents = [{ parts }];
 
   const resp = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contents }),
+    body: JSON.stringify({
+        contents,
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: schema,
+        }
+    }),
   });
 
   if (!resp.ok) {
@@ -141,10 +169,15 @@ exports.identify = onRequest(
       return res.status(400).json({ error: "No images provided" });
     }
 
+    // Dynamic Ranger: Use client-provided logic or fallback to backend defaults
+    const systemPrompt = body.system_prompt || ROCK_ID_SYSTEM_PROMPT;
+    const outputSchema = body.output_schema || RockIdSchema;
+
     const userPrompt = buildRockIdUserPrompt({
       location_hint: body.location_hint ?? "",
       context_notes: body.context_notes ?? "",
       user_goal: body.user_goal ?? "quick_id",
+      session_context: body.session_context || null,
     });
 
     const cleanJson = (text) => {
@@ -172,7 +205,7 @@ exports.identify = onRequest(
     try {
       const raw =
         provider === "gemini"
-          ? await callGemini({ userPrompt, images })
+          ? await callGemini({ systemPrompt, userPrompt, images, schema: outputSchema })
           : await callOpenAI({ userPrompt, images });
 
       const parsed = cleanJson(raw);

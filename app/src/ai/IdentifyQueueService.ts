@@ -112,13 +112,32 @@ export class IdentifyQueueService {
        const fileData = await FileSystem.readAsStringAsync(find.photoUri, { encoding: FileSystem.EncodingType.Base64 });
        const dataUrl = `data:image/jpeg;base64,${fileData}`;
 
+       // 2a. Get Session Context if available
+       let sessionContext = null;
+       if (find.sessionId) {
+           const { getSession } = require('../shared/db');
+           const session = await getSession(find.sessionId);
+           if (session) {
+               const date = new Date(session.startTime);
+               const hours = date.getHours();
+               const timeOfDay = hours < 12 ? 'Morning' : hours < 17 ? 'Afternoon' : 'Evening';
+
+               sessionContext = {
+                   sessionName: session.name,
+                   sessionLocation: session.locationName,
+                   sessionTime: timeOfDay
+               };
+           }
+       }
+
        // 3. Call AI
        const result = await identifyRock({
           provider: 'gemini', // OpenAI quota exceeded, using Gemini
           imageDataUrls: [dataUrl],
           locationHint: find.lat && find.long ? `${find.lat}, ${find.long}` : null,
           contextNotes: find.note || find.label || 'Field find',
-          userGoal: 'quick_id' // could store this in queue if needed
+          userGoal: 'quick_id',
+          sessionContext
        });
 
        // 4. Save Result

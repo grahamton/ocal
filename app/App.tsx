@@ -78,7 +78,7 @@ import { SettingsModal } from './src/shared/components/SettingsModal';
 
 function AppContent() {
   const insets = useSafeAreaInsets();
-  const { colors, toggleTheme, mode } = useTheme();
+  const { colors, mode } = useTheme();
   // ... existing hooks
 
   const [refreshKey, setRefreshKey] = useState(0);
@@ -161,39 +161,45 @@ function AppContent() {
       >
         <View style={styles.header}>
           <View style={styles.headerRow}>
+            {/* Left: Logo Only */}
             <StatusIcon status="polished" category="mineral" size={32} theme={mode === 'high-contrast' ? 'beach' : 'journal'} />
-            <Text style={[styles.title, { color: colors.text }]}>Ocal</Text>
-            {activeSession ? (
-              <TouchableOpacity onPress={() => setSessionModalVisible(true)} style={{ flexShrink: 1 }}>
-                <GlassView style={styles.sessionPillContainer} intensity={10}>
-                  <Text style={[styles.sessionPillText, { color: colors.accent }]} numberOfLines={1} ellipsizeMode="tail">
-                    {activeSession.name}
-                  </Text>
-                  <Ionicons name="create-outline" size={12} color={colors.accent} style={{marginLeft: 4, flexShrink: 0}} />
-                </GlassView>
-              </TouchableOpacity>
-            ) : null}
-            <View style={{ flex: 1 }} />
 
-            <TouchableOpacity onPress={() => setInsightsVisible(true)} style={{ padding: 8 }}>
-                <Ionicons name="analytics-outline" size={24} color={colors.text} />
-            </TouchableOpacity>
+            {/* Center: Session Pill (Expanded) */}
+            <View style={{flex: 1, paddingHorizontal: 12}}>
+                <TouchableOpacity
+                    onPress={() => setSessionModalVisible(true)}
+                    style={{width: '100%'}}
+                    activeOpacity={0.8}
+                >
+                    <GlassView style={[styles.sessionPillContainer, !activeSession && { justifyContent: 'center', opacity: 0.8 }]} intensity={10}>
+                        <Text
+                            style={[
+                                styles.sessionPillText,
+                                { color: colors.accent, textAlign: activeSession ? 'left' : 'center' },
+                                !activeSession && { fontWeight: '600', fontSize: 13 }
+                            ]}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                        >
+                            {activeSession ? activeSession.name : 'Start Session'}
+                        </Text>
+                        {activeSession && (
+                             <Ionicons name="create-outline" size={14} color={colors.accent} style={{marginLeft: 4, flexShrink: 0}} />
+                        )}
+                    </GlassView>
+                </TouchableOpacity>
+            </View>
 
-            <TouchableOpacity onPress={() => setSettingsVisible(true)} style={{ padding: 8 }}>
-                <Ionicons name="settings-outline" size={24} color={colors.text} />
-            </TouchableOpacity>
+            {/* Right: Actions */}
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <TouchableOpacity onPress={() => setInsightsVisible(true)} style={{ padding: 8 }}>
+                    <Ionicons name="analytics-outline" size={24} color={colors.text} />
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={toggleTheme}
-              style={[
-                { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: colors.border },
-                mode === 'high-contrast' ? { backgroundColor: '#0f172a' } : { backgroundColor: '#fff' }
-              ]}
-            >
-                <Text style={{ fontSize: 12, fontWeight: '700', color: mode === 'high-contrast' ? '#fff' : '#0f766e' }}>
-                  {mode === 'high-contrast' ? '☀ BEACH' : '☕ JOURNAL'}
-                </Text>
-            </TouchableOpacity>
+                <TouchableOpacity onPress={() => setSettingsVisible(true)} style={{ padding: 8 }}>
+                    <Ionicons name="settings-outline" size={24} color={colors.text} />
+                </TouchableOpacity>
+            </View>
           </View>
         </View>
 

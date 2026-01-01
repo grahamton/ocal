@@ -1,4 +1,4 @@
-import { RockIdResult } from '../ai/rockIdSchema';
+// import { RockIdResult } from '../ai/rockIdSchema'; // Flexible now
 export type FindRecord = {
   id: string;
   photoUri: string;
@@ -13,7 +13,7 @@ export type FindRecord = {
   status: 'draft' | 'cataloged';
   sessionId: string | null;
   favorite: boolean;
-  aiData?: RockIdResult | null;
+  aiData?: Record<string, any> | null;
 };
 
 export type Session = {

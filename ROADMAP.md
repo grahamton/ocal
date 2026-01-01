@@ -40,6 +40,15 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Tests/QA: Polling logic for queue; Schema validation relaxed for robustness; Pull-to-Refresh added.
 - Risks: Latency offline (mitigated by queue); model accuracy (mitigated by "Scientist View" transparency).
 
+## Phase 3.5 - Explore Mode & AI Discovery **Complete**
+
+- Scope: Enable "Explore" vs "Ship" modes for AI to discover new useful data fields without breaking the app.
+- Milestones:
+  - [x] Refactor `RangerConfig` for dynamic schemas (Explore = loose, Ship = strict).
+  - [x] Add "Raw Data Inspector" to Find Detail view for developer visibility.
+- Status: **Complete** (Jan 2026).
+- Rationale: Allows safe experimentation with prompt engineering.
+
 ## Phase 4 - SQLite Migration & Export **Complete**
 
 - Scope: Migrate from AsyncStorage to SQLite for performance, querying, and data export

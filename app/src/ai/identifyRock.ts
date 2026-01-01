@@ -1,4 +1,5 @@
 import { RockIdResult } from './rockIdSchema';
+import { getRangerSystemPrompt, getRangerSchema, RangerMode } from './RangerConfig';
 
 export type IdentifyInput = {
   imageUrls?: string[];
@@ -6,8 +7,14 @@ export type IdentifyInput = {
   locationHint?: string | null;
   contextNotes?: string | null;
   userGoal?: 'quick_id' | 'learning' | 'catalog_tagging' | null;
+  sessionContext?: {
+    sessionName?: string;
+    sessionTime?: string;
+    sessionLocation?: string;
+  } | null;
   provider?: 'openai' | 'gemini';
   endpoint?: string; // override function URL; default uses ENV or relative path
+  outputMode?: RangerMode;
 };
 
 export async function identifyRock(input: IdentifyInput): Promise<RockIdResult> {
@@ -15,6 +22,8 @@ export async function identifyRock(input: IdentifyInput): Promise<RockIdResult> 
     input.endpoint ||
     process.env.EXPO_PUBLIC_IDENTIFY_URL ||
     'https://<region>-<project>.cloudfunctions.net/identify';
+
+  const mode = input.outputMode || 'explore'; // Default to Explore mode for discovery
 
   const res = await fetch(url, {
     method: 'POST',
@@ -26,6 +35,9 @@ export async function identifyRock(input: IdentifyInput): Promise<RockIdResult> 
       location_hint: input.locationHint ?? null,
       context_notes: input.contextNotes ?? null,
       user_goal: input.userGoal ?? 'quick_id',
+      session_context: input.sessionContext ?? null,
+      system_prompt: getRangerSystemPrompt(mode),
+      output_schema: getRangerSchema(mode),
     }),
   });
 

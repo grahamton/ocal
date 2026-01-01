@@ -2,14 +2,15 @@ import { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View, ScrollView, Image, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
-import { updateFindMetadata, getFind, deleteFind } from '../../shared/db';
+import { updateFindMetadata, getFind, deleteFind, getSession } from '../../shared/db';
 import { FindRecord } from '../../shared/types';
 import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
-import { RockIdResult } from '../../ai/rockIdSchema';
+// import { RockIdResult } from '../../ai/rockIdSchema'; // Not used strictly anymore
 import { formatLocationSync } from '../../shared/format';
 import { useTheme } from '../../shared/ThemeContext';
 import { StatusIcon } from '../../../components/StatusIcon';
 import { getCategoryFromTags } from '../../../utils/CategoryMapper';
+import { RawJsonInspector } from '../../../components/RawJsonInspector';
 
 type Props = {
   visible: boolean;
@@ -26,8 +27,9 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
   const [favorite, setFavorite] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [aiResult, setAiResult] = useState<RockIdResult | null>(null);
+  const [aiResult, setAiResult] = useState<Record<string, any> | null>(null);
   const [localItem, setLocalItem] = useState<FindRecord | null>(item);
+  const [sessionName, setSessionName] = useState<string | null>(null);
 
   useEffect(() => {
     if (item && visible) {
@@ -38,6 +40,13 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
       setAiResult(item.aiData || null);
       setLocalItem(item);
       setAiLoading(false);
+      setSessionName(null);
+
+      if (item.sessionId) {
+        getSession(item.sessionId).then(s => {
+            if (s) setSessionName(s.name);
+        });
+      }
     }
   }, [item, visible]);
 
@@ -231,13 +240,15 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
 
                 {/* Metadata Row */}
                 <Text style={[styles.metadata, { color: colors.textSecondary }]}>
-                  {(localItem.location_text || formatLocationSync(localItem.lat, localItem.long))} • {formatDate(localItem.timestamp)}
+                  {(localItem.location_text || formatLocationSync(localItem.lat, localItem.long))}
+                  {sessionName ? ` • ${sessionName}` : ''} • {formatDate(localItem.timestamp)}
                 </Text>
               </View>
 
-              {/* Scientist View / Field Lab */}
-              {/* Curator View / Museum Plaque */}
+              {/* Dynamic Content Renderer */}
               <View style={[styles.labCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+
+                {/* Dynamic Header (Polished/Rough Status) */}
                 <View style={styles.labHeader}>
                    <StatusIcon
                       status={aiResult ? 'polished' : (aiLoading ? 'polishing' : 'rough')}
@@ -247,98 +258,46 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
                       theme={mode === 'high-contrast' ? 'beach' : 'journal'}
                    />
                    <View style={{justifyContent: 'center', flex: 1}}>
-                       <Text style={[styles.labTitle, { color: colors.text }]}>MUSEUM CURATION</Text>
-                       <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                           {aiResult ? 'CONTEXT & HISTORY' : (aiLoading ? 'RESEARCHING...' : 'WAITING')}
+                       <Text style={[styles.labTitle, { color: colors.text }]}>
+                          {aiResult ? 'ANALYSIS COMPLETE' : (aiLoading ? 'ANALYZING...' : 'READY TO SCAN')}
                        </Text>
                    </View>
                 </View>
 
-                {aiResult?.specimen_context && (
-                  <>
-                    <View style={{ gap: 8, marginVertical: 12 }}>
-                        {/* Row 1: Age (Full Width) */}
-                        <View style={[styles.factChip, {width: '100%', flexDirection: 'row', justifyContent: 'flex-start', paddingHorizontal: 16, backgroundColor: colors.background}]}>
-                            <Ionicons name="time-outline" size={24} color={colors.accent} />
-                            <View style={{flex: 1, alignItems: 'flex-start'}}>
-                                <Text style={[styles.factLabel, {color: colors.textSecondary}]}>Time Period</Text>
-                                <Text style={[styles.factValue, {color: colors.text, textAlign: 'left'}]} numberOfLines={2}>{aiResult.specimen_context.age}</Text>
+                {/* Dynamic Content Loop */}
+                {aiResult && Object.entries(aiResult).map(([key, value]) => {
+                    if (key === 'best_guess') return null; // Handled in header
+                    if (key.includes('deprecated')) return null;
+
+                    return (
+                      <View key={key} style={styles.labSection}>
+                         <View style={{flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8}}>
+                             <Ionicons name="information-circle-outline" size={20} color={colors.textSecondary} />
+                             <Text style={[styles.labSectionTitle, {marginBottom: 0}]}>{key.replace(/_/g, ' ').toUpperCase()}</Text>
+                         </View>
+
+                         {typeof value === 'object' && value !== null ? (
+                            <View style={{gap: 8}}>
+                                {Object.entries(value).map(([subKey, subValue]) => (
+                                    <View key={subKey} style={styles.factChip}>
+                                         <Text style={[styles.factLabel, {color: colors.textSecondary}]}>{subKey.replace(/_/g, ' ')}</Text>
+                                         <Text style={[styles.factValue, {color: colors.text}]}>
+                                            {/* Handle nested arrays (e.g. catalog tags) simply for now */}
+                                            {Array.isArray(subValue)
+                                                ? subValue.join(', ')
+                                                : (typeof subValue === 'string' ? subValue : JSON.stringify(subValue))}
+                                         </Text>
+                                    </View>
+                                ))}
                             </View>
-                        </View>
+                         ) : (
+                            <Text style={{color: colors.text}}>{String(value)}</Text>
+                         )}
+                      </View>
+                    );
+                })}
 
-                        {/* Row 2: Split */}
-                        <View style={{flexDirection: 'row', gap: 8}}>
-                             {/* Formation Chip */}
-                            <View style={[styles.factChip, {flex: 1, backgroundColor: colors.background}]}>
-                                <Ionicons name="layers-outline" size={24} color={colors.accent} />
-                                <Text style={[styles.factLabel, {color: colors.textSecondary}]}>Origin</Text>
-                                <Text style={[styles.factValue, {color: colors.text}]} numberOfLines={4}>{aiResult.specimen_context.formation}</Text>
-                            </View>
-                            {/* Type Chip */}
-                            <View style={[styles.factChip, {flex: 1, backgroundColor: colors.background}]}>
-                                <Ionicons name="leaf-outline" size={24} color={colors.accent} />
-                                <Text style={[styles.factLabel, {color: colors.textSecondary}]}>Type</Text>
-                                <Text style={[styles.factValue, {color: colors.text}]} numberOfLines={4}>{aiResult.specimen_context.type}</Text>
-                            </View>
-                        </View>
-                    </View>
-
-                    <View style={[styles.didYouKnowBox, {backgroundColor: colors.background + '80'}]}>
-                        <Text style={[styles.didYouKnowTitle, {color: colors.accent}]}>DID YOU KNOW?</Text>
-                        <Text style={[styles.didYouKnowText, {color: colors.text}]}>
-                           {aiResult.specimen_context.historical_fact}
-                        </Text>
-                    </View>
-                  </>
-                )}
-
-                {/* Ranger's Workshop / Lapidary Advice */}
-                {aiResult.lapidary_guidance && (
-                    <View style={styles.labSection}>
-                        <View style={{flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8}}>
-                             <Ionicons name="hammer-outline" size={20} color={colors.textSecondary} />
-                             <Text style={[styles.labSectionTitle, {marginBottom: 0}]}>RANGER&apos;S WORKSHOP</Text>
-                        </View>
-
-                        <View style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 12,
-                            backgroundColor: aiResult.lapidary_guidance.is_tumble_candidate ? '#f0fdf4' : '#fef2f2',
-                            padding: 12,
-                            borderRadius: 12,
-                            borderWidth: 1,
-                            borderColor: aiResult.lapidary_guidance.is_tumble_candidate ? '#bbf7d0' : '#fecaca'
-                        }}>
-                             <View style={{
-                                 width: 40, height: 40, borderRadius: 20,
-                                 backgroundColor: aiResult.lapidary_guidance.is_tumble_candidate ? '#16a34a' : '#dc2626',
-                                 alignItems: 'center', justifyContent: 'center'
-                             }}>
-                                 <Ionicons
-                                    name={aiResult.lapidary_guidance.is_tumble_candidate ? "checkmark" : "close"}
-                                    size={24} color="#fff"
-                                 />
-                             </View>
-                             <View style={{flex: 1}}>
-                                 <Text style={{fontSize: 14, fontWeight: '700', color: '#0f172a'}}>
-                                     {aiResult.lapidary_guidance.is_tumble_candidate ? "TUMBLE CANDIDATE" : "SKIP THE TUMBLER"}
-                                 </Text>
-                                 <Text style={{fontSize: 13, color: '#334155'}}>
-                                     {aiResult.lapidary_guidance.tumble_reason}
-                                 </Text>
-                             </View>
-                        </View>
-
-                        {aiResult.lapidary_guidance.special_care && (
-                             <Text style={{fontSize: 12, color: colors.textSecondary, fontStyle: 'italic', marginTop: 4, marginLeft: 4}}>
-                                 💡 Tip: {aiResult.lapidary_guidance.special_care}
-                             </Text>
-                        )}
-                    </View>
-                )}
-
-                {/* Notes Section Moved Here */}
+                {/* Notes Section */}
                 <View style={styles.notesSection}>
                   <Text style={[styles.labSectionTitle, { color: colors.textSecondary, marginTop: 12 }]}>YOUR FIELD NOTES</Text>
                   <TextInput
@@ -357,12 +316,15 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
                   />
                 </View>
 
-                 {/* Field Data (Pushed Down) */}
+                 {/* Field Data */}
                 <View style={[styles.labSection, {borderTopWidth: 0}]}>
                    <Text style={[styles.monoText, { color: colors.textSecondary, textAlign: 'center', opacity: 0.6 }]}>
                      ID: {localItem.id.slice(0,8)}... • GPS: {localItem.lat?.toFixed(4)}, {localItem.long?.toFixed(4)}
                    </Text>
                 </View>
+
+                {/* Raw Inspector for Dev/Discovery */}
+                <RawJsonInspector data={aiResult} />
 
               </View>
             </>
@@ -617,11 +579,11 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
   factChip: {
-    flex: 1,
+    width: '100%',
     padding: 12,
     borderRadius: 12,
-    // alignItems: 'center', // Removed for Left Alignment
-    gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    gap: 4,
   },
   factLabel: {
     fontSize: 11,
@@ -630,8 +592,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   factValue: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
     textAlign: 'left',
   },
   didYouKnowBox: {
