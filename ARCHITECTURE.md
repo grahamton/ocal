@@ -41,6 +41,16 @@ Ocal is a **React Native mobile app** for rock identification and cataloging, de
 
 ---
 
+## Desktop Access (Chromebook/Windows)
+
+- **Problem:** Users want to manage collections off-phone; current stack is mobile-only (SQLite + FileSystem per device).
+- **Short-term:** Ship the Android build to Chromebooks (Play Store) and address large-screen layout issues.
+- **Next:** Pilot Expo Web/PWA for Gallery + Detail browsing with web-safe fallbacks for native modules; disable camera if unavailable.
+- **Enabler:** Introduce cloud-backed sync (e.g., Firestore/Storage) so desktop/web views reflect mobile captures without manual file moves.
+- **Further reading:** `docs/desktop_access_research.md` for option analysis and action items.
+
+---
+
 ## Key Design Decisions
 
 ### 1. **Offline-First with SQLite**
