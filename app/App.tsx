@@ -25,6 +25,7 @@ import { BatchActionBar } from './src/shared/components/BatchActionBar';
 
 import { ThemeProvider } from './src/shared/ThemeContext';
 import { StatusIcon } from './components/StatusIcon';
+import { AnalyticsService } from './src/shared/AnalyticsService';
 
 export default function App() {
   const [dbReady, setDbReady] = useState(false);
@@ -36,6 +37,7 @@ export default function App() {
 
   useEffect(() => {
     setupDatabase().then(() => setDbReady(true));
+    AnalyticsService.logEvent('app_opened');
   }, []);
 
   const ready = dbReady && fontsLoaded;

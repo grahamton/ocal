@@ -4,6 +4,7 @@ import { identifyRock } from './identifyRock';
 import { updateFindMetadata, listFinds } from '../shared/db';
 import * as FileSystem from 'expo-file-system/legacy';
 import { logger } from '../shared/LogService';
+import { AnalyticsService } from '../shared/AnalyticsService';
 
 const db = SQLite.openDatabaseSync('ocal.db');
 
@@ -132,10 +133,16 @@ export class IdentifyQueueService {
        await db.runAsync('DELETE FROM find_queue WHERE id = ?', item.id);
 
        logger.add('ai', 'Queue item processed successfully', { findId: find.id });
+       AnalyticsService.logEvent('ai_identify_success', {
+         confidence: result.best_guess.confidence,
+         category: result.best_guess.category
+       });
 
     } catch (error) {
       const msg = (error as Error).message || String(error);
       logger.error(`Process Item Error: ${msg}`, error);
+
+      AnalyticsService.logEvent('ai_identify_failed', { error: msg });
 
       // Update retry count
       const nextAttempts = item.attempts + 1;

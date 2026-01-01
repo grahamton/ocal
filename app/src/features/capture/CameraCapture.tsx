@@ -10,6 +10,7 @@ import { FindRecord } from '../../shared/types';
 import { useSession } from '../../shared/SessionContext';
 import { logger } from '../../shared/LogService';
 import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
+import { AnalyticsService } from '../../shared/AnalyticsService';
 
 type Props = {
   onSaved: () => void;
@@ -153,6 +154,7 @@ export function CameraCapture({ onSaved }: Props) {
       setStatusMessage('Saved!');
       // Second confirmation vibration
       Vibration.vibrate(50);
+      AnalyticsService.logEvent('find_captured');
       onSaved();
     } catch (error) {
       logger.error('Capture error', error);

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect, useMe
 
 import { PALETTE_JOURNAL, PALETTE_HIGH_CONTRAST, ThemeMode } from './theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AnalyticsService } from './AnalyticsService';
 
 type ThemeColors = typeof PALETTE_JOURNAL;
 
@@ -30,7 +31,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setTheme = (newMode: ThemeMode) => {
     setModeState(newMode);
     AsyncStorage.setItem('ocal_theme_mode', newMode).catch(() => {});
-  };
+    AnalyticsService.logEvent('mode_toggled', { mode: newMode });
+};
 
   const toggleTheme = () => {
     setTheme(mode === 'journal' ? 'high-contrast' : 'journal');
