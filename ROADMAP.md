@@ -1,6 +1,6 @@
 # Ocal Roadmap
 
-Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-technical outdoor enthusiast. Current focus: Transitioning to Phase 3 (Rock Buddy AI) while polishing Phase 2 (Deck UI).
+Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-technical outdoor enthusiast. Current focus: Database foundation (Phase 4 - SQLite Migration) to support advanced features while testers validate Phase 3 release.
 
 ## Phase 1 - The Bucket (Capture Core)
 
@@ -40,28 +40,48 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Tests/QA: Polling logic for queue; Schema validation relaxed for robustness; Pull-to-Refresh added.
 - Risks: Latency offline (mitigated by queue); model accuracy (mitigated by "Scientist View" transparency).
 
-## Phase 4 - Poster
+## Phase 4 - SQLite Migration & Export **NEXT PRIORITY**
 
-- Scope: Grid generation and image export; follow “fossil plate” style from workflow analysis with monochrome/colour toggles and optional background clearing.
+- Scope: Migrate from AsyncStorage to SQLite for performance, querying, and data export
+- Rationale: **Foundation for all future features** - Poster and Session Enhancements require efficient filtering and geospatial queries. Migration is easier now while tester datasets are small. See `docs/roadmap_reprioritization_research.md` and `docs/database_enhancements_research.md` for analysis.
 - Milestones:
-  - Select finds by filter (“Last Month”, trip) + checkboxes.
-  - Layout engine for 3x3 or 4x4 with captions (editable).
-  - Export high-res PDF/JPG; share sheet.
-- Tests/QA: Layout determinism; export fidelity on varied devices; large image handling.
-- Risks: Memory on-device; rendering speed; print resolution correctness.
-- Status: **Research complete** - Prototypes in `feature/after-the-gallery` branch
+  - Install `react-native-sqlite-storage` and configure
+  - Design schema with indexes (finds, sessions, metadata)
+  - Build migration service (AsyncStorage → SQLite with validation)
+  - Implement schema versioning for future migrations
+  - Add data export utilities (CSV, JSON, SQLite file)
+  - Create "Data Manager" UI for backup/restore
+  - Test migration with real tester data
+- Tests/QA: Migration integrity tests; performance benchmarks; export/import validation; backward compatibility
+- Timeline: **2-3 weeks**
+- Risks: Data loss during migration (mitigated by backup); schema design mistakes (mitigated by versioning)
+- Status: **Research complete** - Ready to start when prioritized
 
-## Phase 5 - Session Enhancements (Backlog)
+## Phase 5 - Poster (Backlog)
+
+- Scope: Grid generation and image export; follow "fossil plate" style from workflow analysis with monochrome/colour toggles and optional background clearing.
+- Milestones:
+  - Select finds by filter ("Last Month", trip) + checkboxes _(efficient with SQLite)_
+  - Layout engine for 3x3 or 4x4 with captions (editable)
+  - Export high-res PDF/JPG; share sheet
+- Tests/QA: Layout determinism; export fidelity on varied devices; large image handling
+- Risks: Memory on-device; rendering speed; print resolution correctness
+- Status: **Research complete** - Prototypes in `feature/after-the-gallery` branch
+- Dependencies: **Benefits from Phase 4 (SQLite)** for efficient filtering
+
+## Phase 6 - Session Enhancements (Backlog)
 
 - Scope: Improve session visibility, AI context integration, and workflow
 - Milestones:
   - AI context enrichment (pass session location/time to Ranger Al)
-  - Enhanced session UI (filters, metadata display)
+  - Enhanced session UI (filters, metadata display) _(efficient with SQLite)_
+  - Geospatial queries (finds within radius) _(enabled by SQLite)_
   - Session-first workflow (optional future)
 - Status: **Research complete** - See `docs/session_improvements_research.md`
 - Risks: Requires testing AI accuracy improvements; full workflow overhaul depends on cloud sync
+- Dependencies: **Benefits from Phase 4 (SQLite)** for geospatial queries
 
-## Phase 6 - UI Tooltips & Feedback (Backlog)
+## Phase 7 - UI Tooltips & Feedback (Backlog)
 
 - Scope: Onboarding hints and in-app feedback mechanism
 - Milestones:
@@ -71,7 +91,7 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Status: **Research complete** - See `docs/ui_tooltips_feedback_research.md`
 - Risks: Tooltip design must respect "Silent Partner" philosophy; feedback requires email setup
 
-## Phase 7 - iOS Version (Backlog)
+## Phase 8 - iOS Version (Backlog)
 
 - Scope: Build and distribute iOS version for iPhone/iPad testing
 - Milestones:
@@ -82,26 +102,26 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Status: **Research complete** - See `docs/ios_version_research.md`
 - Risks: $99/year Apple Developer cost; potential iOS-specific bugs
 
-## Phase 8 - Database Enhancements (Backlog)
+## Phase 9 - Cloud Sync & Advanced Data Tools (Future)
 
-- Scope: Advanced data storage, cross-device sync, and user data control
+- Scope: Optional cloud sync and advanced data manipulation
 - Milestones:
-  - Phase 8.1: Migrate to SQLite with advanced querying and export (CSV/JSON)
-  - Phase 8.2: Optional Firebase sync for cross-device access
-  - Phase 8.3: Custom table builder and data manipulation tools
-  - Phase 8.4: Self-hosting option for privacy-focused users
+  - Phase 9.1: Optional Firebase sync for cross-device access
+  - Phase 9.2: Custom table builder and data manipulation tools
+  - Phase 9.3: Self-hosting option for privacy-focused users
 - Status: **Research complete** - See `docs/database_enhancements_research.md`
 - Risks: Sync conflicts; cloud costs; complexity of dual storage paths; user privacy expectations
+- Dependencies: **Requires Phase 4 (SQLite)** as foundation
 
 ## Future Considerations
 
 - **Cloud Sync**: Cross-device access and real-time sync (see `docs/desktop_access_research.md`)
 - **Desktop/Web Access**: Chromebook/Windows support via PWA or Android build
-- **Data Export**: CSV/JSON export for external analysis (prototyped in Phase 4 branch)
+- **Data Export**: CSV/JSON export for external analysis (will be included in Phase 4)
 
 ## Operating Rules
 
 - Local-first; no auth required. No social, no gamification, no first-launch signup.
 - Run `npm run lint` before finishing tasks; keep files <200 lines or propose refactor.
 - Do not add new npm packages without explicit permission.
-- When coding, reference phase explicitly (e.g., “Context: Phase 1. Implement camera button”).
+- When coding, reference phase explicitly (e.g., "Context: Phase 1. Implement camera button").
