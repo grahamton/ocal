@@ -28,6 +28,14 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-sqlite"]
+    "plugins": [
+      "expo-sqlite"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4db36787-ef0c-4c44-9b2f-e222f51aa18c"
+      }
+    },
+    "owner": "grahamtons-organization"
   }
 }

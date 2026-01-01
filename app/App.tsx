@@ -24,6 +24,7 @@ import { SelectionProvider, useSelection } from './src/shared/SelectionContext';
 import { BatchActionBar } from './src/shared/components/BatchActionBar';
 
 import { ThemeProvider } from './src/shared/ThemeContext';
+import { StatusIcon } from './components/StatusIcon';
 
 export default function App() {
   const [dbReady, setDbReady] = useState(false);
@@ -164,6 +165,7 @@ import { logger } from './src/shared/LogService';
       >
         <View style={styles.header}>
           <View style={styles.headerRow}>
+            <StatusIcon status="polished" category="mineral" size={32} theme={mode === 'high-contrast' ? 'beach' : 'journal'} />
             <Text style={[styles.title, { color: colors.text }]}>Ocal</Text>
             {activeSession ? (
               <TouchableOpacity onPress={() => setSessionModalVisible(true)} style={{ flexShrink: 1 }}>
@@ -181,11 +183,17 @@ import { logger } from './src/shared/LogService';
                 <Ionicons name="analytics-outline" size={24} color={colors.text} />
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={toggleTheme} style={{ padding: 8 }}>
-                <Ionicons name={mode === 'high-contrast' ? 'contrast' : 'contrast-outline'} size={24} color={colors.text} />
+            <TouchableOpacity
+              onPress={toggleTheme}
+              style={[
+                { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: colors.border },
+                mode === 'high-contrast' ? { backgroundColor: '#0f172a' } : { backgroundColor: '#fff' }
+              ]}
+            >
+                <Text style={{ fontSize: 12, fontWeight: '700', color: mode === 'high-contrast' ? '#fff' : '#0f766e' }}>
+                  {mode === 'high-contrast' ? '☀ BEACH' : '☕ JOURNAL'}
+                </Text>
             </TouchableOpacity>
-
-
           </View>
         </View>
 
@@ -205,7 +213,10 @@ import { logger } from './src/shared/LogService';
         {view === 'gallery' ? (
           <View style={styles.section}>
             <View style={styles.galleryHeader}>
-              <Text style={styles.sectionTitle}>Gallery</Text>
+              <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+                  <StatusIcon status="polished" category="fossil" size={24} theme={mode === 'high-contrast' ? 'beach' : 'journal'} />
+                  <Text style={styles.sectionTitle}>Gallery</Text>
+              </View>
             </View>
             <GalleryGrid refreshKey={refreshKey} onSelect={openDetail} />
           </View>

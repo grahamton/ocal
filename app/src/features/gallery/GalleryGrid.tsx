@@ -8,6 +8,8 @@ import { useTheme } from '../../shared/ThemeContext';
 import { useSelection } from '../../shared/SelectionContext';
 import { Ionicons } from '@expo/vector-icons';
 import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
+import { StatusIcon } from '../../../components/StatusIcon';
+import { getCategoryFromTags } from '../../../utils/CategoryMapper';
 
 const spacing = 12;
 
@@ -29,7 +31,7 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
   // Subtracting 48 instead of 32 to account for potential parent padding variation (safe buffer)
   const cardWidth = (width - 48 - spacing * (numColumns - 1)) / numColumns;
 
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const { isSelectionMode, selectedIds, toggleSelection, enterSelectionMode } = useSelection();
 
   useEffect(() => {
@@ -134,6 +136,13 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
           </View>
         )}
 
+        {/* Rough Status Overlay - Only if not analyzed */}
+        {!item.aiData && !isSelected && (
+           <View style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center'}}>
+               <StatusIcon status="rough" size={40} theme={mode === 'high-contrast' ? 'beach' : 'journal'} />
+           </View>
+        )}
+
         <View style={styles.cardBody}>
           {/* Title */}
           <Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1}>
@@ -185,6 +194,19 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
             <Text style={[styles.listTitle, { color: colors.text }]} numberOfLines={1}>
               {item.label || item.aiData?.best_guess?.label || 'Unknown'}
             </Text>
+            {/* Category Icon Mini */}
+            {item.aiData && (
+               <StatusIcon
+                  status="polished"
+                  size={24}
+                  category={getCategoryFromTags([item.aiData?.best_guess?.category || ''], item.aiData?.best_guess?.label)}
+                  theme={mode === 'high-contrast' ? 'beach' : 'journal'}
+                  style={{marginLeft: 8}}
+               />
+            )}
+            {!item.aiData && (
+               <StatusIcon status="rough" size={24} theme={mode === 'high-contrast' ? 'beach' : 'journal'} style={{marginLeft: 8}} />
+            )}
           </View>
 
           <Text style={[styles.listMeta, { color: colors.textSecondary }]} numberOfLines={1}>

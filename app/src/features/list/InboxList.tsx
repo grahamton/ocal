@@ -6,6 +6,7 @@ import { FindRecord } from '../../shared/types';
 import { useTheme } from '../../shared/ThemeContext';
 import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
 import { logger } from '../../shared/LogService';
+import { StatusIcon } from '../../../components/StatusIcon';
 
 type Props = {
   refreshKey: number;
@@ -161,7 +162,10 @@ export function InboxList({ refreshKey, onUpdated }: Props) {
       <View style={[styles.deckContainer, { borderColor: colors.border, borderWidth: mode === 'high-contrast' ? 2 : 1 }]}>
           <Image source={{ uri: currentItem.photoUri }} style={styles.cardImage} resizeMode="cover" />
           <View style={styles.cardOverlay}>
-             <Text style={styles.cardDate}>{new Date(currentItem.timestamp).toLocaleDateString()}</Text>
+             <View style={{flexDirection: 'row', alignItems: 'center', gap: 12}}>
+                <StatusIcon status="rough" size={32} theme={mode === 'high-contrast' ? 'beach' : 'journal'} />
+                <Text style={styles.cardDate}>{new Date(currentItem.timestamp).toLocaleDateString()}</Text>
+             </View>
           </View>
       </View>
 

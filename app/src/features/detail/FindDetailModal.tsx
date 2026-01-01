@@ -8,6 +8,8 @@ import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
 import { RockIdResult } from '../../ai/rockIdSchema';
 import { formatLocationSync } from '../../shared/format';
 import { useTheme } from '../../shared/ThemeContext';
+import { StatusIcon } from '../../../components/StatusIcon';
+import { getCategoryFromTags } from '../../../utils/CategoryMapper';
 
 type Props = {
   visible: boolean;
@@ -17,7 +19,7 @@ type Props = {
 };
 
 export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [label, setLabel] = useState('');
@@ -238,8 +240,19 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
               {/* Scientist View / Field Lab */}
               <View style={[styles.labCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.labHeader}>
-                   <Ionicons name="beaker" size={20} color={colors.accent} />
-                   <Text style={[styles.labTitle, { color: colors.text }]}>Field Lab Analysis</Text>
+                   <StatusIcon
+                      status={aiResult ? 'polished' : (aiLoading ? 'polishing' : 'rough')}
+                      category={getCategoryFromTags([aiResult?.best_guess?.category || ''], aiResult?.best_guess?.label)}
+                      confidence={aiResult?.best_guess?.confidence || 0}
+                      size={40}
+                      theme={mode === 'high-contrast' ? 'beach' : 'journal'}
+                   />
+                   <View style={{justifyContent: 'center'}}>
+                       <Text style={[styles.labTitle, { color: colors.text }]}>Field Lab Analysis</Text>
+                       <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                           {aiResult ? 'IDENTIFIED' : (aiLoading ? 'PROCESSING...' : 'WAITING')}
+                       </Text>
+                   </View>
                 </View>
 
                 {/* Confidence Meter */}
