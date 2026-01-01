@@ -49,6 +49,23 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
   - Export high-res PDF/JPG; share sheet.
 - Tests/QA: Layout determinism; export fidelity on varied devices; large image handling.
 - Risks: Memory on-device; rendering speed; print resolution correctness.
+- Status: **Research complete** - Prototypes in `feature/after-the-gallery` branch
+
+## Phase 5 - Session Enhancements (Backlog)
+
+- Scope: Improve session visibility, AI context integration, and workflow
+- Milestones:
+  - AI context enrichment (pass session location/time to Ranger Al)
+  - Enhanced session UI (filters, metadata display)
+  - Session-first workflow (optional future)
+- Status: **Research complete** - See `docs/session_improvements_research.md`
+- Risks: Requires testing AI accuracy improvements; full workflow overhaul depends on cloud sync
+
+## Future Considerations
+
+- **Cloud Sync**: Cross-device access and real-time sync (see `docs/desktop_access_research.md`)
+- **Desktop/Web Access**: Chromebook/Windows support via PWA or Android build
+- **Data Export**: CSV/JSON export for external analysis (prototyped in Phase 4 branch)
 
 ## Operating Rules
 
