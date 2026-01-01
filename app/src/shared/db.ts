@@ -1,12 +1,21 @@
-import * as SQLite from 'expo-sqlite';
-import { FindRecord, Session } from './types';
-import { RockIdResult } from '../ai/rockIdSchema';
+import * as SQLite from "expo-sqlite";
+import { FindRecord, Session } from "./types";
+import { RockIdResult } from "../ai/rockIdSchema";
 
-const db = SQLite.openDatabaseSync('ocal.db');
+const db = SQLite.openDatabaseSync("ocal.db");
 
 export async function setupDatabase() {
   // WAL improves reliability for concurrent reads/writes.
-  await db.execAsync('PRAGMA journal_mode = WAL;');
+  await db.execAsync("PRAGMA journal_mode = WAL;");
+  await db.execAsync("PRAGMA foreign_keys = ON;");
+
+  // Set initial schema version if not set
+  const versionInfo = await db.getAllAsync<{ user_version: number }>(
+    "PRAGMA user_version"
+  );
+  const currentVersion = versionInfo[0]?.user_version ?? 0;
+  console.log(`[DB] Current Schema Version: ${currentVersion}`);
+
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS finds (
       id TEXT PRIMARY KEY NOT NULL,
@@ -23,6 +32,9 @@ export async function setupDatabase() {
       favorite INTEGER DEFAULT 0,
       aiData TEXT
     );
+     CREATE INDEX IF NOT EXISTS idx_finds_timestamp ON finds(timestamp);
+     CREATE INDEX IF NOT EXISTS idx_finds_favorite ON finds(favorite);
+     CREATE INDEX IF NOT EXISTS idx_finds_sessionId ON finds(sessionId);
   `);
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS sessions (
@@ -34,6 +46,7 @@ export async function setupDatabase() {
       status TEXT NOT NULL,
       finds TEXT NOT NULL
     );
+    CREATE INDEX IF NOT EXISTS idx_sessions_startTime ON sessions(startTime);
   `);
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS find_queue (
@@ -47,19 +60,32 @@ export async function setupDatabase() {
     );
   `);
   await ensureColumns();
+
+  // Mark as version 1 after successful setup
+  if (currentVersion === 0) {
+    await db.execAsync("PRAGMA user_version = 1");
+  }
 }
 
 async function ensureColumns() {
-  const columns = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(finds);`);
+  const columns = await db.getAllAsync<{ name: string }>(
+    `PRAGMA table_info(finds);`
+  );
   const names = new Set(columns.map((c) => c.name));
   const migrations: Array<{ name: string; sql: string }> = [
-    { name: 'note', sql: 'ALTER TABLE finds ADD COLUMN note TEXT;' },
-    { name: 'category', sql: 'ALTER TABLE finds ADD COLUMN category TEXT;' },
-    { name: 'label', sql: 'ALTER TABLE finds ADD COLUMN label TEXT;' },
-    { name: 'status', sql: "ALTER TABLE finds ADD COLUMN status TEXT DEFAULT 'draft';" },
-    { name: 'sessionId', sql: 'ALTER TABLE finds ADD COLUMN sessionId TEXT;' },
-    { name: 'favorite', sql: 'ALTER TABLE finds ADD COLUMN favorite INTEGER DEFAULT 0;' },
-    { name: 'aiData', sql: 'ALTER TABLE finds ADD COLUMN aiData TEXT;' },
+    { name: "note", sql: "ALTER TABLE finds ADD COLUMN note TEXT;" },
+    { name: "category", sql: "ALTER TABLE finds ADD COLUMN category TEXT;" },
+    { name: "label", sql: "ALTER TABLE finds ADD COLUMN label TEXT;" },
+    {
+      name: "status",
+      sql: "ALTER TABLE finds ADD COLUMN status TEXT DEFAULT 'draft';",
+    },
+    { name: "sessionId", sql: "ALTER TABLE finds ADD COLUMN sessionId TEXT;" },
+    {
+      name: "favorite",
+      sql: "ALTER TABLE finds ADD COLUMN favorite INTEGER DEFAULT 0;",
+    },
+    { name: "aiData", sql: "ALTER TABLE finds ADD COLUMN aiData TEXT;" },
   ];
 
   for (const migration of migrations) {
@@ -72,10 +98,12 @@ async function ensureColumns() {
     }
   }
 
-  if (!names.has('status')) {
-    await db.execAsync(`UPDATE finds SET status = 'draft' WHERE status IS NULL;`);
+  if (!names.has("status")) {
+    await db.execAsync(
+      `UPDATE finds SET status = 'draft' WHERE status IS NULL;`
+    );
   }
-  if (!names.has('favorite')) {
+  if (!names.has("favorite")) {
     await db.execAsync(`UPDATE finds SET favorite = 0 WHERE favorite IS NULL;`);
   }
 }
@@ -103,7 +131,7 @@ type FindUpdate = {
   label?: string | null;
   note?: string | null;
   category?: string | null;
-  status?: 'draft' | 'cataloged';
+  status?: "draft" | "cataloged" | "archived";
   sessionId?: string | null;
   favorite?: boolean;
   synced?: boolean;
@@ -114,67 +142,74 @@ export async function updateFindMetadata(id: string, updates: FindUpdate) {
   const fields: string[] = [];
   const values: Array<string | number | null> = [];
 
-  if ('label' in updates) {
-    fields.push('label = ?');
+  if ("label" in updates) {
+    fields.push("label = ?");
     values.push(updates.label ?? null);
   }
-  if ('note' in updates) {
-    fields.push('note = ?');
+  if ("note" in updates) {
+    fields.push("note = ?");
     values.push(updates.note ?? null);
   }
-  if ('category' in updates) {
-    fields.push('category = ?');
+  if ("category" in updates) {
+    fields.push("category = ?");
     values.push(updates.category ?? null);
   }
-  if ('status' in updates) {
-    fields.push('status = ?');
-    values.push(updates.status ?? 'draft');
+  if ("status" in updates) {
+    fields.push("status = ?");
+    values.push(updates.status ?? "draft");
   }
-  if ('sessionId' in updates) {
-    fields.push('sessionId = ?');
+  if ("sessionId" in updates) {
+    fields.push("sessionId = ?");
     values.push(updates.sessionId ?? null);
   }
-  if ('favorite' in updates) {
-    fields.push('favorite = ?');
+  if ("favorite" in updates) {
+    fields.push("favorite = ?");
     values.push(updates.favorite ? 1 : 0);
   }
-  if ('synced' in updates) {
-    fields.push('synced = ?');
+  if ("synced" in updates) {
+    fields.push("synced = ?");
     values.push(updates.synced ? 1 : 0);
   }
-  if ('aiData' in updates) {
-    fields.push('aiData = ?');
+  if ("aiData" in updates) {
+    fields.push("aiData = ?");
     values.push(JSON.stringify(updates.aiData ?? null));
   }
 
   if (!fields.length) return;
 
-  await db.runAsync(`UPDATE finds SET ${fields.join(', ')} WHERE id = ?;`, ...values, id);
+  await db.runAsync(
+    `UPDATE finds SET ${fields.join(", ")} WHERE id = ?;`,
+    ...values,
+    id
+  );
 }
 
-export async function listFinds(options?: { sessionId?: string | null; status?: 'draft' | 'cataloged' | 'all' }): Promise<FindRecord[]> {
+export async function listFinds(options?: {
+  sessionId?: string | null;
+  status?: "draft" | "cataloged" | "archived" | "all";
+}): Promise<FindRecord[]> {
   const { sessionId, status } = options ?? {};
-  let query = 'SELECT * FROM finds';
+  let query = "SELECT * FROM finds";
   const params: Array<string | null> = [];
   const conditions: string[] = [];
 
   if (sessionId === null) {
-    conditions.push('sessionId IS NULL');
-  } else if (typeof sessionId === 'string') {
-    conditions.push('sessionId = ?');
+    conditions.push("sessionId IS NULL");
+  } else if (typeof sessionId === "string") {
+    conditions.push("sessionId = ?");
     params.push(sessionId);
   }
 
-  if (status && status !== 'all') {
-    conditions.push('status = ?');
+  if (status && status !== "all") {
+    conditions.push("status = ?");
     params.push(status);
   }
 
   if (conditions.length > 0) {
-    query += ' WHERE ' + conditions.join(' AND ');
+    query += " WHERE " + conditions.join(" AND ");
   }
 
-  query += ' ORDER BY datetime(timestamp) DESC;';
+  query += " ORDER BY datetime(timestamp) DESC;";
 
   const result = await db.getAllAsync<{
     id: string;
@@ -186,7 +221,7 @@ export async function listFinds(options?: { sessionId?: string | null; status?: 
     note: string | null;
     category: string | null;
     label: string | null;
-    status: 'draft' | 'cataloged' | null;
+    status: "draft" | "cataloged" | null;
     sessionId: string | null;
     favorite: number | null;
     aiData: string | null;
@@ -202,7 +237,7 @@ export async function listFinds(options?: { sessionId?: string | null; status?: 
     note: row.note,
     category: row.category,
     label: row.label,
-    status: (row.status as 'draft' | 'cataloged') ?? 'draft',
+    status: (row.status as "draft" | "cataloged" | "archived") ?? "draft",
     sessionId: row.sessionId ?? null,
     favorite: row.favorite === 1,
     aiData: row.aiData ? JSON.parse(row.aiData) : null,
@@ -220,11 +255,11 @@ export async function getFind(id: string): Promise<FindRecord | null> {
     note: string | null;
     category: string | null;
     label: string | null;
-    status: 'draft' | 'cataloged' | null;
+    status: "draft" | "cataloged" | null;
     sessionId: string | null;
     favorite: number | null;
     aiData: string | null;
-  }>('SELECT * FROM finds WHERE id = ? LIMIT 1', id);
+  }>("SELECT * FROM finds WHERE id = ? LIMIT 1", id);
   if (!rows[0]) return null;
   const row = rows[0];
   return {
@@ -237,7 +272,7 @@ export async function getFind(id: string): Promise<FindRecord | null> {
     note: row.note,
     category: row.category,
     label: row.label,
-    status: (row.status as 'draft' | 'cataloged') ?? 'draft',
+    status: (row.status as "draft" | "cataloged" | "archived") ?? "draft",
     sessionId: row.sessionId ?? null,
     favorite: row.favorite === 1,
     aiData: row.aiData ? JSON.parse(row.aiData) : null,
@@ -245,7 +280,10 @@ export async function getFind(id: string): Promise<FindRecord | null> {
 }
 
 export async function deleteFind(id: string) {
-  const rows = await db.getAllAsync<{ sessionId: string | null }>(`SELECT sessionId FROM finds WHERE id = ? LIMIT 1;`, id);
+  const rows = await db.getAllAsync<{ sessionId: string | null }>(
+    `SELECT sessionId FROM finds WHERE id = ? LIMIT 1;`,
+    id
+  );
   const row = rows[0];
   if (row?.sessionId) {
     await removeFindFromSession(row.sessionId, id, { skipFindUpdate: true });
@@ -255,10 +293,12 @@ export async function deleteFind(id: string) {
 
 export async function clearAllDataForDev() {
   if (!__DEV__) {
-    throw new Error('clearAllDataForDev is only available in development builds.');
+    throw new Error(
+      "clearAllDataForDev is only available in development builds."
+    );
   }
-  await db.execAsync('DELETE FROM finds;');
-  await db.execAsync('DELETE FROM sessions;');
+  await db.execAsync("DELETE FROM finds;");
+  await db.execAsync("DELETE FROM sessions;");
 }
 
 export async function createSession(session: Session) {
@@ -301,7 +341,7 @@ export async function listSessions(): Promise<Session[]> {
     startTime: number;
     endTime: number | null;
     locationName: string | null;
-    status: 'active' | 'complete';
+    status: "active" | "complete";
     finds: string | null;
   }>(`SELECT * FROM sessions ORDER BY startTime DESC;`);
 
@@ -315,7 +355,7 @@ export async function getSession(sessionId: string): Promise<Session | null> {
     startTime: number;
     endTime: number | null;
     locationName: string | null;
-    status: 'active' | 'complete';
+    status: "active" | "complete";
     finds: string | null;
   }>(`SELECT * FROM sessions WHERE id = ? LIMIT 1;`, sessionId);
   const row = rows[0];
@@ -326,14 +366,20 @@ export async function getSession(sessionId: string): Promise<Session | null> {
 export async function addFindToSession(sessionId: string, findId: string) {
   const session = await getSession(sessionId);
   if (!session) return null;
-  const nextFinds = session.finds.includes(findId) ? session.finds : [...session.finds, findId];
+  const nextFinds = session.finds.includes(findId)
+    ? session.finds
+    : [...session.finds, findId];
   const updated: Session = { ...session, finds: nextFinds };
   await updateSession(updated);
   await updateFindMetadata(findId, { sessionId });
   return updated;
 }
 
-export async function removeFindFromSession(sessionId: string, findId: string, options?: { skipFindUpdate?: boolean }) {
+export async function removeFindFromSession(
+  sessionId: string,
+  findId: string,
+  options?: { skipFindUpdate?: boolean }
+) {
   const session = await getSession(sessionId);
   if (!session) return null;
   const nextFinds = session.finds.filter((id) => id !== findId);
@@ -345,13 +391,17 @@ export async function removeFindFromSession(sessionId: string, findId: string, o
   return updated;
 }
 
-export async function endSession(sessionId: string, endTime: number, name?: string) {
+export async function endSession(
+  sessionId: string,
+  endTime: number,
+  name?: string
+) {
   const session = await getSession(sessionId);
   if (!session) return null;
   const updated: Session = {
     ...session,
     endTime,
-    status: 'complete',
+    status: "complete",
     name: name?.trim() ? name.trim() : session.name,
   };
   await updateSession(updated);
@@ -364,16 +414,19 @@ function mapSessionRow(row: {
   startTime: number;
   endTime: number | null;
   locationName: string | null;
-  status: 'active' | 'complete';
+  status: "active" | "complete";
   finds: string | null;
 }): Session {
   let parsedFinds: string[] = [];
   if (row.finds) {
     try {
       const maybe = JSON.parse(row.finds);
-      if (Array.isArray(maybe)) parsedFinds = maybe.filter((id): id is string => typeof id === 'string');
+      if (Array.isArray(maybe))
+        parsedFinds = maybe.filter(
+          (id): id is string => typeof id === "string"
+        );
     } catch (error) {
-      console.warn('Failed to parse session finds', error);
+      console.warn("Failed to parse session finds", error);
     }
   }
   return {

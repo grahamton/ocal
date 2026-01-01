@@ -40,7 +40,7 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Tests/QA: Polling logic for queue; Schema validation relaxed for robustness; Pull-to-Refresh added.
 - Risks: Latency offline (mitigated by queue); model accuracy (mitigated by "Scientist View" transparency).
 
-## Phase 4 - SQLite Migration & Export **NEXT PRIORITY**
+## Phase 4 - SQLite Migration & Export **Complete**
 
 - Scope: Migrate from AsyncStorage to SQLite for performance, querying, and data export
 - Rationale: **Foundation for all future features** - Poster and Session Enhancements require efficient filtering and geospatial queries. Migration is easier now while tester datasets are small. See `docs/roadmap_reprioritization_research.md` and `docs/database_enhancements_research.md` for analysis.
@@ -55,7 +55,7 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Tests/QA: Migration integrity tests; performance benchmarks; export/import validation; backward compatibility
 - Timeline: **2-3 weeks**
 - Risks: Data loss during migration (mitigated by backup); schema design mistakes (mitigated by versioning)
-- Status: **Research complete** - Ready to start when prioritized
+- Status: **Complete** (Jan 2026)
 
 ## Phase 5 - Poster (Backlog)
 

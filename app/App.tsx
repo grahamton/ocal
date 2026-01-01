@@ -26,6 +26,8 @@ import { BatchActionBar } from './src/shared/components/BatchActionBar';
 import { ThemeProvider } from './src/shared/ThemeContext';
 import { StatusIcon } from './components/StatusIcon';
 import { AnalyticsService } from './src/shared/AnalyticsService';
+// import { migrationService } from './src/shared/migration/MigrationService';
+// import { MigrationStatusModal } from './src/shared/migration/MigrationStatusModal';
 
 export default function App() {
   const [dbReady, setDbReady] = useState(false);
@@ -36,13 +38,16 @@ export default function App() {
   });
 
   useEffect(() => {
-    setupDatabase().then(() => setDbReady(true));
-    AnalyticsService.logEvent('app_opened');
+    (async () => {
+      await setupDatabase();
+      setDbReady(true);
+      AnalyticsService.logEvent('app_opened');
+    })();
   }, []);
 
-  const ready = dbReady && fontsLoaded;
+  const appIsReady = dbReady && fontsLoaded;
 
-  if (!ready) {
+  if (!appIsReady) {
     return (
       <View style={styles.loadingContainer}>
         <StatusBar barStyle="light-content" />
@@ -67,32 +72,21 @@ export default function App() {
 }
 
 import { SessionControlModal } from './src/shared/components/SessionControlModal';
-
 import { logger } from './src/shared/LogService';
+import { useTheme } from './src/shared/ThemeContext';
+import { SettingsModal } from './src/shared/components/SettingsModal';
 
-  import { useTheme } from './src/shared/ThemeContext';
-
-  function AppContent() {
+function AppContent() {
   const insets = useSafeAreaInsets();
   const { colors, toggleTheme, mode } = useTheme();
   // ... existing hooks
-
-  // Update header text styles to use colors.text
-
-  // Add Toggle Button
-  // <TouchableOpacity onPress={toggleTheme}>
-  //   <Ionicons name={mode === 'high-contrast' ? 'contrast' : 'contrast-outline'} ... />
-  // </TouchableOpacity>
-
-  // This is too complex for a blind replace without seeing the exact lines.
-  // I will read AppContent again to be precise.
-  // Aborting this specific replace to read file first.
 
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedFind, setSelectedFind] = useState<FindRecord | null>(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [sessionModalVisible, setSessionModalVisible] = useState(false);
   const [insightsVisible, setInsightsVisible] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
   // Navigation State
   const [view, setView] = useState<'capture' | 'inbox' | 'gallery'>('capture');
@@ -183,6 +177,10 @@ import { logger } from './src/shared/LogService';
 
             <TouchableOpacity onPress={() => setInsightsVisible(true)} style={{ padding: 8 }}>
                 <Ionicons name="analytics-outline" size={24} color={colors.text} />
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => setSettingsVisible(true)} style={{ padding: 8 }}>
+                <Ionicons name="settings-outline" size={24} color={colors.text} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -305,6 +303,11 @@ import { logger } from './src/shared/LogService';
         visible={sessionModalVisible && !!activeSession}
         onClose={() => setSessionModalVisible(false)}
         session={activeSession}
+      />
+
+      <SettingsModal
+        visible={settingsVisible}
+        onClose={() => setSettingsVisible(false)}
       />
 
 
