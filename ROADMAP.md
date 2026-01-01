@@ -61,6 +61,16 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Status: **Research complete** - See `docs/session_improvements_research.md`
 - Risks: Requires testing AI accuracy improvements; full workflow overhaul depends on cloud sync
 
+## Phase 6 - UI Tooltips & Feedback (Backlog)
+
+- Scope: Onboarding hints and in-app feedback mechanism
+- Milestones:
+  - In-app feedback form (using `expo-mail-composer`)
+  - First-launch tooltips for key features
+  - Optional help modal
+- Status: **Research complete** - See `docs/ui_tooltips_feedback_research.md`
+- Risks: Tooltip design must respect "Silent Partner" philosophy; feedback requires email setup
+
 ## Future Considerations
 
 - **Cloud Sync**: Cross-device access and real-time sync (see `docs/desktop_access_research.md`)
