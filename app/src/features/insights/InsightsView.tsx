@@ -150,7 +150,7 @@ export function InsightsView() {
   );
 }
 
-function StatItem({ label, value, icon, colors }: { label: string; value: string; icon: any; colors: any }) {
+function StatItem({ label, value, icon, colors }: { label: string; value: string; icon: keyof typeof Ionicons.glyphMap; colors: Record<string, string> }) {
   return (
     <View style={styles.statItem}>
       <Ionicons name={icon} size={24} color={colors.accent} />
@@ -160,7 +160,7 @@ function StatItem({ label, value, icon, colors }: { label: string; value: string
   );
 }
 
-function TimeBar({ label, count, percent, colors }: { label: string; count: number; percent: number; colors: any }) {
+function TimeBar({ label, count, percent, colors }: { label: string; count: number; percent: number; colors: Record<string, string> }) {
   return (
     <View style={styles.timeBar}>
       <Text style={[styles.timeLabel, { color: colors.text }]}>{label}</Text>

@@ -10,6 +10,7 @@ exports.RockIdSchema = {
       'best_guess',
       'alternatives',
       'specimen_context',
+      'lapidary_guidance',
       // 'region_fit',
       // 'followup_photos',
       // 'followup_questions',

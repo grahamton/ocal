@@ -10,6 +10,7 @@ export const RockIdSchema = {
       'best_guess',
       'alternatives',
       'specimen_context',
+      'lapidary_guidance',
       'region_fit',
       'followup_photos',
       'followup_questions',
@@ -123,7 +124,7 @@ export interface RockIdResponse {
     type: string;
     historical_fact: string;
   };
-  lapidary_guidance?: {
+  lapidary_guidance: {
     is_tumble_candidate: boolean;
     tumble_reason: string;
     special_care?: string;
