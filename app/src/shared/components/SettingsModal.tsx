@@ -25,6 +25,11 @@ export function SettingsModal({ visible, onClose }: { visible: boolean; onClose:
             <ThemeToggle />
         </View>
 
+        <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>AI Configuration</Text>
+            <RangerModeToggle />
+        </View>
+
         <DataManager />
       </View>
     </Modal>
@@ -101,6 +106,59 @@ function ThemeToggle() {
             </View>
             <Ionicons
                 name={isHighContrast ? "radio-button-on" : "radio-button-off"}
+                size={24}
+                color={colors.accent}
+            />
+        </TouchableOpacity>
+    );
+}
+
+import { RangerSettings } from '../../ai/RangerSettings';
+import { RangerMode } from '../../ai/RangerConfig';
+import { useState, useEffect } from 'react';
+
+function RangerModeToggle() {
+    const { colors } = useTheme();
+    const [mode, setMode] = useState<RangerMode>('explore');
+
+    useEffect(() => {
+        RangerSettings.getMode().then(setMode);
+    }, []);
+
+    const toggle = async () => {
+        const next = mode === 'explore' ? 'ship' : 'explore';
+        setMode(next);
+        await RangerSettings.setMode(next);
+    };
+
+    const isExplore = mode === 'explore';
+
+    return (
+        <TouchableOpacity
+            onPress={toggle}
+            style={[
+                styles.toggleBtn,
+                {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border
+                }
+            ]}
+        >
+            <Ionicons
+                name={isExplore ? "compass" : "rocket"}
+                size={24}
+                color={isExplore ? "#10b981" : "#f43f5e"}
+            />
+            <View style={{flex: 1}}>
+                <Text style={{fontWeight: '700', color: colors.text, fontSize: 16}}>
+                    {isExplore ? 'Explore Mode (Dev)' : 'Ship Mode (Strict)'}
+                </Text>
+                <Text style={{color: colors.textSecondary, fontSize: 13}}>
+                    {isExplore ? 'Structured brainstorming & discovery' : 'Strict schema for production'}
+                </Text>
+            </View>
+            <Ionicons
+                name={isExplore ? "radio-button-on" : "radio-button-off"}
                 size={24}
                 color={colors.accent}
             />

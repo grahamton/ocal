@@ -6,6 +6,7 @@ import { updateFindMetadata, listFinds } from '../shared/db';
 import * as FileSystem from 'expo-file-system/legacy';
 import { logger } from '../shared/LogService';
 import { AnalyticsService } from '../shared/AnalyticsService';
+import { RangerSettings } from './RangerSettings';
 
 const db = SQLite.openDatabaseSync('ocal.db');
 
@@ -131,13 +132,16 @@ export class IdentifyQueueService {
        }
 
        // 3. Call AI
+       const mode = await RangerSettings.getMode();
+
        const result = await identifyRock({
           provider: 'gemini', // OpenAI quota exceeded, using Gemini
           imageDataUrls: [dataUrl],
           locationHint: find.lat && find.long ? `${find.lat}, ${find.long}` : null,
           contextNotes: find.note || find.label || 'Field find',
           userGoal: 'quick_id',
-          sessionContext
+          sessionContext,
+          outputMode: mode
        });
 
        // 4. Save Result
