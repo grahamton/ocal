@@ -9,7 +9,7 @@ exports.RockIdSchema = {
     required: [
       'best_guess',
       'alternatives',
-      'observable_reasons',
+      'specimen_context',
       // 'region_fit',
       // 'followup_photos',
       // 'followup_questions',
@@ -48,11 +48,28 @@ exports.RockIdSchema = {
           },
         },
       },
-      observable_reasons: {
-          type: 'array',
-          description: 'List of visible physical traits used for ID (e.g. "conchoidal fracture", "translucent edges").',
-          maxItems: 8,
-          items: { type: 'string', maxLength: 140 }
+      specimen_context: {
+        type: 'object',
+        description: 'Geologic context tailored to location and age.',
+        additionalProperties: false,
+        required: ['age', 'formation', 'type', 'historical_fact'],
+        properties: {
+          age: { type: 'string', maxLength: 60, description: 'Geologic epoch/period (e.g. "Miocene (~23 MYA)").' },
+          formation: { type: 'string', maxLength: 60, description: 'Specific formation name (e.g. "Astoria Formation").' },
+          type: { type: 'string', maxLength: 60, description: 'Scientific classification (e.g. "Marine Bivalve").' },
+          historical_fact: { type: 'string', maxLength: 300, description: 'Fascinating fact about the era/environment.' }
+        }
+      },
+      lapidary_guidance: {
+        type: 'object',
+        description: 'Advice for polishing or tumbling this specimen.',
+        additionalProperties: false,
+        required: ['is_tumble_candidate', 'tumble_reason'],
+        properties: {
+          is_tumble_candidate: { type: 'boolean', description: 'True if hard enough (Mohs > 6) and non-porous. False if soft/crumbly.' },
+          tumble_reason: { type: 'string', maxLength: 165, description: 'Why it is or isn\'t a candidate (e.g. "Hardness 7, takes high polish").' },
+          special_care: { type: 'string', maxLength: 100, description: 'Optional tips (e.g. "Use plastic pellets for cushioning").' }
+        }
       },
       region_fit: {
         type: 'object',
@@ -88,7 +105,7 @@ exports.RockIdSchema = {
           pattern: { type: 'array', maxItems: 6, items: { type: 'string', maxLength: 40 }, description: 'Visual patterns (e.g. "banded", "spotted").' },
           luster: { type: 'array', maxItems: 4, items: { type: 'string', maxLength: 30 }, description: 'Surface reflectiveness (e.g. "waxy", "vitreous").' },
           translucency: { type: 'array', maxItems: 1, items: { type: 'string', enum: ['opaque', 'translucent', 'transparent', 'unknown'] }, description: 'Light transmission (single value).' },
-          grain_size: { type: 'array', maxItems: 1, items: { type: 'string', enum: ['fine', 'medium', 'coarse', 'mixed', 'unknown'] }, description: 'Texture granularity (single value).' },
+          grain_size: { type: 'array', maxItems: 2, items: { type: 'string', enum: ['fine', 'medium', 'coarse', 'mixed', 'unknown'] }, description: 'Texture granularity (single value).' },
           features: { type: 'array', maxItems: 10, items: { type: 'string', maxLength: 40 }, description: 'Other notable features.' },
           condition: { type: 'array', maxItems: 1, items: { type: 'string', enum: ['fresh', 'weathered', 'polished', 'broken', 'unknown'] }, description: 'Physical state (single value).' },
         },

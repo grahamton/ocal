@@ -151,7 +151,7 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
 
           {/* Location */}
           <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
-            {formatLocationSync(item.lat, item.long)}
+            {item.location_text || formatLocationSync(item.lat, item.long)}
           </Text>
 
           {/* Session/Date */}
@@ -210,7 +210,7 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
           </View>
 
           <Text style={[styles.listMeta, { color: colors.textSecondary }]} numberOfLines={1}>
-            {formatLocationSync(item.lat, item.long)} • {formatDate(item.timestamp)}
+            {(item.location_text || formatLocationSync(item.lat, item.long))} • {formatDate(item.timestamp)}
           </Text>
         </View>
 

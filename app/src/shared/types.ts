@@ -4,6 +4,7 @@ export type FindRecord = {
   photoUri: string;
   lat: number | null;
   long: number | null;
+  location_text?: string | null;
   timestamp: string;
   synced: boolean;
   note: string | null;

@@ -9,7 +9,7 @@ export const RockIdSchema = {
     required: [
       'best_guess',
       'alternatives',
-      'observable_reasons',
+      'specimen_context',
       'region_fit',
       'followup_photos',
       'followup_questions',
@@ -48,11 +48,17 @@ export const RockIdSchema = {
           },
         },
       },
-      observable_reasons: {
-          type: 'array',
-          description: 'List of visible physical traits used for ID (e.g. "conchoidal fracture", "translucent edges").',
-          maxItems: 8,
-          items: { type: 'string', maxLength: 140 }
+      specimen_context: {
+        type: 'object',
+        description: 'Geologic and historical context inferred from the identification and location.',
+        additionalProperties: false,
+        required: ['age', 'formation', 'type', 'historical_fact'],
+        properties: {
+          age: { type: 'string', maxLength: 60, description: 'Geologic time period (e.g. "Miocene (~23 MYA)").' },
+          formation: { type: 'string', maxLength: 60, description: 'Likely geologic formation (e.g. "Astoria Formation").' },
+          type: { type: 'string', maxLength: 60, description: 'Scientific classification (e.g. "Marine Bivalve").' },
+          historical_fact: { type: 'string', maxLength: 300, description: 'A fascinating "Did You Know?" fact about this specimen in its ancient environment.' }
+        }
       },
       region_fit: {
         type: 'object',
@@ -88,7 +94,7 @@ export const RockIdSchema = {
           pattern: { type: 'array', maxItems: 6, items: { type: 'string', maxLength: 40 }, description: 'Visual patterns (e.g. "banded", "spotted").' },
           luster: { type: 'array', maxItems: 4, items: { type: 'string', maxLength: 30 }, description: 'Surface reflectiveness (e.g. "waxy", "vitreous").' },
           translucency: { type: 'array', maxItems: 1, items: { type: 'string', enum: ['opaque', 'translucent', 'transparent', 'unknown'] }, description: 'Light transmission (single value).' },
-          grain_size: { type: 'array', maxItems: 1, items: { type: 'string', enum: ['fine', 'medium', 'coarse', 'mixed', 'unknown'] }, description: 'Texture granularity (single value).' },
+          grain_size: { type: 'array', maxItems: 2, items: { type: 'string', enum: ['fine', 'medium', 'coarse', 'mixed', 'unknown'] }, description: 'Texture granularity (single value).' },
           features: { type: 'array', maxItems: 10, items: { type: 'string', maxLength: 40 }, description: 'Other notable features.' },
           condition: { type: 'array', maxItems: 1, items: { type: 'string', enum: ['fresh', 'weathered', 'polished', 'broken', 'unknown'] }, description: 'Physical state (single value).' },
         },
@@ -111,7 +117,17 @@ export interface RockIdResponse {
     label: string;
     confidence: number;
   }[];
-  observable_reasons: string[];
+  specimen_context: {
+    age: string;
+    formation: string;
+    type: string;
+    historical_fact: string;
+  };
+  lapidary_guidance?: {
+    is_tumble_candidate: boolean;
+    tumble_reason: string;
+    special_care?: string;
+  };
   region_fit: {
     location_hint: string | null;
     fit: 'high' | 'medium' | 'low' | 'unknown';

@@ -27,6 +27,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<RockIdResult | null>(null);
+  const [localItem, setLocalItem] = useState<FindRecord | null>(item);
 
   useEffect(() => {
     if (item && visible) {
@@ -35,6 +36,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
       setFavorite(item.favorite);
       setAiError(null);
       setAiResult(item.aiData || null);
+      setLocalItem(item);
       setAiLoading(false);
     }
   }, [item, visible]);
@@ -56,6 +58,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
         const fresh = await getFind(item.id);
         if (fresh && fresh.aiData && mounted) {
           setAiResult(fresh.aiData);
+          setLocalItem(fresh);
           setAiLoading(false);
         }
       } else if (qItem && qItem.status === 'failed') {
@@ -67,6 +70,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
         const fresh = await getFind(item.id);
         if (fresh && fresh.aiData) {
           setAiResult(fresh.aiData);
+          setLocalItem(fresh);
         }
         setAiLoading(false);
       }
@@ -138,7 +142,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
     setAiError(null);
     try {
       await IdentifyQueueService.addToQueue(item.id);
-    } catch (e) {
+    } catch (_e) {
       setAiError('Could not start analysis.');
       setAiLoading(false);
     }
@@ -151,13 +155,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
     });
   };
 
-  const getConfidenceLabel = (conf: number) : { label: string, color: string } => {
-    if (conf >= 0.9) return { label: 'High Confidence', color: '#15803d' }; // emerald-700
-    if (conf >= 0.7) return { label: 'Likely Match', color: '#d97706' }; // amber-600
-    return { label: 'Uncertain', color: '#b91c1c' }; // red-700
-  };
-
-  if (!item) return null;
+  if (!localItem) return null;
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -170,7 +168,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
 
         {/* Hero Image */}
         <View style={styles.heroContainer}>
-          <Image source={{ uri: item.photoUri }} style={styles.heroImage} resizeMode="cover" />
+          <Image source={{ uri: localItem.photoUri }} style={styles.heroImage} resizeMode="cover" />
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.1)' }]} pointerEvents="none" />
         </View>
 
@@ -233,11 +231,12 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
 
                 {/* Metadata Row */}
                 <Text style={[styles.metadata, { color: colors.textSecondary }]}>
-                  {formatLocationSync(item.lat, item.long)} • {formatDate(item.timestamp)}
+                  {(localItem.location_text || formatLocationSync(localItem.lat, localItem.long))} • {formatDate(localItem.timestamp)}
                 </Text>
               </View>
 
               {/* Scientist View / Field Lab */}
+              {/* Curator View / Museum Plaque */}
               <View style={[styles.labCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.labHeader}>
                    <StatusIcon
@@ -247,94 +246,127 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
                       size={40}
                       theme={mode === 'high-contrast' ? 'beach' : 'journal'}
                    />
-                   <View style={{justifyContent: 'center'}}>
-                       <Text style={[styles.labTitle, { color: colors.text }]}>Field Lab Analysis</Text>
+                   <View style={{justifyContent: 'center', flex: 1}}>
+                       <Text style={[styles.labTitle, { color: colors.text }]}>MUSEUM CURATION</Text>
                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                           {aiResult ? 'IDENTIFIED' : (aiLoading ? 'PROCESSING...' : 'WAITING')}
+                           {aiResult ? 'CONTEXT & HISTORY' : (aiLoading ? 'RESEARCHING...' : 'WAITING')}
                        </Text>
                    </View>
                 </View>
 
-                {/* Confidence Meter */}
-                {aiResult.best_guess?.confidence && (
-                  <View style={styles.meterContainer}>
-                    <View style={styles.meterRow}>
-                      <Text style={[styles.meterLabel, { color: colors.textSecondary }]}>
-                        Confidence: <Text style={{color: getConfidenceLabel(aiResult.best_guess.confidence).color}}>{getConfidenceLabel(aiResult.best_guess.confidence).label}</Text>
-                      </Text>
-                      <Text style={[styles.meterValue, { color: colors.accent }]}>
-                        {Math.round(aiResult.best_guess.confidence * 100)}%
-                      </Text>
+                {aiResult?.specimen_context && (
+                  <>
+                    <View style={{ gap: 8, marginVertical: 12 }}>
+                        {/* Row 1: Age (Full Width) */}
+                        <View style={[styles.factChip, {width: '100%', flexDirection: 'row', justifyContent: 'flex-start', paddingHorizontal: 16, backgroundColor: colors.background}]}>
+                            <Ionicons name="time-outline" size={24} color={colors.accent} />
+                            <View style={{flex: 1, alignItems: 'flex-start'}}>
+                                <Text style={[styles.factLabel, {color: colors.textSecondary}]}>Time Period</Text>
+                                <Text style={[styles.factValue, {color: colors.text, textAlign: 'left'}]} numberOfLines={2}>{aiResult.specimen_context.age}</Text>
+                            </View>
+                        </View>
+
+                        {/* Row 2: Split */}
+                        <View style={{flexDirection: 'row', gap: 8}}>
+                             {/* Formation Chip */}
+                            <View style={[styles.factChip, {flex: 1, backgroundColor: colors.background}]}>
+                                <Ionicons name="layers-outline" size={24} color={colors.accent} />
+                                <Text style={[styles.factLabel, {color: colors.textSecondary}]}>Origin</Text>
+                                <Text style={[styles.factValue, {color: colors.text}]} numberOfLines={4}>{aiResult.specimen_context.formation}</Text>
+                            </View>
+                            {/* Type Chip */}
+                            <View style={[styles.factChip, {flex: 1, backgroundColor: colors.background}]}>
+                                <Ionicons name="leaf-outline" size={24} color={colors.accent} />
+                                <Text style={[styles.factLabel, {color: colors.textSecondary}]}>Type</Text>
+                                <Text style={[styles.factValue, {color: colors.text}]} numberOfLines={4}>{aiResult.specimen_context.type}</Text>
+                            </View>
+                        </View>
                     </View>
-                    <View style={[styles.meterTrack, { backgroundColor: colors.border }]}>
-                      <View
-                        style={[styles.meterFill, {
-                          width: `${aiResult.best_guess.confidence * 100}%`,
-                          backgroundColor: getConfidenceLabel(aiResult.best_guess.confidence).color
-                        }]}
-                      />
+
+                    <View style={[styles.didYouKnowBox, {backgroundColor: colors.background + '80'}]}>
+                        <Text style={[styles.didYouKnowTitle, {color: colors.accent}]}>DID YOU KNOW?</Text>
+                        <Text style={[styles.didYouKnowText, {color: colors.text}]}>
+                           {aiResult.specimen_context.historical_fact}
+                        </Text>
                     </View>
-                  </View>
+                  </>
                 )}
 
-                {/* Visual Cues */}
-                {aiResult.observable_reasons && aiResult.observable_reasons.length > 0 && (
-                  <View style={styles.labSection}>
-                    <Text style={[styles.labSectionTitle, { color: colors.textSecondary }]}>OBSERVABLE EVIDENCE</Text>
-                    {aiResult.observable_reasons.map((reason, i) => (
-                      <View key={i} style={styles.evidenceItem}>
-                        <Ionicons name="eye-outline" size={14} color={colors.textSecondary} style={{marginTop: 2}} />
-                        <Text style={[styles.evidenceText, { color: colors.text }]}>{reason}</Text>
-                      </View>
-                    ))}
-                  </View>
+                {/* Ranger's Workshop / Lapidary Advice */}
+                {aiResult.lapidary_guidance && (
+                    <View style={styles.labSection}>
+                        <View style={{flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8}}>
+                             <Ionicons name="hammer-outline" size={20} color={colors.textSecondary} />
+                             <Text style={[styles.labSectionTitle, {marginBottom: 0}]}>RANGER&apos;S WORKSHOP</Text>
+                        </View>
+
+                        <View style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 12,
+                            backgroundColor: aiResult.lapidary_guidance.is_tumble_candidate ? '#f0fdf4' : '#fef2f2',
+                            padding: 12,
+                            borderRadius: 12,
+                            borderWidth: 1,
+                            borderColor: aiResult.lapidary_guidance.is_tumble_candidate ? '#bbf7d0' : '#fecaca'
+                        }}>
+                             <View style={{
+                                 width: 40, height: 40, borderRadius: 20,
+                                 backgroundColor: aiResult.lapidary_guidance.is_tumble_candidate ? '#16a34a' : '#dc2626',
+                                 alignItems: 'center', justifyContent: 'center'
+                             }}>
+                                 <Ionicons
+                                    name={aiResult.lapidary_guidance.is_tumble_candidate ? "checkmark" : "close"}
+                                    size={24} color="#fff"
+                                 />
+                             </View>
+                             <View style={{flex: 1}}>
+                                 <Text style={{fontSize: 14, fontWeight: '700', color: '#0f172a'}}>
+                                     {aiResult.lapidary_guidance.is_tumble_candidate ? "TUMBLE CANDIDATE" : "SKIP THE TUMBLER"}
+                                 </Text>
+                                 <Text style={{fontSize: 13, color: '#334155'}}>
+                                     {aiResult.lapidary_guidance.tumble_reason}
+                                 </Text>
+                             </View>
+                        </View>
+
+                        {aiResult.lapidary_guidance.special_care && (
+                             <Text style={{fontSize: 12, color: colors.textSecondary, fontStyle: 'italic', marginTop: 4, marginLeft: 4}}>
+                                 💡 Tip: {aiResult.lapidary_guidance.special_care}
+                             </Text>
+                        )}
+                    </View>
                 )}
 
-                {/* Alternatives */}
-                {aiResult.alternatives && aiResult.alternatives.length > 0 && (
-                  <View style={styles.labSection}>
-                    <Text style={[styles.labSectionTitle, { color: colors.textSecondary }]}>ALTERNATIVES</Text>
-                    {aiResult.alternatives.slice(0, 3).map((alt, i) => (
-                      <View key={i} style={styles.altRow}>
-                        <Text style={[styles.altName, { color: colors.text }]}>{alt.label}</Text>
-                        <Text style={[styles.altProb, { color: colors.textSecondary }]}>{Math.round(alt.confidence * 100)}%</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
+                {/* Notes Section Moved Here */}
+                <View style={styles.notesSection}>
+                  <Text style={[styles.labSectionTitle, { color: colors.textSecondary, marginTop: 12 }]}>YOUR FIELD NOTES</Text>
+                  <TextInput
+                    value={note}
+                    onChangeText={setNote}
+                    style={[styles.notesInput, {
+                      backgroundColor: colors.background,
+                      borderColor: colors.border,
+                      color: colors.text,
+                      minHeight: 80
+                    }]}
+                    placeholder="Add your story about this find..."
+                    placeholderTextColor={colors.textSecondary}
+                    multiline
+                    textAlignVertical="top"
+                  />
+                </View>
 
-                {/* Raw Field Data */}
-                <View style={styles.labSection}>
-                   <Text style={[styles.labSectionTitle, { color: colors.textSecondary }]}>FIELD DATA</Text>
-                   <Text style={[styles.monoText, { color: colors.textSecondary }]}>ID: {item.id}</Text>
-                   <Text style={[styles.monoText, { color: colors.textSecondary }]}>
-                     GPS: {item.lat?.toFixed(6)}, {item.long?.toFixed(6)}
+                 {/* Field Data (Pushed Down) */}
+                <View style={[styles.labSection, {borderTopWidth: 0}]}>
+                   <Text style={[styles.monoText, { color: colors.textSecondary, textAlign: 'center', opacity: 0.6 }]}>
+                     ID: {localItem.id.slice(0,8)}... • GPS: {localItem.lat?.toFixed(4)}, {localItem.long?.toFixed(4)}
                    </Text>
                 </View>
+
               </View>
             </>
           )}
-
-          {/* Notes Field */}
-
-          <View style={styles.notesSection}>
-            <Text style={[styles.metadata, { color: colors.text }]}>Your Notes</Text>
-            <TextInput
-              value={note}
-              onChangeText={setNote}
-              style={[styles.notesInput, {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                color: colors.text
-              }]}
-              placeholder="Add your story about this find..."
-              placeholderTextColor={colors.textSecondary}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-          </View>
-
           {/* Bottom padding for sticky footer */}
           <View style={{ height: 80 }} />
         </ScrollView>
@@ -578,5 +610,46 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     // Legacy mapping if needed, but handled by iconButton now
-  }
+  },
+  factGrid: {
+    flexDirection: 'row',
+    gap: 8,
+    marginVertical: 12,
+  },
+  factChip: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 12,
+    // alignItems: 'center', // Removed for Left Alignment
+    gap: 6,
+  },
+  factLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  factValue: {
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'left',
+  },
+  didYouKnowBox: {
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 8,
+    gap: 6,
+  },
+  didYouKnowTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  didYouKnowText: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '500',
+  },
 });
