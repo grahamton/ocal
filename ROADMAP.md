@@ -116,6 +116,17 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Risks: Sync conflicts; cloud costs; complexity of dual storage paths; user privacy expectations
 - Dependencies: **Requires Phase 4 (SQLite)** as foundation
 
+## Phase 10 - Find Pattern Memory (Backlog)
+
+- Scope: Learn patterns from past finds (beach, weather, tides) to suggest "what to watch for today".
+- Milestones:
+  - [ ] Schema update: Add weather/tide tags to `sessions`.
+  - [ ] Patterns: Build local correlation engine for finds vs. conditions.
+  - [ ] Insights: Add "Watch For" cards to session dashboard.
+- Status: **Research Spike** - See `docs/find-pattern-memory_research.md`
+- Risks: Pattern accuracy depends on data quality (manual tags may be inconsistent).
+- Dependencies: **Benefits from Phase 4 (SQLite)** for querying find history.
+
 ## Future Considerations
 
 - **Cloud Sync**: Cross-device access and real-time sync (see `docs/desktop_access_research.md`)
