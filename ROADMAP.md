@@ -81,17 +81,7 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Risks: Requires testing AI accuracy improvements; full workflow overhaul depends on cloud sync
 - Dependencies: **Benefits from Phase 4 (SQLite)** for geospatial queries
 
-## Phase 7 - UI Tooltips & Feedback (Backlog)
-
-- Scope: Onboarding hints and in-app feedback mechanism
-- Milestones:
-  - In-app feedback form (using `expo-mail-composer`)
-  - First-launch tooltips for key features
-  - Optional help modal
-- Status: **Research complete** - See `docs/ui_tooltips_feedback_research.md`
-- Risks: Tooltip design must respect "Silent Partner" philosophy; feedback requires email setup
-
-## Phase 8 - iOS Version (Backlog)
+## Phase 7 - iOS Version (Backlog)
 
 - Scope: Build and distribute iOS version for iPhone/iPad testing
 - Milestones:
@@ -101,6 +91,19 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
   - Distribute via TestFlight
 - Status: **Research complete** - See `docs/ios_version_research.md`
 - Risks: $99/year Apple Developer cost; potential iOS-specific bugs
+- Priority: **Low** - Not a priority for current Android user base
+
+## Phase 8 - UI Tooltips & Feedback (Backlog)
+
+- Scope: Onboarding hints and in-app feedback mechanism
+- Rationale: **Deferred for user feedback** - Better to identify real user confusion patterns from Phases 4-6 before adding tooltips. Respects "Silent Partner" philosophy by avoiding premature UI chrome.
+- Milestones:
+  - In-app feedback form (using `expo-mail-composer`)
+  - First-launch tooltips for key features (based on observed user pain points)
+  - Optional help modal
+- Status: **Research complete** - See `docs/ui_tooltips_feedback_research.md`
+- Risks: Tooltip design must respect "Silent Partner" philosophy; feedback requires email setup
+- Priority: **Polish** - Add after core features are validated by users
 
 ## Phase 9 - Cloud Sync & Advanced Data Tools (Future)
 
