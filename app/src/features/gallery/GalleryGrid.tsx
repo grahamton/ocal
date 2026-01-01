@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { DeviceEventEmitter, Image, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { listFinds } from '../../shared/db';
 import { formatLocationSync } from '../../shared/format';
@@ -7,7 +7,7 @@ import { FindRecord } from '../../shared/types';
 import { useTheme } from '../../shared/ThemeContext';
 import { useSelection } from '../../shared/SelectionContext';
 import { Ionicons } from '@expo/vector-icons';
-import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
+
 import { StatusIcon } from '../../../components/StatusIcon';
 import { getCategoryFromTags } from '../../../utils/CategoryMapper';
 
@@ -57,25 +57,20 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
     return allItems;
   }, [allItems, filter]);
 
-  const unprocessedCount = allItems.filter(item => !item.aiData).length;
+
 
   // Auto-refresh when AI processing completes
+  // Auto-refresh when AI processing completes
   useEffect(() => {
-    if (unprocessedCount === 0) return;
-    let mounted = true;
-    const pollInterval = setInterval(async () => {
-      if (!mounted) return;
-      const hasProcessing = await Promise.all(
-        allItems.filter(item => !item.aiData).slice(0, 5).map(item => IdentifyQueueService.getQueueStatus(item.id))
-      );
-      const anyCompleted = hasProcessing.some(q => q && q.status === "completed");
-      if (anyCompleted && mounted) {
+    const subscription = DeviceEventEmitter.addListener('AI_IDENTIFY_SUCCESS', async () => {
+        // Refresh data
         const rows = await listFinds();
-        if (mounted) setItems(rows);
-      }
-    }, 3000);
-    return () => { mounted = false; clearInterval(pollInterval); };
-  }, [allItems, unprocessedCount]);
+        setItems(rows);
+    });
+    return () => {
+        subscription.remove();
+    };
+  }, []);
 
 
 

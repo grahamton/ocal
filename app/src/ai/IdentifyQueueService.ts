@@ -1,5 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import * as Network from 'expo-network';
+import { DeviceEventEmitter } from 'react-native';
 import { identifyRock } from './identifyRock';
 import { updateFindMetadata, listFinds } from '../shared/db';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -131,6 +132,9 @@ export class IdentifyQueueService {
 
        // 5. Cleanup Queue
        await db.runAsync('DELETE FROM find_queue WHERE id = ?', item.id);
+
+       // Notify UI
+       DeviceEventEmitter.emit('AI_IDENTIFY_SUCCESS', { findId: find.id });
 
        logger.add('ai', 'Queue item processed successfully', { findId: find.id });
        AnalyticsService.logEvent('ai_identify_success', {
