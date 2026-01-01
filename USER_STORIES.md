@@ -7,7 +7,7 @@
 **Demographics**:
 
 - Age: 65-70
-- Location: Duluth, Minnesota (Lake Superior shoreline)
+- Location: Oregon Coast
 - Activity: Daily beach walks (5+ miles)
 - Tech comfort: Basic smartphone users
 
@@ -271,7 +271,7 @@
 
 6. **Batch operations** - Analyze/delete multiple
 7. **Session tracking** - Group by walk
-8. **Location names** - "Duluth" not coordinates
+8. **Location names** - "Cannon Beach" not coordinates
 9. **Notes** - Add personal context
 10. **Favorites** - Mark special finds
 
@@ -290,7 +290,7 @@
 > "I love that I can just take a picture and keep walking. I don't have to stop and type anything."
 > — Carol, on capture flow
 
-> "The AI is surprisingly good! It identified my Lake Superior agate correctly."
+> "The AI is surprisingly good! It identified my Oregon agate correctly."
 > — Jim, on AI accuracy
 
 > "The text is big enough that I can actually read it without my glasses."

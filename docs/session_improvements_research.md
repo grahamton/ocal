@@ -55,7 +55,7 @@
 **Changes**:
 
 - Modify `rockIdPrompt.ts` to include:
-  - Session location name (e.g., "Brighton Beach, Duluth")
+  - Session location name (e.g., "Cannon Beach, Oregon")
   - Time of day (morning/afternoon/evening)
   - Session notes (if user adds context like "near pier")
 - Update `identifyRock` function to accept session metadata
