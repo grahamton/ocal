@@ -1,52 +1,55 @@
-# AGENTS — Ocal (Oregon Coast Agate Log)
+# Ocal: Agent Guidance (v1.0 Beta)
 
-Guidance for AI agents and humans working on Ocal. Primary user is a non-technical outdoor enthusiast in “Beach Mode.” Philosophy: tools, not toys. Keep the app modular (anti-monolith).
+**Core Philosophy: "The Silent Partner"**
+Ocal is a tool for senior beachcombers. It is high-contrast, offline-first, and respectful of the user's time. We are NOT building a social network or a gamified toy. We are building a field geologist's digital notebook.
 
-## UX Guidelines (Beach Mode)
+## 1. The User (Persona)
 
-- Touch targets: minimum 48px; prefer 64px for primary actions (Camera, Save).
-- High contrast: black on white; avoid subtle greys for text.
-- Offline first: Capture and Save must work without network; sync silently later.
-- Error messages: friendly, non-technical (e.g., “Couldn't save rock” vs “Error 500”).
-- One-hand bias: keep core actions in the thumb zone; keep flows under 5 seconds on the beach.
+- **Demographic**: Seniors (65+), retired professionals.
+- **Context**: Walking on a sunny beach, often without glasses, sometimes with dirty hands.
+- **Needs**: Large text, clear icons, ZERO login friction, works offline.
 
-## Tech Stack & Architecture
+## 2. Technical Stack (The "Shell")
 
-- Framework: React (Web PWA) or React Native (Expo).
-- Styling: Tailwind CSS (utility classes over custom CSS files).
-- State/data: local-first; IndexedDB or AsyncStorage is the source of truth; no auth required to use the app.
-- Directory structure: `src/features/` (capture, gallery, analysis), `src/shared/` (UI components, utilities).
-- Modularity: prefer small, composable pieces; avoid monolithic modules.
+- **Framework**: React Native (Expo).
+- **Language**: TypeScript (Strict).
+- **Styling**: `StyleSheet` (No Tailwind/StyledComponents). Use `ThemeContext` for dynamic theming.
+- **Data**: `expo-sqlite` (Local First). No cloud database for user data yet.
+- **AI**: Firebase Cloud Functions + Google Gemini (for visual ID).
 
-## Implementation Phases
+## 3. Key Systems (The "Heart")
 
-- Current: **Phase 1 — The Bucket (Capture Core)**: camera access, geolocation, local storage list. No editing, no cloud, no AI.
-- Phase 2 — The Sorting Table: detail view, editing notes, manual categories.
-- Phase 3 — The Rock Buddy (AI): vision API integration for ID suggestions.
-- Phase 4 — The Poster: grid generation and image export.
-- When coding, reference the phase explicitly (e.g., “Context: Phase 1. Create the main camera button…”).
+### A. StatusIcon ("The Visual Language")
 
-## Code Style & Quality
+- **Rough**: Dashed icon (Pending).
+- **Polishing**: Pulsing animation (Processing).
+- **Polished**: Solid Shape (Result).
+- **Rule**: Never show text status (e.g., "Processing...") without the accompanying icon. The icon _is_ the status.
 
-- Linting: run `npm run lint` before finishing any task; no unused variables.
-- Testing: write simple unit tests for utilities (e.g., coordinate formatting). UI tests should assert main buttons are visible.
-- Refactoring: stay modular but avoid over-slicing. Split when sections are reused, hard to scan, have distinct logic/tests, or files creep past ~250–300 lines. Keep simple, single-use UI blocks inline when that makes the flow clearer.
-- Dependencies: do not add new npm packages without explicit user permission.
-- Comments: keep them minimal; prioritize clear naming.
+### B. Themes ("Beach vs. Journal")
 
-## No-Go Zones (Scope Creep)
+- **High-Contrast (`mode === 'high-contrast'`)**:
+  - Used in the field (Capture).
+  - Black background, White text (#FFF), Neon accents.
+  - No gradients, no blurs.
+  - Max readability.
+- **Journal (`mode === 'journal'`)**:
+  - Used at home (Detail/Reflect).
+  - Paper/Teal tones, Glassmorphism covers.
+  - Rich details.
+  - Comfortable reading.
 
-- No social features (likes, feeds, profiles).
-- No gamification (streaks, XP).
-- No complex auth; never block first-launch with sign-up.
+## 4. Development Rules
 
-## Offline & Sync Expectations
+1.  **Repo Structure**:
+    - `/app`: The Expo project.
+    - `/functions`: The Backend (AI).
+2.  **No Auth**: Do not add login screens.
+3.  **No Inbox**: The flow is Capture -> Gallery. There is no intermediate "sorting" bin.
+4.  **Icons**: Use `StatusIcon` for app-specific logic. Use `Ionicons` for generic UI actions.
 
-- Field use must be fully functional offline (capture, store, view local list).
-- Sync is a background concern; never block capture on connectivity.
+## 5. Current Focus (Beta)
 
-## Prompts & Handoffs
-
-- Be explicit about phase and scope in prompts and PR descriptions.
-- Call out blockers early (e.g., camera permission, storage limits).
-- Default to Beach Mode priorities: speed, clarity, offline reliability.\*\*\*
+- Stability of the AI pipeline.
+- Refining the "StatusIcon" animations.
+- Gathering feedback on the "Beach Mode" visibility.

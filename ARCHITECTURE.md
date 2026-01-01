@@ -150,12 +150,11 @@ Ocal is a **React Native mobile app** for rock identification and cataloging, de
 
 ```
 1. User taps find in gallery
-2. Show CardFront (photo)
-3. Flip to CardBack (logbook)
-4. Edit name, notes, favorite
-5. Apply AI suggestions
+2. Open Detail View (FindDetailModal)
+3. "Rough" finds auto-trigger AI analysis
+4. User edits name, notes, favorite
+5. AI updates "Rough" icon to "Polished" category
 6. Save → Update SQLite
-7. Status: 'draft' → 'cataloged'
 ```
 
 ---
@@ -225,11 +224,11 @@ src/
 │   │   └── GalleryGrid.tsx (grid/list views)
 │   ├── detail/
 │   │   ├── FindDetailModal.tsx (Scientist View / Field Lab)
-│   │   └── components/ (Deleted legacy CardFront/Back)
+│   │   └── components/ (StatusIcon.tsx)
 │   └── insights/
 │       └── InsightsView.tsx (analytics)
 ├── shared/
-│   ├── components/ (GlassView, FlipCard, etc.)
+│   ├── components/ (GlassView, SessionPill, etc.)
 │   ├── db.ts (SQLite operations)
 │   ├── types.ts (TypeScript definitions)
 │   └── ThemeContext.tsx
