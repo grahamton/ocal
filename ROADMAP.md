@@ -149,10 +149,16 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
   - [ ] Data: Add `size_class` metadata or AI estimation.
 - Status: **Research Spike** - See `docs/camera_controls_research.md`
 
+## Phase 12 - Web Companion (Backlog)
+
+- Scope: PWA/Web version for desktop browsing (Chromebook/Windows).
+- Rationale: "Tools not Toys" - Serious collectors want to manage their finds on a big screen with a keyboard.
+- Dependencies: **Requires Phase 9 (Cloud Sync)**.
+- Status: **Research Complete** - See `docs/desktop_access_research.md`.
+
 ## Future Considerations
 
 - **Cloud Sync**: Cross-device access and real-time sync (see `docs/desktop_access_research.md`)
-- **Desktop/Web Access**: Chromebook/Windows support via PWA or Android build
 - **Data Export**: CSV/JSON export for external analysis (will be included in Phase 4)
 
 ## Operating Rules
