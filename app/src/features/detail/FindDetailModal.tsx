@@ -7,7 +7,7 @@ import { FindRecord } from '../../shared/types';
 import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
 import { RockIdResult, AnalysisEvent } from '../../ai/rockIdSchema';
 import { formatLocationSync } from '../../shared/format';
-import { useTheme } from '../../shared/ThemeContext';
+import { useTheme, ThemeColors } from '../../shared/ThemeContext';
 import { StatusIcon } from '../../../components/StatusIcon';
 import { getCategoryFromTags } from '../../../utils/CategoryMapper';
 import { RawJsonInspector } from '../../../components/RawJsonInspector';
@@ -21,7 +21,7 @@ type Props = {
 
 
 
-function ContextItem({ label, value, colors }: { label: string, value: string, colors: any }) {
+function ContextItem({ label, value, colors }: { label: string, value: string, colors: ThemeColors }) {
   if (!value) return null;
   return (
     <View style={styles.factGrid}>
@@ -187,7 +187,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
     setAiError(null);
     try {
       await IdentifyQueueService.addToQueue(item.id);
-    } catch (_e) {
+    } catch {
       setAiError('Could not start analysis.');
       setAiLoading(false);
     }
@@ -279,8 +279,8 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
                   {(localItem.location_text || formatLocationSync(localItem.lat, localItem.long))}
                   {sessionName ? ` • ${sessionName}` : ''} • {formatDate(localItem.timestamp)}
                   {/* Traceability Badge */}
-                  {localItem.aiData && 'meta' in (localItem.aiData as any) && (
-                     <Text style={{fontSize: 10, color: colors.accent}}> • v{(localItem.aiData as any).meta?.schemaVersion}</Text>
+                  {localItem.aiData && 'meta' in localItem.aiData && (
+                     <Text style={{fontSize: 10, color: colors.accent}}> • v{(localItem.aiData as AnalysisEvent).meta?.schemaVersion}</Text>
                   )}
                 </Text>
               </View>
@@ -466,7 +466,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
                          {aiResult.alternatives && aiResult.alternatives.length > 0 && (
                            <View style={{marginBottom: 12}}>
                              <Text style={[styles.label, {color: colors.textSecondary, marginBottom: 4}]}>Alternatives</Text>
-                             {aiResult.alternatives.map((alt: any, i: number) => (
+                             {aiResult.alternatives.map((alt: { label: string, confidence: number }, i: number) => (
                                <View key={i} style={styles.altRow}>
                                  <Text style={{color: colors.text}}>{alt.label}</Text>
                                  <Text style={{color: colors.textSecondary}}>{Math.round(alt.confidence * 100)}%</Text>
@@ -480,7 +480,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
                            <View>
                              <Text style={[styles.label, {color: colors.textSecondary, marginBottom: 4}]}>Tags</Text>
                              <Text style={{color: colors.text, lineHeight: 20}}>
-                               {Object.entries(aiResult.catalog_tags).map(([k, v]) =>
+                               {Object.entries(aiResult.catalog_tags).map(([_k, v]) =>
                                  Array.isArray(v) ? v.join(', ') : v
                                ).join(' • ')}
                              </Text>

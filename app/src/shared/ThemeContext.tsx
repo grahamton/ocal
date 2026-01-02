@@ -4,7 +4,7 @@ import { PALETTE_JOURNAL, PALETTE_HIGH_CONTRAST, ThemeMode } from './theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AnalyticsService } from './AnalyticsService';
 
-type ThemeColors = typeof PALETTE_JOURNAL;
+export type ThemeColors = typeof PALETTE_JOURNAL;
 
 type ThemeContextType = {
   mode: ThemeMode;

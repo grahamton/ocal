@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { listFinds } from '../../shared/db';
 import { formatLocationSync } from '../../shared/format';
 import { FindRecord } from '../../shared/types';
+import { AnalysisEvent } from '../../ai/rockIdSchema';
 import { useTheme } from '../../shared/ThemeContext';
 import { useSelection } from '../../shared/SelectionContext';
 import { useSession } from '../../shared/SessionContext';
@@ -93,7 +94,7 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
   const getAiResult = (data: FindRecord['aiData']) => {
       if (!data) return null;
       if ('result' in data && 'meta' in data) {
-          return (data as any).result; // Cast to access result safely if types aren't perfectly aligned yet, or use type guard
+          return (data as AnalysisEvent).result; // Cast to access result safely if types aren't perfectly aligned yet, or use type guard
       }
       return data; // Legacy RockIdResult
   };
