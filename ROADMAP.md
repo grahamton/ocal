@@ -156,6 +156,17 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Dependencies: **Requires Phase 9 (Cloud Sync)**.
 - Status: **Research Complete** - See `docs/desktop_access_research.md`.
 
+## Phase 13 - Technical Modernization (Backlog)
+
+- Scope: Infrastructure refactor to support scale and maintainability (TanStack Query, FlashList, Reanimated).
+- Rationale: "Rut Check" identified manual state sync and list performance as risks for future growth.
+- Milestones:
+  - [ ] State: Migrate to TanStack Query (delete refreshKey/EventEmitters).
+  - [ ] List: Implement FlashList for Gallery.
+  - [ ] Refactor: Explode `FindDetailModal` into atomic components.
+  - [ ] Vibe: Add `moti`/`reanimated` for smooth transitions.
+- Status: **Research Complete** - See `docs/refactor_modernization_research.md`.
+
 ## Future Considerations
 
 - **Cloud Sync**: Cross-device access and real-time sync (see `docs/desktop_access_research.md`)

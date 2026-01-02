@@ -338,6 +338,7 @@ Analyze this rock and provide:
 4. **Sharing** - Social features, collaborative collections
 5. **Find Pattern Memory** - Predictive suggestions based on session conditions (weather, tides).
 6. **Camera Controls** - Zoom/Lens/Scale tools. See `docs/camera_controls_research.md`.
+7. **Technical Modernization** - State/List/UI refactor. See `docs/refactor_modernization_research.md`.
 
 ### Under Consideration
 
