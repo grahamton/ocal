@@ -301,7 +301,17 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
                        <Text style={[styles.labTitle, { color: colors.text }]}>
                           {aiResult ? 'ANALYSIS COMPLETE' : (aiLoading ? 'ANALYZING...' : 'READY TO SCAN')}
                        </Text>
-                       {/* Confidence Bar Removed as per user request */}
+                       {/* Confidence Bar */}
+                       {aiResult?.best_guess?.confidence !== undefined && (
+                         <View style={{flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4}}>
+                           <View style={{height: 4, flex: 1, backgroundColor: colors.border, borderRadius: 2, overflow: 'hidden'}}>
+                             <View style={{height: '100%', width: `${aiResult.best_guess.confidence * 100}%`, backgroundColor: aiResult.best_guess.confidence > 0.8 ? '#22c55e' : '#eab308'}} />
+                           </View>
+                           <Text style={{fontSize: 11, fontWeight: '700', color: colors.textSecondary}}>
+                             {Math.round(aiResult.best_guess.confidence * 100)}%
+                           </Text>
+                         </View>
+                       )}
                    </View>
                 </View>
 
