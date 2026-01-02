@@ -123,6 +123,6 @@ Never use text to indicate status. Use the **Dynamic Icon System**:
 
 ## 8. Current Implementation Priorities
 
-1.  **Refactor Detail View:** Remove "Observable Evidence" list. Replace with "Geologic Context" chips (Age, Formation, Type).
-2.  **Verify Queue:** Ensure `IdentifyQueueService` runs automatically upon `CaptureScreen` save.
-3.  **Clean Nav:** Verify "Inbox" and "Review" tabs are completely removed from the router.
+1.  **Phase 5: Poster Mode:** Build the "Fossil Plate" grid generator for social sharing.
+2.  **Multimodal Experiments:** Test video/multi-image input with Gemini 2.0 for 3D understanding.
+3.  **Refine Geologic Context:** Use feedback from the new AI output to tune prompts for specific formations.

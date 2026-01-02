@@ -46,6 +46,9 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Milestones:
   - [x] Refactor `RangerConfig` for dynamic schemas (Explore = loose, Ship = strict).
   - [x] Add "Raw Data Inspector" to Find Detail view for developer visibility.
+  - [x] **Gemini 2.0 Integration**: Upgraded to `gemini-2.0-flash` for deeper reasoning.
+  - [x] **"Locked In" Schema**: Implemented strict JSON schema with category-specific details (Mineral/Rock/Fossil/Artifact).
+  - [x] **Traceability**: Added `AnalysisEvent` wrapper with `schemaVersion`, `runId`, and `aiModel`.
 - Status: **Complete** (Jan 2026).
 - Rationale: Allows safe experimentation with prompt engineering.
 
@@ -54,25 +57,25 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Scope: Migrate from AsyncStorage to SQLite for performance, querying, and data export
 - Rationale: **Foundation for all future features** - Poster and Session Enhancements require efficient filtering and geospatial queries. Migration is easier now while tester datasets are small. See `docs/roadmap_reprioritization_research.md` and `docs/database_enhancements_research.md` for analysis.
 - Milestones:
-  - Install `react-native-sqlite-storage` and configure
-  - Design schema with indexes (finds, sessions, metadata)
-  - Build migration service (AsyncStorage → SQLite with validation)
-  - Implement schema versioning for future migrations
-  - Add data export utilities (CSV, JSON, SQLite file)
-  - Create "Data Manager" UI for backup/restore
-  - Test migration with real tester data
+  - [x] Install `react-native-sqlite-storage` and configure
+  - [x] Design schema with indexes (finds, sessions, metadata)
+  - [x] Build migration service (AsyncStorage → SQLite with validation)
+  - [x] Implement schema versioning for future migrations
+  - [x] Add data export utilities (CSV, JSON, SQLite file)
+  - [x] Create "Data Manager" UI for backup/restore
+  - [x] Test migration with real tester data
 - Tests/QA: Migration integrity tests; performance benchmarks; export/import validation; backward compatibility
 - Timeline: **2-3 weeks**
 - Risks: Data loss during migration (mitigated by backup); schema design mistakes (mitigated by versioning)
 - Status: **Complete** (Jan 2026)
 
-## Phase 5 - Poster (Backlog)
+## Phase 5 - Poster (In Progress)
 
 - Scope: Grid generation and image export; follow "fossil plate" style from workflow analysis with monochrome/colour toggles and optional background clearing.
 - Milestones:
-  - Select finds by filter ("Last Month", trip) + checkboxes _(efficient with SQLite)_
-  - Layout engine for 3x3 or 4x4 with captions (editable)
-  - Export high-res PDF/JPG; share sheet
+  - [ ] Select finds by filter ("Last Month", trip) + checkboxes _(efficient with SQLite)_
+  - [ ] Layout engine for 3x3 or 4x4 with captions (editable)
+  - [ ] Export high-res PDF/JPG; share sheet
 - Tests/QA: Layout determinism; export fidelity on varied devices; large image handling
 - Risks: Memory on-device; rendering speed; print resolution correctness
 - Status: **Research complete** - Prototypes in `feature/after-the-gallery` branch
