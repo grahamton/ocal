@@ -84,6 +84,19 @@ export function DataManager() {
     }
   };
 
+  const handleExportAnalysis = async () => {
+    try {
+        setLoading(true);
+        const path = await exportService.exportAnalysisJson();
+        await exportService.shareFile(path);
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        Alert.alert('Export Failed', msg);
+    } finally {
+        setLoading(false);
+    }
+  };
+
   const handleExportCsv = async () => {
     try {
       setLoading(true);
@@ -147,6 +160,20 @@ export function DataManager() {
       </View>
 
       <View style={styles.actions}>
+
+          <TouchableOpacity onPress={handleExportAnalysis} disabled={loading}>
+            <GlassView style={styles.card} intensity={20}>
+                <View style={[styles.iconBox, { backgroundColor: 'rgba(139, 92, 246, 0.1)' }]}>
+                    <Ionicons name="bug-outline" size={24} color="#8b5cf6" />
+                </View>
+                <View style={{flex: 1}}>
+                    <Text style={[styles.actionTitle, { color: colors.text }]}>Export for Analysis</Text>
+                    <Text style={[styles.actionDesc, { color: colors.textSecondary }]}>
+                        Sanitized JSON for AI feedback (No heavy images).
+                    </Text>
+                </View>
+            </GlassView>
+          </TouchableOpacity>
 
           <TouchableOpacity onPress={handleExportJson} disabled={loading}>
             <GlassView style={styles.card} intensity={20}>

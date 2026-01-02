@@ -41,6 +41,49 @@ export const RockIdSchema = {
          maxLength: 300,
          description: '2-3 sentence summary of the find from Ranger Al. No AI mention.'
       },
+      category_details: {
+        type: 'object',
+        description: 'Detailed analysis specific to the category.',
+        additionalProperties: false,
+        properties: {
+          mineral: {
+            type: 'object',
+            nullable: true,
+            properties: {
+              crystal_system: { type: 'string', nullable: true, maxLength: 60 },
+              chemical_formula: { type: 'string', nullable: true, maxLength: 60 },
+              hardness_scale: { type: 'string', nullable: true, maxLength: 60 },
+              optical_properties: { type: 'string', nullable: true, maxLength: 100 }
+            }
+          },
+          rock: {
+            type: 'object',
+            nullable: true,
+            properties: {
+              texture_type: { type: 'string', nullable: true, maxLength: 100 },
+              mineral_composition: { type: 'string', nullable: true, maxLength: 100 },
+              depositional_environment: { type: 'string', nullable: true, maxLength: 100 }
+            }
+          },
+          fossil: {
+            type: 'object',
+            nullable: true,
+            properties: {
+              taxonomy: { type: 'string', nullable: true, maxLength: 100 },
+              living_relative: { type: 'string', nullable: true, maxLength: 80 },
+              preservation_mode: { type: 'string', nullable: true, maxLength: 80 }
+            }
+          },
+          artifact: {
+            type: 'object',
+            nullable: true,
+            properties: {
+              likely_origin: { type: 'string', nullable: true, maxLength: 150, description: 'Brief hypothesis on origin (e.g. "Bottle glass, mid-20th century").' },
+              estimated_age_range: { type: 'string', nullable: true, maxLength: 60 }
+            }
+          }
+        }
+      },
       alternatives: {
         type: 'array',
         description: 'Other possible identifications if the best guess is uncertain.',

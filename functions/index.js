@@ -83,7 +83,7 @@ function toGeminiParts({ userPrompt, images }) {
   return parts;
 }
 
-async function callGemini({ systemPrompt, userPrompt, images, schema = RockIdSchema }) {
+async function callGemini({ systemPrompt, userPrompt, images, schema = RockIdSchema, temperature = 0.7 }) {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error("Missing GEMINI_API_KEY secret");
   }
@@ -123,6 +123,7 @@ async function callGemini({ systemPrompt, userPrompt, images, schema = RockIdSch
         generation_config: {
           response_mime_type: "application/json",
           response_schema: schema.schema,
+          temperature: temperature,
         }
     }),
   });
@@ -172,6 +173,7 @@ exports.identify = onRequest(
     // Dynamic Ranger: Use client-provided logic or fallback to backend defaults
     const systemPrompt = body.system_prompt || ROCK_ID_SYSTEM_PROMPT;
     const outputSchema = body.output_schema || RockIdSchema;
+    const temperature = typeof body.temperature === 'number' ? body.temperature : 0.7; // Default to balanced 0.7
 
     const userPrompt = buildRockIdUserPrompt({
       location_hint: body.location_hint ?? "",
@@ -205,7 +207,7 @@ exports.identify = onRequest(
     try {
       const raw =
         provider === "gemini"
-          ? await callGemini({ systemPrompt, userPrompt, images, schema: outputSchema })
+          ? await callGemini({ systemPrompt, userPrompt, images, schema: outputSchema, temperature })
           : await callOpenAI({ userPrompt, images });
 
       const parsed = cleanJson(raw);

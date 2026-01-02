@@ -51,36 +51,36 @@ const RockIdSchema = {
             type: 'object',
             nullable: true,
             properties: {
-              crystal_system: { type: 'string', nullable: true },
-              chemical_formula: { type: 'string', nullable: true },
-              hardness_scale: { type: 'string', nullable: true },
-              optical_properties: { type: 'string', nullable: true }
+              crystal_system: { type: 'string', nullable: true, maxLength: 60 },
+              chemical_formula: { type: 'string', nullable: true, maxLength: 60 },
+              hardness_scale: { type: 'string', nullable: true, maxLength: 60 },
+              optical_properties: { type: 'string', nullable: true, maxLength: 100 }
             }
           },
           rock: {
             type: 'object',
             nullable: true,
             properties: {
-              texture_type: { type: 'string', nullable: true },
-              mineral_composition: { type: 'string', nullable: true },
-              depositional_environment: { type: 'string', nullable: true }
+              texture_type: { type: 'string', nullable: true, maxLength: 100 },
+              mineral_composition: { type: 'string', nullable: true, maxLength: 100 },
+              depositional_environment: { type: 'string', nullable: true, maxLength: 100 }
             }
           },
           fossil: {
             type: 'object',
             nullable: true,
             properties: {
-              taxonomy: { type: 'string', nullable: true },
-              living_relative: { type: 'string', nullable: true },
-              preservation_mode: { type: 'string', nullable: true }
+              taxonomy: { type: 'string', nullable: true, maxLength: 100 },
+              living_relative: { type: 'string', nullable: true, maxLength: 80 },
+              preservation_mode: { type: 'string', nullable: true, maxLength: 80 }
             }
           },
           artifact: {
             type: 'object',
             nullable: true,
             properties: {
-              likely_origin: { type: 'string', nullable: true },
-              estimated_age_range: { type: 'string', nullable: true }
+              likely_origin: { type: 'string', nullable: true, maxLength: 150, description: 'Brief hypothesis on origin (e.g. "Bottle glass, mid-20th century").' },
+              estimated_age_range: { type: 'string', nullable: true, maxLength: 60 }
             }
           }
         }

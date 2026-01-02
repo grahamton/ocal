@@ -15,6 +15,7 @@ export type IdentifyInput = {
   provider?: 'openai' | 'gemini';
   endpoint?: string; // override function URL; default uses ENV or relative path
   outputMode?: RangerMode;
+  temperature?: number;
 };
 
 export async function identifyRock(input: IdentifyInput): Promise<AnalysisEvent> {
@@ -38,6 +39,7 @@ export async function identifyRock(input: IdentifyInput): Promise<AnalysisEvent>
       session_context: input.sessionContext ?? null,
       system_prompt: getRangerSystemPrompt(mode),
       output_schema: getRangerSchema(mode),
+      temperature: input.temperature,
     }),
   });
 
@@ -57,8 +59,9 @@ export async function identifyRock(input: IdentifyInput): Promise<AnalysisEvent>
      const keysToNormalize = ['type', 'color', 'pattern', 'luster', 'features'];
 
      for (const key of keysToNormalize) {
-        if (Array.isArray((result.catalog_tags as any)[key])) {
-           (result.catalog_tags as any)[key] = (result.catalog_tags as any)[key].map(normalize);
+        const tagKey = key as keyof typeof result.catalog_tags;
+        if (Array.isArray(result.catalog_tags[tagKey])) {
+           (result.catalog_tags[tagKey] as string[]) = (result.catalog_tags[tagKey] as string[]).map(normalize);
         }
      }
   }

@@ -230,7 +230,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
               onPress={runIdentify}
             >
               <Ionicons name="sparkles" size={24} color="#fff" />
-              <Text style={styles.analyzeButtonText}>Identify Rock Buddy</Text>
+              <Text style={styles.analyzeButtonText}>Ask Ranger Al</Text>
             </TouchableOpacity>
           )}
 

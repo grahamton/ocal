@@ -136,7 +136,8 @@ export class IdentifyQueueService {
           locationHint: find.lat && find.long ? `${find.lat}, ${find.long}` : null,
           contextNotes: find.note || find.label || 'Field find',
           userGoal: 'quick_id',
-          sessionContext
+          sessionContext,
+          temperature: 0.7 // Balanced creativity
        });
 
        const aiResult = analysisEvent.result;

@@ -2,6 +2,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { listFinds, listSessions } from '../db';
+import { logger } from '../LogService';
 
 export class ExportService {
   /**
@@ -26,6 +27,54 @@ export class ExportService {
     const filePath = `${FileSystem.documentDirectory}${fileName}`;
 
     await FileSystem.writeAsStringAsync(filePath, JSON.stringify(backupData, null, 2));
+    return filePath;
+  }
+
+  /**
+   * Generates a lightweight JSON for AI analysis/debugging.
+   * Strips out large Base64 images to keep the file size manageable.
+   */
+  async exportAnalysisJson(): Promise<string> {
+    const finds = await listFinds({ status: 'all' });
+    const sessions = await listSessions();
+
+    // Deep clone and sanitize
+    const cleanFinds = finds.map(f => {
+      const clean = JSON.parse(JSON.stringify(f));
+
+      // Sanitize AI Data input images
+      if (clean.aiData) {
+        // Handle AnalysisEvent structure
+        if (clean.aiData.input?.sourceImages) {
+           clean.aiData.input.sourceImages = clean.aiData.input.sourceImages.map((img: any) => ({
+             ...img,
+             uri: img.uri?.startsWith('data:') ? '[Base64 Data Omitted]' : img.uri
+           }));
+        }
+
+        // Handle legacy structure (if any) or deeply nested data urls
+        // Simple recursive cleaner for any other large strings?
+        // For now, specific targeting is safer.
+      }
+      return clean;
+    });
+
+    const exportData = {
+      meta: {
+        exportedAt: new Date().toISOString(),
+        version: 1,
+        appVersion: '0.0.1',
+        type: 'analysis_export'
+      },
+      finds: cleanFinds,
+      sessions,
+      logs: logger.getLogs()
+    };
+
+    const fileName = `ocal_analysis_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    const filePath = `${FileSystem.documentDirectory}${fileName}`;
+
+    await FileSystem.writeAsStringAsync(filePath, JSON.stringify(exportData, null, 2));
     return filePath;
   }
 
