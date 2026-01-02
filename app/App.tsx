@@ -11,9 +11,7 @@ import { FindDetailModal } from './src/features/detail/FindDetailModal';
 import { setupDatabase, deleteFind } from './src/shared/db';
 import { FindRecord } from './src/shared/types';
 import { SessionProvider, useSession } from './src/shared/SessionContext';
-// import { InboxList } from './src/features/list/InboxList'; // Removed for Auto-Pilot
-// Removed Cataloger imports to clean up unused code if possible, or keeping them if needed for other things.
-// Actually I removed usage in AppContent, so I should remove imports.
+
 
 
 // import { NextActionPrompt } from './src/shared/NextActionPrompt';
@@ -89,7 +87,7 @@ function AppContent() {
   const [settingsVisible, setSettingsVisible] = useState(false);
 
   // Navigation State
-  const [view, setView] = useState<'capture' | 'inbox' | 'gallery'>('capture');
+  const [view, setView] = useState<'capture' | 'gallery'>('capture');
 
   // Log navigation changes
   useEffect(() => {
