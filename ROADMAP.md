@@ -52,6 +52,17 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Status: **Complete** (Jan 2026).
 - Rationale: Allows safe experimentation with prompt engineering.
 
+## Phase 3.6 - Persona Refinement (Campfire Storyteller) **Complete**
+
+- Scope: Shift AI from "Safety Officer" to "Friendly Guide" and refine UI for validation.
+- Milestones:
+  - [x] **Ranger Al Persona**: Updated to "Campfire Storyteller" (Warm, Professional, Educational).
+  - [x] **Deep Context**: Instructed AI to connect specific finds to local geologic history.
+  - [x] **Humility**: Added rules for admitting uncertainty ("It's a mystery...").
+  - [x] **Keeper Celebration**: Explicitly honors user's "good eye" for Agates/Jaspers.
+  - [x] **UI Polish**: Removed distraction (percentage bar) to focus on the ID result.
+- Status: **Complete** (Jan 2026).
+
 ## Phase 4 - SQLite Migration & Export **Complete**
 
 - Scope: Migrate from AsyncStorage to SQLite for performance, querying, and data export
