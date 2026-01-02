@@ -49,7 +49,22 @@ export class ExportService {
       };
 
       const dateStr = new Date(f.timestamp).toLocaleDateString() + ' ' + new Date(f.timestamp).toLocaleTimeString();
-      const label = f.label || f.aiData?.best_guess?.label || 'Unknown';
+      let aiLabel = 'Unknown';
+      let aiCategory = '';
+
+      if (f.aiData && 'result' in f.aiData) {
+          // Wrapped AnalysisEvent
+          const res = (f.aiData as any).result;
+          aiLabel = res?.best_guess?.label || 'Unknown';
+          aiCategory = res?.best_guess?.category || '';
+      } else if (f.aiData) {
+          // Legacy RockIdResult
+          const res = f.aiData as any;
+          aiLabel = res?.best_guess?.label || 'Unknown';
+          aiCategory = res?.best_guess?.category || '';
+      }
+
+      const label = f.label || aiLabel;
 
       // Use locationSync text or lat/long
       const locText = f.lat && f.long ? `${f.lat.toFixed(5)}, ${f.long.toFixed(5)}` : 'No Location';
@@ -58,7 +73,7 @@ export class ExportService {
         escape(dateStr),
         escape(f.id),
         escape(label),
-        escape(f.category || f.aiData?.best_guess?.category),
+        escape(f.category || aiCategory),
         escape(locText),
         f.favorite ? 'Yes' : 'No',
         escape(f.note)

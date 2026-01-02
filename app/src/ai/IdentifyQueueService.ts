@@ -2,7 +2,7 @@ import * as SQLite from 'expo-sqlite';
 import * as Network from 'expo-network';
 import { DeviceEventEmitter } from 'react-native';
 import { identifyRock } from './identifyRock';
-import { updateFindMetadata, listFinds } from '../shared/db';
+import { updateFindMetadata, listFinds, getSession } from '../shared/db';
 import * as FileSystem from 'expo-file-system/legacy';
 import { logger } from '../shared/LogService';
 import { AnalyticsService } from '../shared/AnalyticsService';
@@ -115,7 +115,6 @@ export class IdentifyQueueService {
        // 2a. Get Session Context if available
        let sessionContext = null;
        if (find.sessionId) {
-           const { getSession } = require('../shared/db');
            const session = await getSession(find.sessionId);
            if (session) {
                const date = new Date(session.startTime);
@@ -131,7 +130,7 @@ export class IdentifyQueueService {
        }
 
        // 3. Call AI
-       const result = await identifyRock({
+       const analysisEvent = await identifyRock({
           provider: 'gemini', // OpenAI quota exceeded, using Gemini
           imageDataUrls: [dataUrl],
           locationHint: find.lat && find.long ? `${find.lat}, ${find.long}` : null,
@@ -140,13 +139,12 @@ export class IdentifyQueueService {
           sessionContext
        });
 
-       // 4. Save Result
+       const aiResult = analysisEvent.result;
+       console.log('AI Result received for', find.id, aiResult.best_guess?.label);
+
+       // 4. Save Result (Store full AnalysisEvent for traceability)
        await updateFindMetadata(find.id, {
-         aiData: result,
-         // Auto-apply label if high confidence?
-         // For now, let's just store it and let user apply.
-         // Or maybe we add a 'pending_review' flag?
-         // Let's stick to just saving aiData.
+         aiData: analysisEvent,
        });
 
        // 5. Cleanup Queue
@@ -157,8 +155,8 @@ export class IdentifyQueueService {
 
        logger.add('ai', 'Queue item processed successfully', { findId: find.id });
        AnalyticsService.logEvent('ai_identify_success', {
-         confidence: result.best_guess.confidence,
-         category: result.best_guess.category
+         confidence: aiResult.best_guess.confidence,
+         category: aiResult.best_guess.category
        });
 
     } catch (error) {

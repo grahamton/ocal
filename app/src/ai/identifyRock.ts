@@ -1,4 +1,4 @@
-import { RockIdResult } from './rockIdSchema';
+import { RockIdResult, AnalysisEvent } from './rockIdSchema';
 import { getRangerSystemPrompt, getRangerSchema, RangerMode } from './RangerConfig';
 
 export type IdentifyInput = {
@@ -17,7 +17,7 @@ export type IdentifyInput = {
   outputMode?: RangerMode;
 };
 
-export async function identifyRock(input: IdentifyInput): Promise<RockIdResult> {
+export async function identifyRock(input: IdentifyInput): Promise<AnalysisEvent> {
   const url =
     input.endpoint ||
     process.env.EXPO_PUBLIC_IDENTIFY_URL ||
@@ -49,5 +49,45 @@ export async function identifyRock(input: IdentifyInput): Promise<RockIdResult> 
     throw new Error(`${err?.error || 'Identify request failed'}${detail}`);
   }
 
-  return res.json();
+  const result = await res.json() as RockIdResult;
+
+  // Client-side Safety Net: Normalize catalog tags
+  if (result.catalog_tags) {
+     const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, '_');
+     const keysToNormalize = ['type', 'color', 'pattern', 'luster', 'features'];
+
+     for (const key of keysToNormalize) {
+        if (Array.isArray((result.catalog_tags as any)[key])) {
+           (result.catalog_tags as any)[key] = (result.catalog_tags as any)[key].map(normalize);
+        }
+     }
+  }
+
+  // Wrap in AnalysisEvent
+  const analysisEvent: AnalysisEvent = {
+    meta: {
+      schemaVersion: '1.0.0',
+      aiModel: 'gemini-1.5-flash', // Hardcoded for now, should ideally come from env or response
+      aiModelVersion: '001',
+      promptHash: 'na', // TODO: Implement real hash
+      pipelineVersion: '1.0.0',
+      runId: 'uuid-' + Date.now(), // Simple UUID for prototype
+      timestamp: new Date().toISOString(),
+    },
+    input: {
+      sourceImages: [
+        ...(input.imageUrls || []).map(uri => ({ uri })),
+        ...(input.imageDataUrls || []).map(uri => ({
+            uri: uri.startsWith('data:') ? '[Base64 Data Omitted]' : uri
+        })),
+      ],
+      locationUsed: !!input.locationHint,
+      userGoal: input.userGoal || 'quick_id',
+    },
+    result: result
+  };
+
+  console.log('Traceability Event:', JSON.stringify(analysisEvent).substring(0, 100) + '...');
+
+  return analysisEvent;
 }

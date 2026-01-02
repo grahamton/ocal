@@ -42,7 +42,14 @@ export function InsightsView() {
   const rockTypes = () => {
     const types: Record<string, number> = {};
     finds.forEach(f => {
-      const type = f.aiData?.best_guess?.label || f.label || 'Unknown';
+      let aiLabel = 'Unknown';
+      if (f.aiData && 'result' in f.aiData) {
+        aiLabel = (f.aiData as any).result?.best_guess?.label || 'Unknown';
+      } else if (f.aiData) {
+        aiLabel = (f.aiData as any).best_guess?.label || 'Unknown';
+      }
+
+      const type = aiLabel !== 'Unknown' ? aiLabel : (f.label || 'Unknown');
       types[type] = (types[type] || 0) + 1;
     });
     return Object.entries(types)

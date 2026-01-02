@@ -89,8 +89,19 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 
+  // Helper to safely unwrap AI data (Migration: RockIdResult -> AnalysisEvent)
+  const getAiResult = (data: FindRecord['aiData']) => {
+      if (!data) return null;
+      if ('result' in data && 'meta' in data) {
+          return (data as any).result; // Cast to access result safely if types aren't perfectly aligned yet, or use type guard
+      }
+      return data; // Legacy RockIdResult
+  };
+
   const renderGridItem = (item: FindRecord) => {
     const isSelected = selectedIds.has(item.id);
+    const aiResult = getAiResult(item.aiData);
+    const displayLabel = item.label || aiResult?.best_guess?.label || 'Unknown';
 
     return (
       <TouchableOpacity
@@ -136,7 +147,7 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
         )}
 
         {/* Rough Status Overlay - Only if not analyzed */}
-        {!item.aiData && !isSelected && (
+        {!aiResult && !isSelected && (
            <View style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center'}}>
                <StatusIcon status="rough" size={40} theme={mode === 'high-contrast' ? 'beach' : 'journal'} />
            </View>
@@ -145,7 +156,7 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
         <View style={styles.cardBody}>
           {/* Title */}
           <Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1}>
-            {item.label || item.aiData?.best_guess?.label || 'Unknown'}
+            {displayLabel}
           </Text>
 
           {/* Location */}
@@ -164,15 +175,17 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
 
   const renderListItem = (item: FindRecord) => {
     const isSelected = selectedIds.has(item.id);
+    const aiResult = getAiResult(item.aiData);
+    const displayLabel = item.label || aiResult?.best_guess?.label || 'Unknown';
 
     return (
       <TouchableOpacity
         key={item.id}
         style={[
-          styles.listItem,
-          { backgroundColor: colors.card, borderColor: isSelected ? colors.accent : colors.border },
-          isSelected && { borderLeftWidth: 4 }
-        ]}
+            styles.listItem,
+            { backgroundColor: colors.card, borderColor: isSelected ? colors.accent : colors.border },
+            isSelected && { borderLeftWidth: 4 }
+          ]}
         activeOpacity={0.85}
         onLongPress={() => enterSelectionMode(item.id)}
         onPress={() => {
@@ -191,19 +204,19 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
               <Ionicons name="star" size={16} color="#fbbf24" style={{ marginRight: 4 }} />
             )}
             <Text style={[styles.listTitle, { color: colors.text }]} numberOfLines={1}>
-              {item.label || item.aiData?.best_guess?.label || 'Unknown'}
+              {displayLabel}
             </Text>
             {/* Category Icon Mini */}
-            {item.aiData && (
+            {aiResult && (
                <StatusIcon
                   status="polished"
                   size={24}
-                  category={getCategoryFromTags([item.aiData?.best_guess?.category || ''], item.aiData?.best_guess?.label)}
+                  category={getCategoryFromTags([aiResult.best_guess?.category || ''], aiResult.best_guess?.label)}
                   theme={mode === 'high-contrast' ? 'beach' : 'journal'}
                   style={{marginLeft: 8}}
                />
             )}
-            {!item.aiData && (
+            {!aiResult && (
                <StatusIcon status="rough" size={24} theme={mode === 'high-contrast' ? 'beach' : 'journal'} style={{marginLeft: 8}} />
             )}
           </View>

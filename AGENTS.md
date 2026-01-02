@@ -1,5 +1,9 @@
 # Ocal: Agent Guidance (v2.0 - "The Magic Container")
 
+## Current Date: 2026-01-01
+
+- this is for model knowledge in case out of date tools/models are suggested
+
 ## 1. Core Philosophy: "The Silent Partner"
 
 Ocal is a field geologist's digital notebook for seniors (Carol & Jim). It is high-contrast, offline-first, and respectful of the user's time.

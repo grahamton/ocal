@@ -1,6 +1,6 @@
 import * as SQLite from "expo-sqlite";
 import { FindRecord, Session } from "./types";
-import { RockIdResult } from "../ai/rockIdSchema";
+import { RockIdResult, AnalysisEvent } from "../ai/rockIdSchema";
 
 const db = SQLite.openDatabaseSync("ocal.db");
 
@@ -46,7 +46,7 @@ export async function setupDatabase() {
       status TEXT NOT NULL,
       finds TEXT NOT NULL
     );
-    CREATE INDEX IF NOT EXISTS idx_sessions_startTime ON sessions(startTime);
+     CREATE INDEX IF NOT EXISTS idx_sessions_startTime ON sessions(startTime);
   `);
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS find_queue (
@@ -135,7 +135,7 @@ type FindUpdate = {
   sessionId?: string | null;
   favorite?: boolean;
   synced?: boolean;
-  aiData?: RockIdResult | null;
+  aiData?: RockIdResult | AnalysisEvent | null;
 };
 
 export async function updateFindMetadata(id: string, updates: FindUpdate) {

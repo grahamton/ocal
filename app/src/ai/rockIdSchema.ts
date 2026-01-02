@@ -8,6 +8,7 @@ export const RockIdSchema = {
     additionalProperties: false,
     required: [
       'best_guess',
+      'ranger_summary',
       'alternatives',
       'specimen_context',
       'lapidary_guidance',
@@ -31,9 +32,14 @@ export const RockIdSchema = {
           category: {
             type: 'string',
             description: 'Broad classification category.',
-            enum: ['rock', 'mineral', 'fossil', 'artifact_like', 'unknown'],
+            enum: ['rock', 'mineral', 'fossil', 'manmade', 'unknown'],
           },
         },
+      },
+      ranger_summary: {
+         type: 'string',
+         maxLength: 300,
+         description: '2-3 sentence summary of the find from Ranger Al. No AI mention.'
       },
       alternatives: {
         type: 'array',
@@ -53,12 +59,32 @@ export const RockIdSchema = {
         type: 'object',
         description: 'Geologic and historical context inferred from the identification and location.',
         additionalProperties: false,
-        required: ['age', 'formation', 'type', 'historical_fact'],
+        required: ['age', 'geology_hypothesis', 'type', 'historical_fact'],
         properties: {
           age: { type: 'string', maxLength: 60, description: 'Geologic time period (e.g. "Miocene (~23 MYA)").' },
-          formation: { type: 'string', maxLength: 60, description: 'Likely geologic formation (e.g. "Astoria Formation").' },
+          geology_hypothesis: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['name', 'confidence', 'evidence'],
+            properties: {
+                name: { type: ['string', 'null'], maxLength: 60, description: 'Specific formation name if supported by evidence, else null.' },
+                confidence: { type: 'string', enum: ['high', 'medium', 'low'], description: 'Confidence in the formation assignment.' },
+                evidence: { type: 'array', items: { type: 'string' }, maxItems: 3, description: 'Cues used (e.g. "location_map", "visual_texture").' }
+            }
+          },
           type: { type: 'string', maxLength: 60, description: 'Scientific classification (e.g. "Marine Bivalve").' },
           historical_fact: { type: 'string', maxLength: 300, description: 'A fascinating "Did You Know?" fact about this specimen in its ancient environment.' }
+        }
+      },
+      lapidary_guidance: {
+        type: 'object',
+        description: 'Advice for polishing or tumbling this specimen.',
+        additionalProperties: false,
+        required: ['is_tumble_candidate', 'tumble_reason'],
+        properties: {
+          is_tumble_candidate: { type: 'boolean', description: 'True if hard enough (Mohs > 6) and non-porous. False if soft/crumbly.' },
+          tumble_reason: { type: 'string', maxLength: 165, description: 'Why it is or isn\'t a candidate (e.g. "Hardness 7, takes high polish").' },
+          special_care: { type: 'string', maxLength: 100, description: 'Optional tips (e.g. "Use plastic pellets for cushioning").' }
         }
       },
       region_fit: {
@@ -69,7 +95,7 @@ export const RockIdSchema = {
         properties: {
           location_hint: { type: ['string', 'null'], maxLength: 120, description: 'The provided location context, or null.' },
           fit: { type: 'string', enum: ['high', 'medium', 'low', 'unknown'], description: 'How well the ID matches the local geology.' },
-          note: { type: ['string', 'null'], maxLength: 160, description: 'Brief explanation of the fit (e.g. "Common in Lake Superior region").' },
+          note: { type: ['string', 'null'], maxLength: 160, description: 'Brief explanation of the fit. Do not state formation as fact if fit is low.' },
         },
       },
       followup_photos: {
@@ -86,7 +112,7 @@ export const RockIdSchema = {
       },
       catalog_tags: {
         type: 'object',
-        description: 'Structured attributes for filtering and organizing.',
+        description: 'Structured attributes for filtering and organizing. All values must be snake_case.',
         additionalProperties: false,
         required: ['type', 'color', 'pattern', 'luster', 'translucency', 'grain_size', 'features', 'condition'],
         properties: {
@@ -95,7 +121,7 @@ export const RockIdSchema = {
           pattern: { type: 'array', maxItems: 6, items: { type: 'string', maxLength: 40 }, description: 'Visual patterns (e.g. "banded", "spotted").' },
           luster: { type: 'array', maxItems: 4, items: { type: 'string', maxLength: 30 }, description: 'Surface reflectiveness (e.g. "waxy", "vitreous").' },
           translucency: { type: 'array', maxItems: 1, items: { type: 'string', enum: ['opaque', 'translucent', 'transparent', 'unknown'] }, description: 'Light transmission (single value).' },
-          grain_size: { type: 'array', maxItems: 2, items: { type: 'string', enum: ['fine', 'medium', 'coarse', 'mixed', 'unknown'] }, description: 'Texture granularity (single value).' },
+          grain_size: { type: 'array', maxItems: 4, items: { type: 'string', enum: ['fine', 'medium', 'coarse', 'mixed', 'unknown'] }, description: 'Texture granularity (single value).' },
           features: { type: 'array', maxItems: 10, items: { type: 'string', maxLength: 40 }, description: 'Other notable features.' },
           condition: { type: 'array', maxItems: 1, items: { type: 'string', enum: ['fresh', 'weathered', 'polished', 'broken', 'unknown'] }, description: 'Physical state (single value).' },
         },
@@ -108,11 +134,45 @@ export const RockIdSchema = {
 } as const;
 
 // Explicit type matching the schema above
+// rockIdSchema.ts
+// Defines the exact shape of the JSON output we expect from Ranger Al (Gemini 2.0).
+
+export interface MineralDetail {
+  crystal_system?: string; // e.g., "Hexagonal", "Cubic"
+  chemical_formula?: string; // e.g., "SiO2"
+  hardness_scale?: string; // e.g., "7 (Mohs)"
+  optical_properties?: string; // e.g., "Double refractive"
+}
+
+export interface RockDetail {
+  texture_type?: string; // e.g., "Phaneritic", "Glassy"
+  mineral_composition?: string; // e.g., "Quartz, Feldspar, Mica"
+  depositional_environment?: string; // e.g., "High-energy beach"
+}
+
+export interface FossilDetail {
+  taxonomy?: string; // e.g., "Mollusca > Bivalvia"
+  living_relative?: string; // e.g., "Modern Clam"
+  preservation_mode?: string; // e.g., "Cast", "Permineralization"
+}
+
+export interface ArtifactDetail {
+  likely_origin?: string; // e.g., "Glass Bottle", "Industrial Slag"
+  estimated_age_range?: string; // e.g., "1920s-1950s"
+}
+
 export interface RockIdResponse {
   best_guess: {
     label: string;
     confidence: number;
-    category: 'rock' | 'mineral' | 'fossil' | 'artifact_like' | 'unknown';
+    category: 'rock' | 'mineral' | 'fossil' | 'manmade' | 'unknown';
+  };
+  ranger_summary: string;
+  category_details?: {
+      mineral?: MineralDetail;
+      rock?: RockDetail;
+      fossil?: FossilDetail;
+      artifact?: ArtifactDetail;
   };
   alternatives: {
     label: string;
@@ -120,7 +180,11 @@ export interface RockIdResponse {
   }[];
   specimen_context: {
     age: string;
-    formation: string;
+    geology_hypothesis: {
+        name: string | null;
+        confidence: 'high' | 'medium' | 'low';
+        evidence: string[];
+    };
     type: string;
     historical_fact: string;
   };
@@ -152,3 +216,22 @@ export interface RockIdResponse {
 }
 
 export type RockIdResult = RockIdResponse;
+
+export interface AnalysisEvent {
+    meta: {
+      schemaVersion: string;
+      aiModel: string;
+      aiModelVersion: string;
+      promptHash: string;
+      pipelineVersion: string;
+      runId: string;
+      runNumber?: number;
+      timestamp: string;
+    };
+    input: {
+      sourceImages: { uri: string; shotType?: string }[];
+      locationUsed: boolean;
+      userGoal: string;
+    };
+    result: RockIdResult;
+}

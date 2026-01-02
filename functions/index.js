@@ -88,9 +88,9 @@ async function callGemini({ systemPrompt, userPrompt, images, schema = RockIdSch
     throw new Error("Missing GEMINI_API_KEY secret");
   }
 
-  // Direct REST call to v1 Gemini to avoid client version issues.
+  // Direct REST call to v1beta Gemini to support responseSchema
   const apiKey = process.env.GEMINI_API_KEY;
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
   const parts = [
     { text: `SYSTEM:\n${systemPrompt}` },
     { text: `SCHEMA:\n${JSON.stringify(schema.schema)}` },
@@ -120,9 +120,9 @@ async function callGemini({ systemPrompt, userPrompt, images, schema = RockIdSch
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
         contents,
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: schema,
+        generation_config: {
+          response_mime_type: "application/json",
+          response_schema: schema.schema,
         }
     }),
   });
@@ -218,11 +218,31 @@ exports.identify = onRequest(
           });
       }
 
-      const valid = validate(parsed);
+      // Validate against the schema used for generation
+      // Ajv needs conversion for 'nullable: true' (OpenAPI style) to 'type: ["string", "null"]'
+      const toAjvSchema = (s) => {
+        const copy = JSON.parse(JSON.stringify(s));
+        const traverse = (obj) => {
+          if (typeof obj !== 'object' || obj === null) return;
+          if (obj.nullable === true && typeof obj.type === 'string') {
+             obj.type = [obj.type, 'null'];
+             delete obj.nullable;
+          }
+          for (const k in obj) traverse(obj[k]);
+        };
+        traverse(copy);
+        return copy;
+      };
+
+      const ajvSchema = toAjvSchema(outputSchema.schema);
+      const requestValidate = ajv.compile(ajvSchema);
+      const valid = requestValidate(parsed);
+
       if (!valid) {
+        console.error("Schema validation failed", requestValidate.errors);
         return res
           .status(500)
-          .json({ error: "Schema validation failed", detail: validate.errors });
+          .json({ error: "Schema validation failed", detail: requestValidate.errors });
       }
 
       return res.json(parsed);
