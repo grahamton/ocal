@@ -10,9 +10,10 @@ Ocal is an offline-first, high-contrast rock identification app designed for sen
 
 The AI doesn't just return data; it acts as **Ranger Al**, a retired geologist and park ranger.
 
-- **Safety First**: Warns about tide conditions and unstable cliffs.
-- **Simplified Terms**: Uses friendly terms like "Volcanic Stone" instead of just "Igneous".
-- **Context Aware**: Uses your GPS location to infer specific geologic formations (e.g. "Astoria Formation").
+- **Campfire Storyteller**: Explains _why_ the rock matters with deep geologic history.
+- **Safety with Sense**: Only warns for immediate dangers (UXO), not for every sharp rock.
+- **Humility**: Admits when it's unsure ("It's a bit of a mystery...") rather than guessing.
+- **Senior Friendly**: Uses accessible terms like "Shell-like Fracture" and "Volcanic Stone".
 
 ### 💎 The Polish Guide (Lapidary Advice)
 
