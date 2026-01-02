@@ -337,6 +337,7 @@ Analyze this rock and provide:
 3. **Export** - CSV/PDF generation
 4. **Sharing** - Social features, collaborative collections
 5. **Find Pattern Memory** - Predictive suggestions based on session conditions (weather, tides).
+6. **Camera Controls** - Zoom/Lens/Scale tools. See `docs/camera_controls_research.md`.
 
 ### Under Consideration
 

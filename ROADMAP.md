@@ -139,6 +139,16 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
 - Risks: Pattern accuracy depends on data quality (manual tags may be inconsistent).
 - Dependencies: **Benefits from Phase 4 (SQLite)** for querying find history.
 
+## Phase 11 - Camera Controls & Scale (Backlog)
+
+- Scope: Zoom controls, lens selection (prevent jitter), and size estimation.
+- Rationale: Seniors need one-handed framing assist (zoom) and stability; scale data improves AI accuracy.
+- Milestones:
+  - [ ] UI: 1x/2x zoom buttons (one-handed friendly).
+  - [ ] Logic: Lock specific camera lens if possible to prevent "jumping".
+  - [ ] Data: Add `size_class` metadata or AI estimation.
+- Status: **Research Spike** - See `docs/camera_controls_research.md`
+
 ## Future Considerations
 
 - **Cloud Sync**: Cross-device access and real-time sync (see `docs/desktop_access_research.md`)
