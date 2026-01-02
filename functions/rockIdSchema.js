@@ -1,12 +1,11 @@
 // JSON Schema for RockID Assistant structured outputs. Keep lengths tight to avoid overflow.
-// Synced with client-side RockIdSchema.ts
 const RockIdSchema = {
   name: 'rock_id_result',
   strict: true,
   schema: {
     type: 'object',
     description: 'Structured identification result for a rock, mineral, or fossil specimen.',
-    // additionalProperties: false, // Removed for Gemini compatibility
+    additionalProperties: false,
     required: [
       'best_guess',
       'ranger_summary',
@@ -25,7 +24,7 @@ const RockIdSchema = {
       best_guess: {
         type: 'object',
         description: 'The most likely identification based on visible features.',
-        // additionalProperties: false,
+        additionalProperties: false,
         required: ['label', 'confidence', 'category'],
         properties: {
           label: { type: 'string', minLength: 1, maxLength: 80, description: 'Common name of the specimen (e.g. "Banded Agate").' },
@@ -40,46 +39,46 @@ const RockIdSchema = {
       ranger_summary: {
          type: 'string',
          maxLength: 300,
-         description: '2-3 sentence summary of the find from Ranger Al. No AI mention.'
+         description: '2-3 sentence summary/story from Ranger Al. This is the ONLY place for general narrative. Do not repeat specific fields.'
       },
       category_details: {
         type: 'object',
         description: 'Detailed analysis specific to the category.',
-        // additionalProperties: false,
+        additionalProperties: false,
         properties: {
           mineral: {
             type: 'object',
             nullable: true,
             properties: {
-              crystal_system: { type: 'string', nullable: true, maxLength: 60 },
-              chemical_formula: { type: 'string', nullable: true, maxLength: 60 },
-              hardness_scale: { type: 'string', nullable: true, maxLength: 60 },
-              optical_properties: { type: 'string', nullable: true, maxLength: 100 }
+              crystal_system: { type: 'string', nullable: true, maxLength: 60, description: 'Scientific Name ONLY (e.g. "Hexagonal").' },
+              chemical_formula: { type: 'string', nullable: true, maxLength: 60, description: 'Standard formula (e.g. "SiO2").' },
+              hardness_scale: { type: 'string', nullable: true, maxLength: 60, description: 'Mohs value or range (e.g. "7").' },
+              optical_properties: { type: 'string', nullable: true, maxLength: 100, description: 'Brief keywords (e.g. "Double refractive").' }
             }
           },
           rock: {
             type: 'object',
             nullable: true,
             properties: {
-              texture_type: { type: 'string', nullable: true, maxLength: 100 },
-              mineral_composition: { type: 'string', nullable: true, maxLength: 100 },
-              depositional_environment: { type: 'string', nullable: true, maxLength: 100 }
+              texture_type: { type: 'string', nullable: true, maxLength: 80, description: 'Scientific term ONLY (e.g. "Phaneritic", "Glassy"). NO description.' },
+              mineral_composition: { type: 'string', nullable: true, maxLength: 100, description: 'Comma-separated list of minerals.' },
+              depositional_environment: { type: 'string', nullable: true, maxLength: 100, description: 'Brief environment name (e.g. "Riverbed").' }
             }
           },
           fossil: {
             type: 'object',
             nullable: true,
             properties: {
-              taxonomy: { type: 'string', nullable: true, maxLength: 100 },
-              living_relative: { type: 'string', nullable: true, maxLength: 80 },
-              preservation_mode: { type: 'string', nullable: true, maxLength: 80 }
+              taxonomy: { type: 'string', nullable: true, maxLength: 120, description: 'Scientific classification hierarchy (e.g. "Mollusca > Bivalvia"). NO explanation.' },
+              living_relative: { type: 'string', nullable: true, maxLength: 80, description: 'Common name of modern equivalent.' },
+              preservation_mode: { type: 'string', nullable: true, maxLength: 80, description: 'Geologic process (e.g. "Permineralization").' }
             }
           },
           artifact: {
             type: 'object',
             nullable: true,
             properties: {
-              likely_origin: { type: 'string', nullable: true, maxLength: 150, description: 'Brief hypothesis on origin (e.g. "Bottle glass, mid-20th century").' },
+              likely_origin: { type: 'string', nullable: true, maxLength: 120, description: 'Short hypothesis (e.g. "Mid-century soda bottle"). NO history lesson.' },
               estimated_age_range: { type: 'string', nullable: true, maxLength: 60 }
             }
           }
@@ -91,7 +90,7 @@ const RockIdSchema = {
         maxItems: 5,
         items: {
           type: 'object',
-          // additionalProperties: false,
+          additionalProperties: false,
           required: ['label', 'confidence'],
           properties: {
             label: { type: 'string', minLength: 1, maxLength: 80 },
@@ -102,28 +101,28 @@ const RockIdSchema = {
       specimen_context: {
         type: 'object',
         description: 'Geologic and historical context inferred from the identification and location.',
-        // additionalProperties: false,
+        additionalProperties: false,
         required: ['age', 'geology_hypothesis', 'type', 'historical_fact'],
         properties: {
-          age: { type: 'string', maxLength: 60, description: 'Geologic epoch/period (e.g. "Miocene (~23 MYA)").' },
+          age: { type: 'string', maxLength: 60, description: 'Geologic time period (e.g. "Miocene (~23 MYA)").' },
           geology_hypothesis: {
             type: 'object',
-            // additionalProperties: false,
+            additionalProperties: false,
             required: ['name', 'confidence', 'evidence'],
             properties: {
-                name: { type: 'string', nullable: true, maxLength: 60, description: 'Specific formation name if supported by evidence, else null.' },
+                name: { type: ['string', 'null'], maxLength: 60, description: 'Specific formation name if supported by evidence, else null.' },
                 confidence: { type: 'string', enum: ['high', 'medium', 'low'], description: 'Confidence in the formation assignment.' },
                 evidence: { type: 'array', items: { type: 'string' }, maxItems: 3, description: 'Cues used (e.g. "location_map", "visual_texture").' }
             }
           },
           type: { type: 'string', maxLength: 60, description: 'Scientific classification (e.g. "Marine Bivalve").' },
-          historical_fact: { type: 'string', maxLength: 300, description: 'Fascinating fact about the era/environment.' }
+          historical_fact: { type: 'string', maxLength: 250, description: 'ONE standalone trivia fact. Do NOT overlap with ranger_summary.' }
         }
       },
       lapidary_guidance: {
         type: 'object',
         description: 'Advice for polishing or tumbling this specimen.',
-        // additionalProperties: false,
+        additionalProperties: false,
         required: ['is_tumble_candidate', 'tumble_reason'],
         properties: {
           is_tumble_candidate: { type: 'boolean', description: 'True if hard enough (Mohs > 6) and non-porous. False if soft/crumbly.' },
@@ -134,12 +133,12 @@ const RockIdSchema = {
       region_fit: {
         type: 'object',
         description: 'Assessment of plausibility given the location hint.',
-        // additionalProperties: false,
+        additionalProperties: false,
         required: ['location_hint', 'fit', 'note'],
         properties: {
-          location_hint: { type: 'string', nullable: true, maxLength: 120, description: 'The provided location context, or null.' },
+          location_hint: { type: ['null', 'string'], maxLength: 120, description: 'The provided location context, or null.' },
           fit: { type: 'string', enum: ['high', 'medium', 'low', 'unknown'], description: 'How well the ID matches the local geology.' },
-          note: { type: 'string', nullable: true, maxLength: 160, description: 'Brief explanation of the fit. Do not state formation as fact if fit is low.' },
+          note: { type: ['null', 'string'], maxLength: 160, description: 'Brief explanation of the fit. Do not state formation as fact if fit is low.' },
         },
       },
       followup_photos: {
@@ -157,7 +156,7 @@ const RockIdSchema = {
       catalog_tags: {
         type: 'object',
         description: 'Structured attributes for filtering and organizing. All values must be snake_case.',
-        // additionalProperties: false,
+        additionalProperties: false,
         required: ['type', 'color', 'pattern', 'luster', 'translucency', 'grain_size', 'features', 'condition'],
         properties: {
           type: { type: 'array', maxItems: 6, items: { type: 'string', maxLength: 40 }, description: 'Broad types (e.g. "sedimentary", "quartz").' },

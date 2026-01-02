@@ -39,7 +39,7 @@ export const RockIdSchema = {
       ranger_summary: {
          type: 'string',
          maxLength: 300,
-         description: '2-3 sentence summary of the find from Ranger Al. No AI mention.'
+         description: '2-3 sentence summary/story from Ranger Al. This is the ONLY place for general narrative. Do not repeat specific fields.'
       },
       category_details: {
         type: 'object',
@@ -50,35 +50,35 @@ export const RockIdSchema = {
             type: 'object',
             nullable: true,
             properties: {
-              crystal_system: { type: 'string', nullable: true, maxLength: 60 },
-              chemical_formula: { type: 'string', nullable: true, maxLength: 60 },
-              hardness_scale: { type: 'string', nullable: true, maxLength: 60 },
-              optical_properties: { type: 'string', nullable: true, maxLength: 100 }
+              crystal_system: { type: 'string', nullable: true, maxLength: 60, description: 'Scientific Name ONLY (e.g. "Hexagonal").' },
+              chemical_formula: { type: 'string', nullable: true, maxLength: 60, description: 'Standard formula (e.g. "SiO2").' },
+              hardness_scale: { type: 'string', nullable: true, maxLength: 60, description: 'Mohs value or range (e.g. "7").' },
+              optical_properties: { type: 'string', nullable: true, maxLength: 100, description: 'Brief keywords (e.g. "Double refractive").' }
             }
           },
           rock: {
             type: 'object',
             nullable: true,
             properties: {
-              texture_type: { type: 'string', nullable: true, maxLength: 100 },
-              mineral_composition: { type: 'string', nullable: true, maxLength: 100 },
-              depositional_environment: { type: 'string', nullable: true, maxLength: 100 }
+              texture_type: { type: 'string', nullable: true, maxLength: 80, description: 'Scientific term ONLY (e.g. "Phaneritic", "Glassy"). NO description.' },
+              mineral_composition: { type: 'string', nullable: true, maxLength: 100, description: 'Comma-separated list of minerals.' },
+              depositional_environment: { type: 'string', nullable: true, maxLength: 100, description: 'Brief environment name (e.g. "Riverbed").' }
             }
           },
           fossil: {
             type: 'object',
             nullable: true,
             properties: {
-              taxonomy: { type: 'string', nullable: true, maxLength: 100 },
-              living_relative: { type: 'string', nullable: true, maxLength: 80 },
-              preservation_mode: { type: 'string', nullable: true, maxLength: 80 }
+              taxonomy: { type: 'string', nullable: true, maxLength: 120, description: 'Scientific classification hierarchy (e.g. "Mollusca > Bivalvia"). NO explanation.' },
+              living_relative: { type: 'string', nullable: true, maxLength: 80, description: 'Common name of modern equivalent.' },
+              preservation_mode: { type: 'string', nullable: true, maxLength: 80, description: 'Geologic process (e.g. "Permineralization").' }
             }
           },
           artifact: {
             type: 'object',
             nullable: true,
             properties: {
-              likely_origin: { type: 'string', nullable: true, maxLength: 150, description: 'Brief hypothesis on origin (e.g. "Bottle glass, mid-20th century").' },
+              likely_origin: { type: 'string', nullable: true, maxLength: 120, description: 'Short hypothesis (e.g. "Mid-century soda bottle"). NO history lesson.' },
               estimated_age_range: { type: 'string', nullable: true, maxLength: 60 }
             }
           }
@@ -116,7 +116,7 @@ export const RockIdSchema = {
             }
           },
           type: { type: 'string', maxLength: 60, description: 'Scientific classification (e.g. "Marine Bivalve").' },
-          historical_fact: { type: 'string', maxLength: 300, description: 'A fascinating "Did You Know?" fact about this specimen in its ancient environment.' }
+          historical_fact: { type: 'string', maxLength: 250, description: 'ONE standalone trivia fact. Do NOT overlap with ranger_summary.' }
         }
       },
       lapidary_guidance: {
