@@ -1,5 +1,9 @@
-import { RockIdResult, AnalysisEvent } from './rockIdSchema';
-import { getRangerSystemPrompt, getRangerSchema, RangerMode } from './RangerConfig';
+import {RockIdResult, AnalysisEvent} from './rockIdSchema';
+import {
+  getRangerSystemPrompt,
+  getRangerSchema,
+  RangerMode,
+} from './RangerConfig';
 
 export type IdentifyInput = {
   imageUrls?: string[];
@@ -18,7 +22,9 @@ export type IdentifyInput = {
   temperature?: number;
 };
 
-export async function identifyRock(input: IdentifyInput): Promise<AnalysisEvent> {
+export async function identifyRock(
+  input: IdentifyInput,
+): Promise<AnalysisEvent> {
   const url =
     input.endpoint ||
     process.env.EXPO_PUBLIC_IDENTIFY_URL ||
@@ -28,7 +34,7 @@ export async function identifyRock(input: IdentifyInput): Promise<AnalysisEvent>
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
       provider: input.provider ?? 'gemini',
       image_urls: input.imageUrls ?? [],
@@ -51,19 +57,22 @@ export async function identifyRock(input: IdentifyInput): Promise<AnalysisEvent>
     throw new Error(`${err?.error || 'Identify request failed'}${detail}`);
   }
 
-  const result = await res.json() as RockIdResult;
+  const result = (await res.json()) as RockIdResult;
 
   // Client-side Safety Net: Normalize catalog tags
   if (result.catalog_tags) {
-     const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, '_');
-     const keysToNormalize = ['type', 'color', 'pattern', 'luster', 'features'];
+    const normalize = (s: string) =>
+      s.toLowerCase().trim().replace(/\s+/g, '_');
+    const keysToNormalize = ['type', 'color', 'pattern', 'luster', 'features'];
 
-     for (const key of keysToNormalize) {
-        const tagKey = key as keyof typeof result.catalog_tags;
-        if (Array.isArray(result.catalog_tags[tagKey])) {
-           (result.catalog_tags[tagKey] as string[]) = (result.catalog_tags[tagKey] as string[]).map(normalize);
-        }
-     }
+    for (const key of keysToNormalize) {
+      const tagKey = key as keyof typeof result.catalog_tags;
+      if (Array.isArray(result.catalog_tags[tagKey])) {
+        (result.catalog_tags[tagKey] as string[]) = (
+          result.catalog_tags[tagKey] as string[]
+        ).map(normalize);
+      }
+    }
   }
 
   // Wrap in AnalysisEvent
@@ -79,18 +88,21 @@ export async function identifyRock(input: IdentifyInput): Promise<AnalysisEvent>
     },
     input: {
       sourceImages: [
-        ...(input.imageUrls || []).map(uri => ({ uri })),
+        ...(input.imageUrls || []).map(uri => ({uri})),
         ...(input.imageDataUrls || []).map(uri => ({
-            uri: uri.startsWith('data:') ? '[Base64 Data Omitted]' : uri
+          uri: uri.startsWith('data:') ? '[Base64 Data Omitted]' : uri,
         })),
       ],
       locationUsed: !!input.locationHint,
       userGoal: input.userGoal || 'quick_id',
     },
-    result: result
+    result: result,
   };
 
-  console.log('Traceability Event:', JSON.stringify(analysisEvent).substring(0, 100) + '...');
+  console.log(
+    'Traceability Event:',
+    JSON.stringify(analysisEvent).substring(0, 100) + '...',
+  );
 
   return analysisEvent;
 }

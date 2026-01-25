@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { listFinds } from '../../shared/db';
-import { useTheme } from '../../shared/ThemeContext';
-import { FindRecord } from '../../shared/types';
-import { GlassView } from '../../shared/components/GlassView';
+import {useEffect, useState} from 'react';
+import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Ionicons} from '@expo/vector-icons';
+import {listFinds} from '../../shared/db';
+import {useTheme} from '../../shared/ThemeContext';
+import {FindRecord} from '../../shared/types';
+import {GlassView} from '../../shared/components/GlassView';
 
 export function InsightsView() {
-  const { colors } = useTheme();
+  const {colors} = useTheme();
   const [finds, setFinds] = useState<FindRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,7 +20,9 @@ export function InsightsView() {
         setLoading(false);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Time of day analysis
@@ -32,9 +34,12 @@ export function InsightsView() {
     const total = finds.length || 1;
 
     return {
-      morning: { count: morning, percent: Math.round((morning / total) * 100) },
-      afternoon: { count: afternoon, percent: Math.round((afternoon / total) * 100) },
-      evening: { count: evening, percent: Math.round((evening / total) * 100) },
+      morning: {count: morning, percent: Math.round((morning / total) * 100)},
+      afternoon: {
+        count: afternoon,
+        percent: Math.round((afternoon / total) * 100),
+      },
+      evening: {count: evening, percent: Math.round((evening / total) * 100)},
     };
   };
 
@@ -49,7 +54,7 @@ export function InsightsView() {
         aiLabel = (f.aiData as any).best_guess?.label || 'Unknown';
       }
 
-      const type = aiLabel !== 'Unknown' ? aiLabel : (f.label || 'Unknown');
+      const type = aiLabel !== 'Unknown' ? aiLabel : f.label || 'Unknown';
       types[type] = (types[type] || 0) + 1;
     });
     return Object.entries(types)
@@ -79,7 +84,9 @@ export function InsightsView() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <Text style={[styles.loading, { color: colors.textSecondary }]}>Loading insights...</Text>
+        <Text style={[styles.loading, {color: colors.textSecondary}]}>
+          Loading insights...
+        </Text>
       </View>
     );
   }
@@ -87,7 +94,7 @@ export function InsightsView() {
   if (finds.length === 0) {
     return (
       <View style={styles.container}>
-        <Text style={[styles.empty, { color: colors.textSecondary }]}>
+        <Text style={[styles.empty, {color: colors.textSecondary}]}>
           No data yet. Start collecting to see insights!
         </Text>
       </View>
@@ -99,14 +106,21 @@ export function InsightsView() {
       {/* Header */}
       <View style={styles.header}>
         <Ionicons name="analytics" size={32} color={colors.accent} />
-        <Text style={[styles.title, { color: colors.text }]}>Your Insights</Text>
+        <Text style={[styles.title, {color: colors.text}]}>Your Insights</Text>
       </View>
 
       {/* Overview Stats */}
-      <GlassView style={[styles.card, { backgroundColor: colors.card }]} intensity={20}>
-        <Text style={[styles.cardTitle, { color: colors.text }]}>Overview</Text>
+      <GlassView
+        style={[styles.card, {backgroundColor: colors.card}]}
+        intensity={20}>
+        <Text style={[styles.cardTitle, {color: colors.text}]}>Overview</Text>
         <View style={styles.statsRow}>
-          <StatItem label="Total Finds" value={finds.length.toString()} icon="albums" colors={colors} />
+          <StatItem
+            label="Total Finds"
+            value={finds.length.toString()}
+            icon="albums"
+            colors={colors}
+          />
           <StatItem
             label="Analyzed"
             value={finds.filter(f => f.aiData).length.toString()}
@@ -123,32 +137,65 @@ export function InsightsView() {
       </GlassView>
 
       {/* Time of Day */}
-      <GlassView style={[styles.card, { backgroundColor: colors.card }]} intensity={20}>
-        <Text style={[styles.cardTitle, { color: colors.text }]}>Best Finding Times</Text>
-        <TimeBar label="Morning (6-12)" count={times.morning.count} percent={times.morning.percent} colors={colors} />
-        <TimeBar label="Afternoon (12-6)" count={times.afternoon.count} percent={times.afternoon.percent} colors={colors} />
-        <TimeBar label="Evening (6-6)" count={times.evening.count} percent={times.evening.percent} colors={colors} />
+      <GlassView
+        style={[styles.card, {backgroundColor: colors.card}]}
+        intensity={20}>
+        <Text style={[styles.cardTitle, {color: colors.text}]}>
+          Best Finding Times
+        </Text>
+        <TimeBar
+          label="Morning (6-12)"
+          count={times.morning.count}
+          percent={times.morning.percent}
+          colors={colors}
+        />
+        <TimeBar
+          label="Afternoon (12-6)"
+          count={times.afternoon.count}
+          percent={times.afternoon.percent}
+          colors={colors}
+        />
+        <TimeBar
+          label="Evening (6-6)"
+          count={times.evening.count}
+          percent={times.evening.percent}
+          colors={colors}
+        />
       </GlassView>
 
       {/* Top Rock Types */}
-      <GlassView style={[styles.card, { backgroundColor: colors.card }]} intensity={20}>
-        <Text style={[styles.cardTitle, { color: colors.text }]}>Most Common Finds</Text>
+      <GlassView
+        style={[styles.card, {backgroundColor: colors.card}]}
+        intensity={20}>
+        <Text style={[styles.cardTitle, {color: colors.text}]}>
+          Most Common Finds
+        </Text>
         {types.map(([type, count], i) => (
           <View key={i} style={styles.listItem}>
-            <Text style={[styles.listLabel, { color: colors.text }]}>{type}</Text>
-            <Text style={[styles.listValue, { color: colors.textSecondary }]}>{count}</Text>
+            <Text style={[styles.listLabel, {color: colors.text}]}>{type}</Text>
+            <Text style={[styles.listValue, {color: colors.textSecondary}]}>
+              {count}
+            </Text>
           </View>
         ))}
       </GlassView>
 
       {/* Hot Spots */}
       {locations.length > 0 && (
-        <GlassView style={[styles.card, { backgroundColor: colors.card }]} intensity={20}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Hot Spots</Text>
+        <GlassView
+          style={[styles.card, {backgroundColor: colors.card}]}
+          intensity={20}>
+          <Text style={[styles.cardTitle, {color: colors.text}]}>
+            Hot Spots
+          </Text>
           {locations.map(([_loc, count], i) => (
             <View key={i} style={styles.listItem}>
-              <Text style={[styles.listLabel, { color: colors.text }]}>Area {i + 1}</Text>
-              <Text style={[styles.listValue, { color: colors.textSecondary }]}>{count} finds</Text>
+              <Text style={[styles.listLabel, {color: colors.text}]}>
+                Area {i + 1}
+              </Text>
+              <Text style={[styles.listValue, {color: colors.textSecondary}]}>
+                {count} finds
+              </Text>
             </View>
           ))}
         </GlassView>
@@ -157,24 +204,53 @@ export function InsightsView() {
   );
 }
 
-function StatItem({ label, value, icon, colors }: { label: string; value: string; icon: keyof typeof Ionicons.glyphMap; colors: Record<string, string> }) {
+function StatItem({
+  label,
+  value,
+  icon,
+  colors,
+}: {
+  label: string;
+  value: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  colors: Record<string, string>;
+}) {
   return (
     <View style={styles.statItem}>
       <Ionicons name={icon} size={24} color={colors.accent} />
-      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
+      <Text style={[styles.statValue, {color: colors.text}]}>{value}</Text>
+      <Text style={[styles.statLabel, {color: colors.textSecondary}]}>
+        {label}
+      </Text>
     </View>
   );
 }
 
-function TimeBar({ label, count, percent, colors }: { label: string; count: number; percent: number; colors: Record<string, string> }) {
+function TimeBar({
+  label,
+  count,
+  percent,
+  colors,
+}: {
+  label: string;
+  count: number;
+  percent: number;
+  colors: Record<string, string>;
+}) {
   return (
     <View style={styles.timeBar}>
-      <Text style={[styles.timeLabel, { color: colors.text }]}>{label}</Text>
+      <Text style={[styles.timeLabel, {color: colors.text}]}>{label}</Text>
       <View style={styles.barContainer}>
-        <View style={[styles.bar, { width: `${percent}%`, backgroundColor: colors.accent }]} />
+        <View
+          style={[
+            styles.bar,
+            {width: `${percent}%`, backgroundColor: colors.accent},
+          ]}
+        />
       </View>
-      <Text style={[styles.timeValue, { color: colors.textSecondary }]}>{count} ({percent}%)</Text>
+      <Text style={[styles.timeValue, {color: colors.textSecondary}]}>
+        {count} ({percent}%)
+      </Text>
     </View>
   );
 }

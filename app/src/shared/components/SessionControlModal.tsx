@@ -1,10 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../ThemeContext';
-import { useSession } from '../SessionContext';
-import { Session } from '../types';
-import { formatTimestamp } from '../format';
+import React, {useState, useEffect} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+} from 'react-native';
+import {Ionicons} from '@expo/vector-icons';
+import {useTheme} from '../ThemeContext';
+import {useSession} from '../SessionContext';
+import {Session} from '../types';
+import {formatTimestamp} from '../format';
 
 type Props = {
   visible: boolean;
@@ -12,11 +23,11 @@ type Props = {
   session: Session | null;
 };
 
-export function SessionControlModal({ visible, onClose, session }: Props) {
-  const { renameSession, endSession } = useSession();
+export function SessionControlModal({visible, onClose, session}: Props) {
+  const {renameSession, endSession} = useSession();
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
-  const { colors, mode } = useTheme();
+  const {colors, mode} = useTheme();
 
   useEffect(() => {
     if (session) {
@@ -42,78 +53,134 @@ export function SessionControlModal({ visible, onClose, session }: Props) {
       'End Session?',
       'This will close the current session. You can verify finds in the Review Deck later.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        {text: 'Cancel', style: 'cancel'},
         {
-            text: 'End Session',
-            style: 'destructive',
-            onPress: async () => {
-                setSaving(true);
-                try {
-                    await endSession();
-                    onClose();
-                } catch {
-                    Alert.alert('Error', 'Could not end session.');
-                } finally {
-                    setSaving(false);
-                }
+          text: 'End Session',
+          style: 'destructive',
+          onPress: async () => {
+            setSaving(true);
+            try {
+              await endSession();
+              onClose();
+            } catch {
+              Alert.alert('Error', 'Could not end session.');
+            } finally {
+              setSaving(false);
             }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
   if (!session) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.overlay}
-      >
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        style={styles.overlay}>
+        <View
+          style={[
+            styles.card,
+            {backgroundColor: colors.card, borderColor: colors.border},
+          ]}>
           <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.text }]}>Session Manager</Text>
+            <Text style={[styles.title, {color: colors.text}]}>
+              Session Manager
+            </Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.form}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Session Name</Text>
-              <TextInput
-                style={[styles.input, {
-                  backgroundColor: mode === 'high-contrast' ? '#1e293b' : colors.background,
+            <Text style={[styles.label, {color: colors.textSecondary}]}>
+              Session Name
+            </Text>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor:
+                    mode === 'high-contrast' ? '#1e293b' : colors.background,
                   borderColor: colors.border,
-                  color: colors.text
-                }]}
-                value={name}
-                onChangeText={setName}
-                placeholder="E.g. Morning Beach Walk"
-                placeholderTextColor={colors.textSecondary}
-              />
+                  color: colors.text,
+                },
+              ]}
+              value={name}
+              onChangeText={setName}
+              placeholder="E.g. Morning Beach Walk"
+              placeholderTextColor={colors.textSecondary}
+            />
           </View>
 
-          <View style={[styles.meta, { backgroundColor: mode === 'high-contrast' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.03)' }]}>
-              <View style={styles.metaItem}>
-                  <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
-                  <Text style={[styles.metaText, { color: colors.textSecondary }]}>Started: {formatTimestamp(new Date(session.startTime).toISOString())}</Text>
-              </View>
-              <View style={styles.metaItem}>
-                  <Ionicons name="map-outline" size={16} color={colors.textSecondary} />
-                  <Text style={[styles.metaText, { color: colors.textSecondary }]}>{session.locationName || 'Unknown Location'}</Text>
-              </View>
+          <View
+            style={[
+              styles.meta,
+              {
+                backgroundColor:
+                  mode === 'high-contrast'
+                    ? 'rgba(255,255,255,0.1)'
+                    : 'rgba(0,0,0,0.03)',
+              },
+            ]}>
+            <View style={styles.metaItem}>
+              <Ionicons
+                name="time-outline"
+                size={16}
+                color={colors.textSecondary}
+              />
+              <Text style={[styles.metaText, {color: colors.textSecondary}]}>
+                Started:{' '}
+                {formatTimestamp(new Date(session.startTime).toISOString())}
+              </Text>
+            </View>
+            <View style={styles.metaItem}>
+              <Ionicons
+                name="map-outline"
+                size={16}
+                color={colors.textSecondary}
+              />
+              <Text style={[styles.metaText, {color: colors.textSecondary}]}>
+                {session.locationName || 'Unknown Location'}
+              </Text>
+            </View>
           </View>
 
           <View style={styles.actions}>
-              <TouchableOpacity style={[styles.endBtn, { borderColor: colors.danger, backgroundColor: 'rgba(239, 68, 68, 0.05)' }]} onPress={handleEndSession} disabled={saving}>
-                  <Text style={[styles.endBtnText, { color: colors.danger }]}>End Session</Text>
-              </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.endBtn,
+                {
+                  borderColor: colors.danger,
+                  backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                },
+              ]}
+              onPress={handleEndSession}
+              disabled={saving}>
+              <Text style={[styles.endBtnText, {color: colors.danger}]}>
+                End Session
+              </Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.text }]} onPress={handleSave} disabled={saving}>
-                  {saving ? <ActivityIndicator color={colors.background} /> : <Text style={[styles.saveBtnText, { color: colors.background }]}>Save Name</Text>}
-              </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.saveBtn, {backgroundColor: colors.text}]}
+              onPress={handleSave}
+              disabled={saving}>
+              {saving ? (
+                <ActivityIndicator color={colors.background} />
+              ) : (
+                <Text style={[styles.saveBtnText, {color: colors.background}]}>
+                  Save Name
+                </Text>
+              )}
+            </TouchableOpacity>
           </View>
-
         </View>
       </KeyboardAvoidingView>
     </Modal>

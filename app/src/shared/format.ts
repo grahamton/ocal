@@ -21,7 +21,10 @@ const geocodeCache = new Map<string, string>();
  * Format location as friendly name using reverse geocoding.
  * Falls back to coordinates if geocoding fails or is unavailable.
  */
-export async function formatLocation(lat: number | null, long: number | null): Promise<string> {
+export async function formatLocation(
+  lat: number | null,
+  long: number | null,
+): Promise<string> {
   if (lat == null || long == null) return 'No Location';
 
   // Check cache first
@@ -31,7 +34,10 @@ export async function formatLocation(lat: number | null, long: number | null): P
   }
 
   try {
-    const results = await Location.reverseGeocodeAsync({ latitude: lat, longitude: long });
+    const results = await Location.reverseGeocodeAsync({
+      latitude: lat,
+      longitude: long,
+    });
 
     if (results && results.length > 0) {
       const location = results[0];
@@ -78,7 +84,10 @@ export async function formatLocation(lat: number | null, long: number | null): P
 /**
  * Synchronous version that returns cached value or coordinates immediately.
  */
-export function formatLocationSync(lat: number | null, long: number | null): string {
+export function formatLocationSync(
+  lat: number | null,
+  long: number | null,
+): string {
   if (lat == null || long == null) return 'No Location';
 
   const cacheKey = `${lat.toFixed(4)},${long.toFixed(4)}`;

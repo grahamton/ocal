@@ -8,9 +8,9 @@ import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
 import { RockIdResult, AnalysisEvent } from '../../ai/rockIdSchema';
 import { formatLocationSync } from '../../shared/format';
 import { useTheme, ThemeColors } from '../../shared/ThemeContext';
-import { StatusIcon } from '../../../components/StatusIcon';
-import { getCategoryFromTags } from '../../../utils/CategoryMapper';
-import { RawJsonInspector } from '../../../components/RawJsonInspector';
+import { StatusIcon } from '../../../app/src/shared/components/StatusIcon';
+import { getCategoryFromTags } from '../../../app/src/shared/CategoryMapper';
+import { RawJsonInspector } from '../../../app/src/shared/components/RawJsonInspector';
 
 type Props = {
   visible: boolean;

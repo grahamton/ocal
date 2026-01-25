@@ -1,11 +1,16 @@
-
-import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { listFinds, updateFindMetadata } from '../../shared/db';
-import { useSession } from '../../shared/SessionContext';
-import { FindRecord } from '../../shared/types';
-import { THEME } from '../../shared/theme';
-import { LedgerTile } from './LedgerTile';
+import {useCallback, useEffect, useState} from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {listFinds, updateFindMetadata} from '../../shared/db';
+import {useSession} from '../../shared/SessionContext';
+import {FindRecord} from '../../shared/types';
+import {THEME} from '../../shared/theme';
+import {LedgerTile} from './LedgerTile';
 
 type Props = {
   refreshKey: number;
@@ -15,8 +20,13 @@ type Props = {
 };
 
 // Simple ledger: pick keeps, then review.
-export function SessionLedger({ refreshKey, onUpdated, onRequestReview, onKept }: Props) {
-  const { activeSession } = useSession();
+export function SessionLedger({
+  refreshKey,
+  onUpdated,
+  onRequestReview,
+  onKept,
+}: Props) {
+  const {activeSession} = useSession();
   const [items, setItems] = useState<FindRecord[]>([]);
 
   const load = useCallback(async () => {
@@ -24,7 +34,7 @@ export function SessionLedger({ refreshKey, onUpdated, onRequestReview, onKept }
       setItems([]);
       return;
     }
-    const rows = await listFinds({ sessionId: activeSession.id });
+    const rows = await listFinds({sessionId: activeSession.id});
     setItems(rows);
   }, [activeSession]);
 
@@ -34,7 +44,7 @@ export function SessionLedger({ refreshKey, onUpdated, onRequestReview, onKept }
   }, [load, refreshKey]);
 
   const toggleKeep = async (id: string, current: boolean) => {
-    await updateFindMetadata(id, { favorite: !current });
+    await updateFindMetadata(id, {favorite: !current});
     if (!current && onKept) {
       onKept();
     }
@@ -45,7 +55,7 @@ export function SessionLedger({ refreshKey, onUpdated, onRequestReview, onKept }
 
   if (!activeSession) return null;
 
-  const keptCount = items.filter((i) => i.favorite).length;
+  const keptCount = items.filter(i => i.favorite).length;
 
   return (
     <View style={styles.container}>
@@ -53,16 +63,28 @@ export function SessionLedger({ refreshKey, onUpdated, onRequestReview, onKept }
         <Text style={styles.title}>Session ledger</Text>
         <Text style={styles.caption}>{items.length} finds</Text>
       </View>
-      <Text style={styles.prompt}>Tap &quot;Keep&quot; to star items for review.</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
-        {items.length === 0 ? <Text style={styles.caption}>Captures will appear here.</Text> : null}
-        {items.map((item) => (
+      <Text style={styles.prompt}>
+        Tap &quot;Keep&quot; to star items for review.
+      </Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.row}>
+        {items.length === 0 ? (
+          <Text style={styles.caption}>Captures will appear here.</Text>
+        ) : null}
+        {items.map(item => (
           <LedgerTile key={item.id} item={item} onToggleKeep={toggleKeep} />
         ))}
       </ScrollView>
       {items.length > 0 ? (
-        <TouchableOpacity style={styles.analyzeButton} onPress={onRequestReview} activeOpacity={0.9}>
-          <Text style={styles.analyzeText}>Review Session {keptCount > 0 ? `(${keptCount} kept)` : ''}</Text>
+        <TouchableOpacity
+          style={styles.analyzeButton}
+          onPress={onRequestReview}
+          activeOpacity={0.9}>
+          <Text style={styles.analyzeText}>
+            Review Session {keptCount > 0 ? `(${keptCount} kept)` : ''}
+          </Text>
         </TouchableOpacity>
       ) : null}
     </View>

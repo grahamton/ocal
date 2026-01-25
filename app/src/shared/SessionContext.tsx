@@ -1,8 +1,16 @@
-import { ReactNode, createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import {
+  ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+} from 'react';
 import * as firestoreService from './firestoreService';
-import { createId } from './id';
-import { Session } from './types';
-import { useAuth } from './AuthContext'; // Import useAuth to get the user ID
+import {createId} from './id';
+import {Session} from './types';
+import {useAuth} from './AuthContext'; // Import useAuth to get the user ID
 
 type SessionContextValue = {
   sessions: Session[];
@@ -11,15 +19,20 @@ type SessionContextValue = {
   endSession: (name?: string) => Promise<void>;
   renameSession: (sessionId: string, newName: string) => Promise<void>;
   endSessionById: (sessionId: string, name?: string) => Promise<void>;
-  addFindToActiveSession: (findId: string, sessionIdOverride?: string) => Promise<void>;
+  addFindToActiveSession: (
+    findId: string,
+    sessionIdOverride?: string,
+  ) => Promise<void>;
 };
 
-const SessionContext = createContext<SessionContextValue | undefined>(undefined);
+const SessionContext = createContext<SessionContextValue | undefined>(
+  undefined,
+);
 
-export function SessionProvider({ children }: { children: ReactNode }) {
+export function SessionProvider({children}: {children: ReactNode}) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSession, setActiveSession] = useState<Session | null>(null);
-  const { user } = useAuth();
+  const {user} = useAuth();
 
   useEffect(() => {
     if (!user) {
@@ -29,14 +42,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
 
     const unsubscribe = firestoreService.subscribeToSessions(
-      (newSessions) => {
+      newSessions => {
         setSessions(newSessions);
-        const active = newSessions.find((session) => session.status === 'active') ?? null;
+        const active =
+          newSessions.find(session => session.status === 'active') ?? null;
         setActiveSession(active);
       },
-      (error) => {
-        console.error("Failed to subscribe to sessions", error);
-      }
+      error => {
+        console.error('Failed to subscribe to sessions', error);
+      },
     );
 
     return () => unsubscribe();
@@ -49,7 +63,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       let fallbackName = `Beach Session ${new Date(now).toLocaleDateString()}`;
       if (!name) {
         const hour = new Date(now).getHours();
-        const dateStr = new Date(now).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        const dateStr = new Date(now).toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+        });
 
         if (hour < 12) fallbackName = `Morning Walk (${dateStr})`;
         else if (hour < 17) fallbackName = `Afternoon Walk (${dateStr})`;
@@ -65,45 +82,51 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         locationName: locationName?.trim() || undefined,
         finds: [],
       };
-      
+
       await firestoreService.addSession(newSession);
       // No need to manually set state, the listener will do it.
       return newSession;
     },
-    []
+    [],
   );
 
   const endSession = useCallback(
     async (name?: string) => {
       if (!activeSession) return;
-      const updates: Partial<Session> = { status: 'complete', endTime: Date.now() };
+      const updates: Partial<Session> = {
+        status: 'complete',
+        endTime: Date.now(),
+      };
       if (name) {
         updates.name = name;
       }
       await firestoreService.updateSession(activeSession.id, updates);
       // No need to manually set state, the listener will do it.
     },
-    [activeSession]
+    [activeSession],
   );
 
   const renameSession = useCallback(
     async (sessionId: string, newName: string) => {
-        await firestoreService.updateSession(sessionId, { name: newName });
-        // No need to manually set state, the listener will do it.
+      await firestoreService.updateSession(sessionId, {name: newName});
+      // No need to manually set state, the listener will do it.
     },
-    []
+    [],
   );
 
   const endSessionById = useCallback(
     async (sessionId: string, name?: string) => {
-      const updates: Partial<Session> = { status: 'complete', endTime: Date.now() };
+      const updates: Partial<Session> = {
+        status: 'complete',
+        endTime: Date.now(),
+      };
       if (name) {
         updates.name = name;
       }
       await firestoreService.updateSession(sessionId, updates);
       // No need to manually set state, the listener will do it.
     },
-    []
+    [],
   );
 
   const addFindToActiveSession = useCallback(
@@ -113,7 +136,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       await firestoreService.addFindToSession(sessionId, findId);
       // No need to manually set state, the listener will do it.
     },
-    [activeSession]
+    [activeSession],
   );
 
   const value = useMemo(
@@ -127,10 +150,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       renameSession,
       // refreshSessions is removed as data is now real-time
     }),
-    [sessions, activeSession, startSession, endSession, endSessionById, addFindToActiveSession, renameSession]
+    [
+      sessions,
+      activeSession,
+      startSession,
+      endSession,
+      endSessionById,
+      addFindToActiveSession,
+      renameSession,
+    ],
   );
 
-  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
+  return (
+    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
+  );
 }
 
 export function useSession() {

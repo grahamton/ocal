@@ -1,6 +1,6 @@
-import { StyleProp, View, ViewStyle } from 'react-native';
-import { THEME } from '../theme';
-import { useTheme } from '../ThemeContext';
+import {StyleProp, View, ViewStyle} from 'react-native';
+import {THEME} from '../theme';
+import {useTheme} from '../ThemeContext';
 
 type Props = {
   children: React.ReactNode;
@@ -8,8 +8,8 @@ type Props = {
   intensity?: number; // Deprecated but kept for API compat
 };
 
-export function GlassView({ children, style }: Props) {
-  const { mode, colors } = useTheme();
+export function GlassView({children, style}: Props) {
+  const {mode, colors} = useTheme();
 
   const containerStyle: ViewStyle = {
     backgroundColor: colors.card,
@@ -18,19 +18,16 @@ export function GlassView({ children, style }: Props) {
     borderRadius: THEME.layout.borderRadius,
     overflow: 'hidden',
     // Journal Mode: Subtle Shadow
-    ...(mode === 'journal' ? {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.05,
-      shadowRadius: 8,
-      elevation: 2,
-    } : {}),
+    ...(mode === 'journal'
+      ? {
+          shadowColor: '#000',
+          shadowOffset: {width: 0, height: 2},
+          shadowOpacity: 0.05,
+          shadowRadius: 8,
+          elevation: 2,
+        }
+      : {}),
   };
 
-  return (
-    <View style={[containerStyle, style]}>
-      {children}
-    </View>
-  );
+  return <View style={[containerStyle, style]}>{children}</View>;
 }
-

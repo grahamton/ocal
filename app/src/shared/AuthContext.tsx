@@ -1,5 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
+import auth, {FirebaseAuthTypes} from '@react-native-firebase/auth';
 
 interface AuthContextType {
   user: FirebaseAuthTypes.User | null;
@@ -13,12 +19,12 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
+export const AuthProvider = ({children}: AuthProviderProps) => {
   const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const subscriber = auth().onAuthStateChanged(async (firebaseUser) => {
+    const subscriber = auth().onAuthStateChanged(async firebaseUser => {
       if (firebaseUser) {
         // User is signed in
         setUser(firebaseUser);
@@ -28,7 +34,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           const anonymousUserCredential = await auth().signInAnonymously();
           setUser(anonymousUserCredential.user);
         } catch (error) {
-          console.error("Anonymous sign-in failed", error);
+          console.error('Anonymous sign-in failed', error);
           // Handle error, maybe set an error state
         }
       }
@@ -40,7 +46,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{user, loading}}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,7 +1,7 @@
 import storage from '@react-native-firebase/storage';
 import auth from '@react-native-firebase/auth';
-import { createId } from './id';
-import { logger } from './LogService';
+import {createId} from './id';
+import {logger} from './LogService';
 
 const getCurrentUserId = (): string | null => {
   return auth().currentUser?.uid || null;
@@ -25,7 +25,7 @@ export const uploadImage = async (localFileUri: string): Promise<string> => {
     logger.add('storage', `Image uploaded successfully: ${downloadURL}`);
     return downloadURL;
   } catch (error) {
-    logger.error('StorageService: Image upload failed', { storagePath, error });
+    logger.error('StorageService: Image upload failed', {storagePath, error});
     throw error;
   }
 };

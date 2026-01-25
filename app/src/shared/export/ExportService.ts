@@ -1,8 +1,7 @@
-
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { listFinds, listSessions } from '../db';
-import { logger } from '../LogService';
+import {listFinds, listSessions} from '../db';
+import {logger} from '../LogService';
 
 export class ExportService {
   /**
@@ -10,23 +9,26 @@ export class ExportService {
    * Can be used for restore or manual debugging.
    */
   async exportBackupJson(): Promise<string> {
-    const finds = await listFinds({ status: 'all' });
+    const finds = await listFinds({status: 'all'});
     const sessions = await listSessions();
 
     const backupData = {
       meta: {
         exportedAt: new Date().toISOString(),
         version: 1,
-        appVersion: '0.0.1'
+        appVersion: '0.0.1',
       },
       finds,
-      sessions
+      sessions,
     };
 
     const fileName = `ocal_backup_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
     const filePath = `${FileSystem.documentDirectory}${fileName}`;
 
-    await FileSystem.writeAsStringAsync(filePath, JSON.stringify(backupData, null, 2));
+    await FileSystem.writeAsStringAsync(
+      filePath,
+      JSON.stringify(backupData, null, 2),
+    );
     return filePath;
   }
 
@@ -35,7 +37,7 @@ export class ExportService {
    * Strips out large Base64 images to keep the file size manageable.
    */
   async exportAnalysisJson(): Promise<string> {
-    const finds = await listFinds({ status: 'all' });
+    const finds = await listFinds({status: 'all'});
     const sessions = await listSessions();
 
     // Deep clone and sanitize
@@ -46,10 +48,14 @@ export class ExportService {
       if (clean.aiData) {
         // Handle AnalysisEvent structure
         if (clean.aiData.input?.sourceImages) {
-           clean.aiData.input.sourceImages = clean.aiData.input.sourceImages.map((img: any) => ({
-             ...img,
-             uri: img.uri?.startsWith('data:') ? '[Base64 Data Omitted]' : img.uri
-           }));
+          clean.aiData.input.sourceImages = clean.aiData.input.sourceImages.map(
+            (img: any) => ({
+              ...img,
+              uri: img.uri?.startsWith('data:')
+                ? '[Base64 Data Omitted]'
+                : img.uri,
+            }),
+          );
         }
 
         // Handle legacy structure (if any) or deeply nested data urls
@@ -64,17 +70,20 @@ export class ExportService {
         exportedAt: new Date().toISOString(),
         version: 1,
         appVersion: '0.0.1',
-        type: 'analysis_export'
+        type: 'analysis_export',
       },
       finds: cleanFinds,
       sessions,
-      logs: logger.getLogs()
+      logs: logger.getLogs(),
     };
 
     const fileName = `ocal_analysis_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
     const filePath = `${FileSystem.documentDirectory}${fileName}`;
 
-    await FileSystem.writeAsStringAsync(filePath, JSON.stringify(exportData, null, 2));
+    await FileSystem.writeAsStringAsync(
+      filePath,
+      JSON.stringify(exportData, null, 2),
+    );
     return filePath;
   }
 
@@ -83,7 +92,7 @@ export class ExportService {
    * Focuses on Finds only.
    */
   async exportFindsCsv(): Promise<string> {
-    const finds = await listFinds({ status: 'all' });
+    const finds = await listFinds({status: 'all'});
 
     // Header
     const header = 'Date,ID,Label,Category,Location,Favorite,Note';
@@ -97,26 +106,32 @@ export class ExportService {
         return `"${safe}"`;
       };
 
-      const dateStr = new Date(f.timestamp).toLocaleDateString() + ' ' + new Date(f.timestamp).toLocaleTimeString();
+      const dateStr =
+        new Date(f.timestamp).toLocaleDateString() +
+        ' ' +
+        new Date(f.timestamp).toLocaleTimeString();
       let aiLabel = 'Unknown';
       let aiCategory = '';
 
       if (f.aiData && 'result' in f.aiData) {
-          // Wrapped AnalysisEvent
-          const res = (f.aiData as any).result;
-          aiLabel = res?.best_guess?.label || 'Unknown';
-          aiCategory = res?.best_guess?.category || '';
+        // Wrapped AnalysisEvent
+        const res = (f.aiData as any).result;
+        aiLabel = res?.best_guess?.label || 'Unknown';
+        aiCategory = res?.best_guess?.category || '';
       } else if (f.aiData) {
-          // Legacy RockIdResult
-          const res = f.aiData as any;
-          aiLabel = res?.best_guess?.label || 'Unknown';
-          aiCategory = res?.best_guess?.category || '';
+        // Legacy RockIdResult
+        const res = f.aiData as any;
+        aiLabel = res?.best_guess?.label || 'Unknown';
+        aiCategory = res?.best_guess?.category || '';
       }
 
       const label = f.label || aiLabel;
 
       // Use locationSync text or lat/long
-      const locText = f.lat && f.long ? `${f.lat.toFixed(5)}, ${f.long.toFixed(5)}` : 'No Location';
+      const locText =
+        f.lat && f.long
+          ? `${f.lat.toFixed(5)}, ${f.long.toFixed(5)}`
+          : 'No Location';
 
       return [
         escape(dateStr),
@@ -125,7 +140,7 @@ export class ExportService {
         escape(f.category || aiCategory),
         escape(locText),
         f.favorite ? 'Yes' : 'No',
-        escape(f.note)
+        escape(f.note),
       ].join(',');
     });
 

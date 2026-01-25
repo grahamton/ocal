@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import { formatCoords } from '../src/shared/format';
-import { createId } from '../src/shared/id';
+import {formatCoords} from '../src/shared/format';
+import {createId} from '../src/shared/id';
 
 test('formatCoords renders lat/long to four decimals', () => {
   const result = formatCoords(44.312345, -124.109876);

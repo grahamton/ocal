@@ -1,16 +1,22 @@
-
-import { useState } from 'react';
-import { Animated, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { GlassView } from '../../shared/components/GlassView';
-import { THEME } from '../../shared/theme';
-import { FindRecord } from '../../shared/types';
+import {useState} from 'react';
+import {
+  Animated,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {GlassView} from '../../shared/components/GlassView';
+import {THEME} from '../../shared/theme';
+import {FindRecord} from '../../shared/types';
 
 type Props = {
   item: FindRecord;
   onToggleKeep: (id: string, current: boolean) => void;
 };
 
-export function LedgerTile({ item, onToggleKeep }: Props) {
+export function LedgerTile({item, onToggleKeep}: Props) {
   const [scale] = useState(() => new Animated.Value(1));
   const [kept, setKept] = useState(item.favorite);
 
@@ -44,16 +50,15 @@ export function LedgerTile({ item, onToggleKeep }: Props) {
   };
 
   return (
-    <Animated.View style={{ transform: [{ scale }] }}>
+    <Animated.View style={{transform: [{scale}]}}>
       <GlassView style={styles.tile} intensity={25}>
-        <Image source={{ uri: item.photoUri }} style={styles.thumb} />
+        <Image source={{uri: item.photoUri}} style={styles.thumb} />
 
         {/* Top-left star badge */}
         <TouchableOpacity
           style={styles.selectBadge}
           onPress={handlePress}
-          activeOpacity={0.8}
-        >
+          activeOpacity={0.8}>
           <Text style={[styles.selectText, kept && styles.selectTextActive]}>
             {kept ? '★' : '☆'}
           </Text>
@@ -68,8 +73,7 @@ export function LedgerTile({ item, onToggleKeep }: Props) {
           <TouchableOpacity
             style={[styles.keepChip, kept && styles.keepChipActive]}
             onPress={handlePress}
-            activeOpacity={0.85}
-          >
+            activeOpacity={0.85}>
             <Text style={[styles.keepText, kept && styles.keepTextActive]}>
               {kept ? 'Kept' : 'Keep'}
             </Text>

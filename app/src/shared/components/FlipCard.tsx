@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Animated, StyleSheet, View, ViewStyle } from 'react-native';
+import {useEffect, useState} from 'react';
+import {Animated, StyleSheet, View, ViewStyle} from 'react-native';
 
 type Props = {
   isFlipped: boolean;
@@ -8,7 +8,7 @@ type Props = {
   style?: ViewStyle;
 };
 
-export function FlipCard({ isFlipped, front, back, style }: Props) {
+export function FlipCard({isFlipped, front, back, style}: Props) {
   const [animatedValue] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
@@ -31,25 +31,23 @@ export function FlipCard({ isFlipped, front, back, style }: Props) {
   });
 
   const frontAnimatedStyle = {
-    transform: [{ rotateY: frontInterpolate }],
+    transform: [{rotateY: frontInterpolate}],
   };
 
   const backAnimatedStyle = {
-    transform: [{ rotateY: backInterpolate }],
+    transform: [{rotateY: backInterpolate}],
   };
 
   return (
     <View style={[styles.container, style]} pointerEvents="box-none">
       <Animated.View
         style={[styles.card, frontAnimatedStyle]}
-        pointerEvents={isFlipped ? 'none' : 'auto'}
-      >
+        pointerEvents={isFlipped ? 'none' : 'auto'}>
         {front}
       </Animated.View>
       <Animated.View
         style={[styles.card, backAnimatedStyle]}
-        pointerEvents={isFlipped ? 'auto' : 'none'}
-      >
+        pointerEvents={isFlipped ? 'auto' : 'none'}>
         {back}
       </Animated.View>
     </View>

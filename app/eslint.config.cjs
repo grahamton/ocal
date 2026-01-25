@@ -27,7 +27,10 @@ module.exports = [
       ...tseslint.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {argsIgnorePattern: '^_', varsIgnorePattern: '^_'},
+      ],
     },
     settings: {
       react: {
@@ -48,7 +51,10 @@ module.exports = [
     },
     rules: {
       ...tseslint.configs.recommended.rules,
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {argsIgnorePattern: '^_', varsIgnorePattern: '^_'},
+      ],
     },
   },
 ];

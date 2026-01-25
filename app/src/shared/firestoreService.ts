@@ -1,7 +1,7 @@
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
-import { FindRecord, Session } from './types';
-import { logger } from './LogService';
+import {FindRecord, Session} from './types';
+import {logger} from './LogService';
 
 const USERS_COLLECTION = 'users';
 const FINDS_SUBCOLLECTION = 'finds';
@@ -15,7 +15,10 @@ const getCurrentUserId = (): string | null => {
 // --- FindRecord Operations ---
 
 const findRecordCollection = (userId: string) =>
-  firestore().collection(USERS_COLLECTION).doc(userId).collection(FINDS_SUBCOLLECTION);
+  firestore()
+    .collection(USERS_COLLECTION)
+    .doc(userId)
+    .collection(FINDS_SUBCOLLECTION);
 
 export const addFind = async (find: FindRecord): Promise<FindRecord> => {
   const userId = getCurrentUserId();
@@ -33,14 +36,20 @@ export const addFind = async (find: FindRecord): Promise<FindRecord> => {
       synced: true, // Mark as synced now that it's in Firestore
     });
     logger.add('firestore', `Find added: ${find.id}`);
-    return { ...find, synced: true };
+    return {...find, synced: true};
   } catch (error) {
-    logger.error('FirestoreService: Failed to add find', { findId: find.id, error });
+    logger.error('FirestoreService: Failed to add find', {
+      findId: find.id,
+      error,
+    });
     throw error;
   }
 };
 
-export const updateFind = async (findId: string, updates: Partial<FindRecord>): Promise<void> => {
+export const updateFind = async (
+  findId: string,
+  updates: Partial<FindRecord>,
+): Promise<void> => {
   const userId = getCurrentUserId();
   if (!userId) {
     logger.error('FirestoreService: Cannot update find - no user ID');
@@ -50,12 +59,20 @@ export const updateFind = async (findId: string, updates: Partial<FindRecord>): 
     const findRef = findRecordCollection(userId).doc(findId);
     await findRef.update({
       ...updates,
-      ...(updates.timestamp && { timestamp: firestore.Timestamp.fromDate(new Date(updates.timestamp)) }),
-      ...(updates.aiData && { aiData: JSON.parse(JSON.stringify(updates.aiData)) }),
+      ...(updates.timestamp && {
+        timestamp: firestore.Timestamp.fromDate(new Date(updates.timestamp)),
+      }),
+      ...(updates.aiData && {
+        aiData: JSON.parse(JSON.stringify(updates.aiData)),
+      }),
     });
     logger.add('firestore', `Find updated: ${findId}`);
   } catch (error) {
-    logger.error('FirestoreService: Failed to update find', { findId, updates, error });
+    logger.error('FirestoreService: Failed to update find', {
+      findId,
+      updates,
+      error,
+    });
     throw error;
   }
 };
@@ -70,7 +87,7 @@ export const deleteFind = async (findId: string): Promise<void> => {
     await findRecordCollection(userId).doc(findId).delete();
     logger.add('firestore', `Find deleted: ${findId}`);
   } catch (error) {
-    logger.error('FirestoreService: Failed to delete find', { findId, error });
+    logger.error('FirestoreService: Failed to delete find', {findId, error});
     throw error;
   }
 };
@@ -78,7 +95,7 @@ export const deleteFind = async (findId: string): Promise<void> => {
 // Listener for real-time updates (for GalleryGrid)
 export const subscribeToFinds = (
   callback: (finds: FindRecord[]) => void,
-  onError: (error: Error) => void
+  onError: (error: Error) => void,
 ) => {
   const userId = getCurrentUserId();
   if (!userId) {
@@ -89,23 +106,25 @@ export const subscribeToFinds = (
   const unsubscribe = findRecordCollection(userId)
     .orderBy('timestamp', 'desc') // Order by timestamp to match existing logic
     .onSnapshot(
-      (querySnapshot) => {
+      querySnapshot => {
         const finds: FindRecord[] = [];
-        querySnapshot.forEach((doc) => {
+        querySnapshot.forEach(doc => {
           const data = doc.data();
           finds.push({
             ...(data as Omit<FindRecord, 'timestamp' | 'aiData'>),
             id: doc.id,
-            timestamp: (data.timestamp as firestore.Timestamp).toDate().toISOString(), // Convert Timestamp to string
+            timestamp: (data.timestamp as firestore.Timestamp)
+              .toDate()
+              .toISOString(), // Convert Timestamp to string
             aiData: data.aiData ? data.aiData : null, // Assuming aiData is already plain JSON
           });
         });
         callback(finds);
       },
-      (error) => {
+      error => {
         logger.error('FirestoreService: Error subscribing to finds', error);
         onError(error);
-      }
+      },
     );
   logger.add('firestore', `Subscribed to finds for user: ${userId}`);
   return unsubscribe;
@@ -114,7 +133,10 @@ export const subscribeToFinds = (
 // --- Session Operations ---
 
 const sessionCollection = (userId: string) =>
-  firestore().collection(USERS_COLLECTION).doc(userId).collection(SESSIONS_SUBCOLLECTION);
+  firestore()
+    .collection(USERS_COLLECTION)
+    .doc(userId)
+    .collection(SESSIONS_SUBCOLLECTION);
 
 export const addSession = async (session: Session): Promise<Session> => {
   const userId = getCurrentUserId();
@@ -127,17 +149,25 @@ export const addSession = async (session: Session): Promise<Session> => {
     await sessionRef.set({
       ...session,
       startTime: firestore.Timestamp.fromMillis(session.startTime), // Convert number to Firestore Timestamp
-      ...(session.endTime && { endTime: firestore.Timestamp.fromMillis(session.endTime) }),
+      ...(session.endTime && {
+        endTime: firestore.Timestamp.fromMillis(session.endTime),
+      }),
     });
     logger.add('firestore', `Session added: ${session.id}`);
     return session;
   } catch (error) {
-    logger.error('FirestoreService: Failed to add session', { sessionId: session.id, error });
+    logger.error('FirestoreService: Failed to add session', {
+      sessionId: session.id,
+      error,
+    });
     throw error;
   }
 };
 
-export const updateSession = async (sessionId: string, updates: Partial<Session>): Promise<void> => {
+export const updateSession = async (
+  sessionId: string,
+  updates: Partial<Session>,
+): Promise<void> => {
   const userId = getCurrentUserId();
   if (!userId) {
     logger.error('FirestoreService: Cannot update session - no user ID');
@@ -147,17 +177,28 @@ export const updateSession = async (sessionId: string, updates: Partial<Session>
     const sessionRef = sessionCollection(userId).doc(sessionId);
     await sessionRef.update({
       ...updates,
-      ...(updates.startTime && { startTime: firestore.Timestamp.fromMillis(updates.startTime) }),
-      ...(updates.endTime && { endTime: firestore.Timestamp.fromMillis(updates.endTime) }),
+      ...(updates.startTime && {
+        startTime: firestore.Timestamp.fromMillis(updates.startTime),
+      }),
+      ...(updates.endTime && {
+        endTime: firestore.Timestamp.fromMillis(updates.endTime),
+      }),
     });
     logger.add('firestore', `Session updated: ${sessionId}`);
   } catch (error) {
-    logger.error('FirestoreService: Failed to update session', { sessionId, updates, error });
+    logger.error('FirestoreService: Failed to update session', {
+      sessionId,
+      updates,
+      error,
+    });
     throw error;
   }
 };
 
-export const addFindToSession = async (sessionId: string, findId: string): Promise<void> => {
+export const addFindToSession = async (
+  sessionId: string,
+  findId: string,
+): Promise<void> => {
   const userId = getCurrentUserId();
   if (!userId) {
     logger.error('FirestoreService: Cannot add find to session - no user ID');
@@ -170,14 +211,18 @@ export const addFindToSession = async (sessionId: string, findId: string): Promi
     });
     logger.add('firestore', `Added find ${findId} to session ${sessionId}`);
   } catch (error) {
-    logger.error('FirestoreService: Failed to add find to session', { sessionId, findId, error });
+    logger.error('FirestoreService: Failed to add find to session', {
+      sessionId,
+      findId,
+      error,
+    });
     throw error;
   }
 };
 
 export const subscribeToSessions = (
   callback: (sessions: Session[]) => void,
-  onError: (error: Error) => void
+  onError: (error: Error) => void,
 ) => {
   const userId = getCurrentUserId();
   if (!userId) {
@@ -188,29 +233,33 @@ export const subscribeToSessions = (
   const unsubscribe = sessionCollection(userId)
     .orderBy('startTime', 'desc')
     .onSnapshot(
-      (querySnapshot) => {
+      querySnapshot => {
         const sessions: Session[] = [];
-        querySnapshot.forEach((doc) => {
+        querySnapshot.forEach(doc => {
           const data = doc.data();
           sessions.push({
             ...(data as Omit<Session, 'startTime' | 'endTime'>),
             id: doc.id,
             startTime: (data.startTime as firestore.Timestamp).toMillis(),
-            endTime: data.endTime ? (data.endTime as firestore.Timestamp).toMillis() : undefined,
+            endTime: data.endTime
+              ? (data.endTime as firestore.Timestamp).toMillis()
+              : undefined,
           });
         });
         callback(sessions);
       },
-      (error) => {
+      error => {
         logger.error('FirestoreService: Error subscribing to sessions', error);
         onError(error);
-      }
+      },
     );
   logger.add('firestore', `Subscribed to sessions for user: ${userId}`);
   return unsubscribe;
 };
 
-export const getSession = async (sessionId: string): Promise<Session | null> => {
+export const getSession = async (
+  sessionId: string,
+): Promise<Session | null> => {
   const userId = getCurrentUserId();
   if (!userId) {
     logger.error('FirestoreService: Cannot get session - no user ID');
@@ -224,12 +273,14 @@ export const getSession = async (sessionId: string): Promise<Session | null> => 
         ...(data as Omit<Session, 'startTime' | 'endTime'>),
         id: doc.id,
         startTime: (data?.startTime as firestore.Timestamp).toMillis(),
-        endTime: data?.endTime ? (data.endTime as firestore.Timestamp).toMillis() : undefined,
+        endTime: data?.endTime
+          ? (data.endTime as firestore.Timestamp).toMillis()
+          : undefined,
       };
     }
     return null;
   } catch (error) {
-    logger.error('FirestoreService: Failed to get session', { sessionId, error });
+    logger.error('FirestoreService: Failed to get session', {sessionId, error});
     throw error;
   }
 };

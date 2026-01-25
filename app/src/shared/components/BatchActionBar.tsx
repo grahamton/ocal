@@ -1,9 +1,9 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { GlassView } from './GlassView';
-import { THEME } from '../theme';
-import { useSelection } from '../SelectionContext';
-import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
-import { logger } from '../LogService';
+import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {GlassView} from './GlassView';
+import {THEME} from '../theme';
+import {useSelection} from '../SelectionContext';
+import {IdentifyQueueService} from '../../ai/IdentifyQueueService';
+import {logger} from '../LogService';
 
 type Props = {
   // onIdentify moved internal
@@ -11,19 +11,22 @@ type Props = {
   onDelete?: () => void;
 };
 
-export function BatchActionBar({ onPoster, onDelete }: Omit<Props, 'onIdentify'>) {
-  const { selectedIds, exitSelectionMode } = useSelection();
+export function BatchActionBar({
+  onPoster,
+  onDelete,
+}: Omit<Props, 'onIdentify'>) {
+  const {selectedIds, exitSelectionMode} = useSelection();
   const count = selectedIds.size;
 
   const handleBatchIdentify = async () => {
     // Queue all selected
     try {
-        const ids = Array.from(selectedIds);
-        await Promise.all(ids.map(id => IdentifyQueueService.addToQueue(id)));
-        // Optional: Show toast?
-        exitSelectionMode();
+      const ids = Array.from(selectedIds);
+      await Promise.all(ids.map(id => IdentifyQueueService.addToQueue(id)));
+      // Optional: Show toast?
+      exitSelectionMode();
     } catch (e) {
-        logger.error('Batch identify failed', e);
+      logger.error('Batch identify failed', e);
     }
   };
 
@@ -38,7 +41,9 @@ export function BatchActionBar({ onPoster, onDelete }: Omit<Props, 'onIdentify'>
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.actionButton} onPress={handleBatchIdentify}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={handleBatchIdentify}>
           <Text style={styles.actionIcon}>✨</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={onPoster}>

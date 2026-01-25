@@ -1,4 +1,4 @@
-import { RockIdResult, AnalysisEvent } from '../ai/rockIdSchema';
+import {RockIdResult, AnalysisEvent} from '../ai/rockIdSchema';
 
 export type FindRecord = {
   id: string;

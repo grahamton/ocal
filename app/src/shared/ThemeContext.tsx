@@ -1,8 +1,15 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+  useMemo,
+} from 'react';
 
-import { PALETTE_JOURNAL, PALETTE_HIGH_CONTRAST, ThemeMode } from './theme';
+import {PALETTE_JOURNAL, PALETTE_HIGH_CONTRAST, ThemeMode} from './theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AnalyticsService } from './AnalyticsService';
+import {AnalyticsService} from './AnalyticsService';
 
 export type ThemeColors = typeof PALETTE_JOURNAL;
 
@@ -15,13 +22,13 @@ type ThemeContextType = {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function ThemeProvider({children}: {children: ReactNode}) {
   // precise default: Journal
   const [mode, setModeState] = useState<ThemeMode>('journal');
 
   useEffect(() => {
     // Load persisted theme
-    AsyncStorage.getItem('ocal_theme_mode').then((saved) => {
+    AsyncStorage.getItem('ocal_theme_mode').then(saved => {
       if (saved === 'high-contrast') {
         setModeState('high-contrast');
       }
@@ -31,8 +38,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setTheme = (newMode: ThemeMode) => {
     setModeState(newMode);
     AsyncStorage.setItem('ocal_theme_mode', newMode).catch(() => {});
-    AnalyticsService.logEvent('mode_toggled', { mode: newMode });
-};
+    AnalyticsService.logEvent('mode_toggled', {mode: newMode});
+  };
 
   const toggleTheme = () => {
     setTheme(mode === 'journal' ? 'high-contrast' : 'journal');
@@ -43,7 +50,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [mode]);
 
   return (
-    <ThemeContext.Provider value={{ mode, colors, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{mode, colors, toggleTheme, setTheme}}>
       {children}
     </ThemeContext.Provider>
   );

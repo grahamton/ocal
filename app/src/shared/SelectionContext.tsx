@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useCallback,
+} from 'react';
 
 type SelectionContextType = {
   isSelectionMode: boolean;
@@ -10,9 +16,11 @@ type SelectionContextType = {
   selectAll: (ids: string[]) => void;
 };
 
-const SelectionContext = createContext<SelectionContextType | undefined>(undefined);
+const SelectionContext = createContext<SelectionContextType | undefined>(
+  undefined,
+);
 
-export function SelectionProvider({ children }: { children: ReactNode }) {
+export function SelectionProvider({children}: {children: ReactNode}) {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -29,7 +37,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleSelection = useCallback((id: string) => {
-    setSelectedIds((prev) => {
+    setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -62,8 +70,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
         toggleSelection,
         clearSelection,
         selectAll,
-      }}
-    >
+      }}>
       {children}
     </SelectionContext.Provider>
   );

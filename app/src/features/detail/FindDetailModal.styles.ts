@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import {StyleSheet} from 'react-native';
 
 // Shared styles for the find detail modal and its subcomponents.
 export const findDetailStyles = StyleSheet.create({

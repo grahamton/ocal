@@ -1,14 +1,13 @@
-import { StyleSheet, View, ViewProps } from 'react-native';
-import { useTheme } from '../ThemeContext';
+import {StyleSheet, View, ViewProps} from 'react-native';
+import {useTheme} from '../ThemeContext';
 
-export function GradientBackground({ children, style, ...props }: ViewProps) {
-  const { colors } = useTheme();
+export function GradientBackground({children, style, ...props}: ViewProps) {
+  const {colors} = useTheme();
 
   return (
     <View
-      style={[styles.container, { backgroundColor: colors.background }, style]}
-      {...props}
-    >
+      style={[styles.container, {backgroundColor: colors.background}, style]}
+      {...props}>
       {children}
     </View>
   );

@@ -23,7 +23,11 @@ class LogService {
     return LogService.instance;
   }
 
-  public add(category: LogEntry['category'], message: string, metadata?: Record<string, unknown>) {
+  public add(
+    category: LogEntry['category'],
+    message: string,
+    metadata?: Record<string, unknown>,
+  ) {
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       category,
@@ -43,7 +47,10 @@ class LogService {
   }
 
   public error(message: string, error?: unknown) {
-    const metadata = error instanceof Error ? { message: error.message, stack: error.stack } : { error };
+    const metadata =
+      error instanceof Error
+        ? {message: error.message, stack: error.stack}
+        : {error};
     this.add('error', message, metadata as Record<string, unknown>);
   }
 
@@ -55,22 +62,27 @@ class LogService {
     const fileName = `ocal_session_${new Date().getTime()}.json`;
     // Use cacheDirectory to avoid "documentDirectory" type issues if any, and it's temporary anyway
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dir = (FileSystem as any).cacheDirectory || (FileSystem as any).documentDirectory;
+    const dir =
+      (FileSystem as any).cacheDirectory ||
+      (FileSystem as any).documentDirectory;
     if (!dir) {
-        throw new Error('No file system directory available');
+      throw new Error('No file system directory available');
     }
     const filePath = `${dir}${fileName}`;
 
     try {
       const data = {
         deviceInfo: {
-            // Add device info here if needed (e.g. Platform.OS)
-            exportTime: new Date().toISOString(),
+          // Add device info here if needed (e.g. Platform.OS)
+          exportTime: new Date().toISOString(),
         },
         logs: this.logs,
       };
 
-      await FileSystem.writeAsStringAsync(filePath, JSON.stringify(data, null, 2));
+      await FileSystem.writeAsStringAsync(
+        filePath,
+        JSON.stringify(data, null, 2),
+      );
 
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(filePath);
@@ -79,13 +91,13 @@ class LogService {
       }
     } catch (error) {
       console.error('Failed to export logs', error);
-      this.add('error', 'Failed to export logs', { error });
+      this.add('error', 'Failed to export logs', {error});
     }
   }
 
   public clear() {
-      this.logs = [];
-      this.add('system', 'Logs cleared');
+    this.logs = [];
+    this.add('system', 'Logs cleared');
   }
 }
 

@@ -1,30 +1,46 @@
-import { AuthProvider } from './src/shared/AuthContext';
+import {AuthProvider} from './src/shared/AuthContext';
 import * as firestoreService from './src/shared/firestoreService';
-import { useEffect, useState, useCallback } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { Alert, Modal, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFonts, Outfit_400Regular, Outfit_700Bold, Outfit_800ExtraBold } from '@expo-google-fonts/outfit';
-import { CameraCapture } from './src/features/capture/CameraCapture';
-import { GalleryGrid } from './src/features/gallery/GalleryGrid';
-import { InsightsView } from './src/features/insights/InsightsView';
+import {useEffect, useState, useCallback} from 'react';
+import {Ionicons} from '@expo/vector-icons';
+import {
+  Alert,
+  Modal,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  RefreshControl,
+} from 'react-native';
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
+import {
+  useFonts,
+  Outfit_400Regular,
+  Outfit_700Bold,
+  Outfit_800ExtraBold,
+} from '@expo-google-fonts/outfit';
+import {CameraCapture} from './src/features/capture/CameraCapture';
+import {GalleryGrid} from './src/features/gallery/GalleryGrid';
+import {InsightsView} from './src/features/insights/InsightsView';
 
-import { FindDetailModal } from './src/features/detail/FindDetailModal';
-import { FindRecord } from './src/shared/types';
-import { SessionProvider, useSession } from './src/shared/SessionContext';
-
-
+import {FindDetailModal} from './src/features/detail/FindDetailModal';
+import {FindRecord} from './src/shared/types';
+import {SessionProvider, useSession} from './src/shared/SessionContext';
 
 // import { NextActionPrompt } from './src/shared/NextActionPrompt';
-import { GradientBackground } from './src/shared/components/GradientBackground';
-import { GlassView } from './src/shared/components/GlassView';
-import { THEME } from './src/shared/theme';
-import { SelectionProvider, useSelection } from './src/shared/SelectionContext';
-import { BatchActionBar } from './src/shared/components/BatchActionBar';
+import {GradientBackground} from './src/shared/components/GradientBackground';
+import {GlassView} from './src/shared/components/GlassView';
+import {THEME} from './src/shared/theme';
+import {SelectionProvider, useSelection} from './src/shared/SelectionContext';
+import {BatchActionBar} from './src/shared/components/BatchActionBar';
 
-import { ThemeProvider } from './src/shared/ThemeContext';
-import { StatusIcon } from './components/StatusIcon';
-import { AnalyticsService } from './src/shared/AnalyticsService';
+import {ThemeProvider} from './src/shared/ThemeContext';
+import {StatusIcon} from './src/shared/components/StatusIcon';
+import {AnalyticsService} from './src/shared/AnalyticsService';
 // import { migrationService } from './src/shared/migration/MigrationService';
 // import { MigrationStatusModal } from './src/shared/migration/MigrationStatusModal';
 
@@ -69,14 +85,14 @@ export default function App() {
   );
 }
 
-import { SessionControlModal } from './src/shared/components/SessionControlModal';
-import { logger } from './src/shared/LogService';
-import { useTheme } from './src/shared/ThemeContext';
-import { SettingsModal } from './src/shared/components/SettingsModal';
+import {SessionControlModal} from './src/shared/components/SessionControlModal';
+import {logger} from './src/shared/LogService';
+import {useTheme} from './src/shared/ThemeContext';
+import {SettingsModal} from './src/shared/components/SettingsModal';
 
 function AppContent() {
   const insets = useSafeAreaInsets();
-  const { colors, mode } = useTheme();
+  const {colors, mode} = useTheme();
   // ... existing hooks
 
   const [refreshKey, setRefreshKey] = useState(0);
@@ -94,9 +110,9 @@ function AppContent() {
     logger.add('nav', `Navigated to ${view}`);
   }, [view]);
 
-  const { activeSession } = useSession();
+  const {activeSession} = useSession();
 
-  const { isSelectionMode, selectedIds, exitSelectionMode } = useSelection();
+  const {isSelectionMode, selectedIds, exitSelectionMode} = useSelection();
 
   const handleBatchDelete = async () => {
     const count = selectedIds.size;
@@ -106,13 +122,17 @@ function AppContent() {
       'Delete Items',
       `Delete ${count} item${count > 1 ? 's' : ''}? This cannot be undone.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        {text: 'Cancel', style: 'cancel'},
         {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
             try {
-              await Promise.all(Array.from(selectedIds).map(id => firestoreService.deleteFind(id))); // Changed here
+              await Promise.all(
+                Array.from(selectedIds).map(id =>
+                  firestoreService.deleteFind(id),
+                ),
+              ); // Changed here
               exitSelectionMode();
               handleRefresh();
               logger.add('user', `Deleted ${count} items`);
@@ -122,7 +142,7 @@ function AppContent() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -131,7 +151,7 @@ function AppContent() {
   }, []);
 
   const openDetail = (item: FindRecord) => {
-    logger.add('nav', 'Opened detail view', { id: item.id });
+    logger.add('nav', 'Opened detail view', {id: item.id});
     setSelectedFind(item);
     setDetailVisible(true);
   };
@@ -144,59 +164,90 @@ function AppContent() {
     setTimeout(() => setRefreshing(false), 1000);
   }, [handleRefresh]);
 
-
-
   return (
-    <View style={[styles.safe, { paddingTop: insets.top }]}>
-      <StatusBar barStyle={mode === 'high-contrast' ? "light-content" : "dark-content"} />
+    <View style={[styles.safe, {paddingTop: insets.top}]}>
+      <StatusBar
+        barStyle={mode === 'high-contrast' ? 'light-content' : 'dark-content'}
+      />
       <ScrollView
         style={styles.pageScroll}
-        contentContainerStyle={[styles.pageContent, { paddingBottom: 120 }]}
+        contentContainerStyle={[styles.pageContent, {paddingBottom: 120}]}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleManualRefresh} tintColor={colors.accent} />
-        }
-      >
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleManualRefresh}
+            tintColor={colors.accent}
+          />
+        }>
         <View style={styles.header}>
           <View style={styles.headerRow}>
             {/* Left: Logo Only */}
-            <StatusIcon status="polished" category="mineral" size={32} theme={mode === 'high-contrast' ? 'beach' : 'journal'} />
+            <StatusIcon
+              status="polished"
+              category="mineral"
+              size={32}
+              theme={mode === 'high-contrast' ? 'beach' : 'journal'}
+            />
 
             {/* Center: Session Pill (Expanded) */}
             <View style={{flex: 1, paddingHorizontal: 12}}>
-                <TouchableOpacity
-                    onPress={() => setSessionModalVisible(true)}
-                    style={{width: '100%'}}
-                    activeOpacity={0.8}
-                >
-                    <GlassView style={[styles.sessionPillContainer, !activeSession && { justifyContent: 'center', opacity: 0.8 }]} intensity={10}>
-                        <Text
-                            style={[
-                                styles.sessionPillText,
-                                { color: colors.accent, textAlign: activeSession ? 'left' : 'center' },
-                                !activeSession && { fontWeight: '600', fontSize: 13 }
-                            ]}
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                        >
-                            {activeSession ? activeSession.name : 'Start Session'}
-                        </Text>
-                        {activeSession && (
-                             <Ionicons name="create-outline" size={14} color={colors.accent} style={{marginLeft: 4, flexShrink: 0}} />
-                        )}
-                    </GlassView>
-                </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setSessionModalVisible(true)}
+                style={{width: '100%'}}
+                activeOpacity={0.8}>
+                <GlassView
+                  style={[
+                    styles.sessionPillContainer,
+                    !activeSession && {justifyContent: 'center', opacity: 0.8},
+                  ]}
+                  intensity={10}>
+                  <Text
+                    style={[
+                      styles.sessionPillText,
+                      {
+                        color: colors.accent,
+                        textAlign: activeSession ? 'left' : 'center',
+                      },
+                      !activeSession && {fontWeight: '600', fontSize: 13},
+                    ]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail">
+                    {activeSession ? activeSession.name : 'Start Session'}
+                  </Text>
+                  {activeSession && (
+                    <Ionicons
+                      name="create-outline"
+                      size={14}
+                      color={colors.accent}
+                      style={{marginLeft: 4, flexShrink: 0}}
+                    />
+                  )}
+                </GlassView>
+              </TouchableOpacity>
             </View>
 
             {/* Right: Actions */}
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                <TouchableOpacity onPress={() => setInsightsVisible(true)} style={{ padding: 8 }}>
-                    <Ionicons name="analytics-outline" size={24} color={colors.text} />
-                </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setInsightsVisible(true)}
+                style={{padding: 8}}>
+                <Ionicons
+                  name="analytics-outline"
+                  size={24}
+                  color={colors.text}
+                />
+              </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => setSettingsVisible(true)} style={{ padding: 8 }}>
-                    <Ionicons name="settings-outline" size={24} color={colors.text} />
-                </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setSettingsVisible(true)}
+                style={{padding: 8}}>
+                <Ionicons
+                  name="settings-outline"
+                  size={24}
+                  color={colors.text}
+                />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -212,14 +263,18 @@ function AppContent() {
           </View>
         ) : null}
 
-
-
         {view === 'gallery' ? (
           <View style={styles.section}>
             <View style={styles.galleryHeader}>
-              <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-                  <StatusIcon status="polished" category="fossil" size={24} theme={mode === 'high-contrast' ? 'beach' : 'journal'} />
-                  <Text style={styles.sectionTitle}>Gallery</Text>
+              <View
+                style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+                <StatusIcon
+                  status="polished"
+                  category="fossil"
+                  size={24}
+                  theme={mode === 'high-contrast' ? 'beach' : 'journal'}
+                />
+                <Text style={styles.sectionTitle}>Gallery</Text>
               </View>
             </View>
             <GalleryGrid refreshKey={refreshKey} onSelect={openDetail} />
@@ -228,14 +283,23 @@ function AppContent() {
       </ScrollView>
 
       {/* Insights Modal */}
-      <Modal visible={insightsVisible} animationType="slide" onRequestClose={() => setInsightsVisible(false)}>
-        <View style={[styles.safe, { paddingTop: insets.top, backgroundColor: colors.background }]}>
-          <View style={[styles.header, { paddingHorizontal: 16 }]}>
-            <TouchableOpacity onPress={() => setInsightsVisible(false)} style={{ padding: 8 }}>
+      <Modal
+        visible={insightsVisible}
+        animationType="slide"
+        onRequestClose={() => setInsightsVisible(false)}>
+        <View
+          style={[
+            styles.safe,
+            {paddingTop: insets.top, backgroundColor: colors.background},
+          ]}>
+          <View style={[styles.header, {paddingHorizontal: 16}]}>
+            <TouchableOpacity
+              onPress={() => setInsightsVisible(false)}
+              style={{padding: 8}}>
               <Ionicons name="close" size={28} color={colors.text} />
             </TouchableOpacity>
-            <Text style={[styles.title, { color: colors.text }]}>Insights</Text>
-            <View style={{ width: 44 }} />
+            <Text style={[styles.title, {color: colors.text}]}>Insights</Text>
+            <View style={{width: 44}} />
           </View>
           <InsightsView />
         </View>
@@ -243,14 +307,15 @@ function AppContent() {
 
       {/* Floating Glass Tab Bar OR Batch Action Bar */}
       {/* Floating Glass Tab Bar OR Batch Action Bar */}
-      <View style={[
-        styles.floatingTabsContainer,
-        {
-          paddingBottom: insets.bottom + 10,
-          backgroundColor: colors.card,
-          borderTopColor: colors.border
-        }
-      ]}>
+      <View
+        style={[
+          styles.floatingTabsContainer,
+          {
+            paddingBottom: insets.bottom + 10,
+            backgroundColor: colors.card,
+            borderTopColor: colors.border,
+          },
+        ]}>
         {isSelectionMode ? (
           <BatchActionBar
             onPoster={() => Alert.alert('Poster', 'Batch poster coming soon')}
@@ -259,30 +324,45 @@ function AppContent() {
         ) : (
           <View style={styles.floatingTabs}>
             {[
-              { key: 'capture', label: 'Capture', icon: 'camera' },
-              { key: 'gallery', label: 'Gallery', icon: 'grid' },
-            ].map((tab) => {
+              {key: 'capture', label: 'Capture', icon: 'camera'},
+              {key: 'gallery', label: 'Gallery', icon: 'grid'},
+            ].map(tab => {
               const active = view === tab.key;
-              const iconName = (active ? tab.icon : `${tab.icon}-outline`) as keyof typeof Ionicons.glyphMap;
+              const iconName = (
+                active ? tab.icon : `${tab.icon}-outline`
+              ) as keyof typeof Ionicons.glyphMap;
               const activeColor = colors.accent;
               const inactiveColor = colors.textSecondary;
 
               return (
                 <TouchableOpacity
                   key={tab.key}
-                  style={[styles.tabButton, active && { backgroundColor: mode === 'high-contrast' ? colors.accent : 'rgba(0,0,0,0.05)' }]}
+                  style={[
+                    styles.tabButton,
+                    active && {
+                      backgroundColor:
+                        mode === 'high-contrast'
+                          ? colors.accent
+                          : 'rgba(0,0,0,0.05)',
+                    },
+                  ]}
                   onPress={() => setView(tab.key as typeof view)}
                   activeOpacity={0.7}
                   accessibilityRole="tab"
-                  accessibilityState={{ selected: active }}
-                  accessibilityLabel={tab.label}
-                >
+                  accessibilityState={{selected: active}}
+                  accessibilityLabel={tab.label}>
                   <Ionicons
                     name={iconName}
                     size={32}
                     color={active ? activeColor : inactiveColor}
                   />
-                  <Text style={[styles.tabTextActive, { color: active ? activeColor : inactiveColor }]}>{tab.label}</Text>
+                  <Text
+                    style={[
+                      styles.tabTextActive,
+                      {color: active ? activeColor : inactiveColor},
+                    ]}>
+                    {tab.label}
+                  </Text>
                 </TouchableOpacity>
               );
             })}
@@ -294,8 +374,8 @@ function AppContent() {
         visible={detailVisible}
         item={selectedFind}
         onClose={() => {
-            logger.add('nav', 'Closed detail view');
-            setDetailVisible(false);
+          logger.add('nav', 'Closed detail view');
+          setDetailVisible(false);
         }}
         onSaved={() => {
           setDetailVisible(false);
@@ -313,8 +393,6 @@ function AppContent() {
         visible={settingsVisible}
         onClose={() => setSettingsVisible(false)}
       />
-
-
     </View>
   );
 }

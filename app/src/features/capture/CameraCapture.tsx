@@ -1,27 +1,37 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Vibration, Animated, Easing } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import {useEffect, useMemo, useRef, useState} from 'react';
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Vibration,
+  Animated,
+  Easing,
+} from 'react-native';
+import {CameraView, useCameraPermissions} from 'expo-camera';
 import * as Location from 'expo-location';
 import * as firestoreService from '../../shared/firestoreService';
 import * as storageService from '../../shared/storageService';
-import { createId } from '../../shared/id';
-import { FindRecord } from '../../shared/types';
-import { useSession } from '../../shared/SessionContext';
-import { logger } from '../../shared/LogService';
-import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
-import { AnalyticsService } from '../../shared/AnalyticsService';
+import {createId} from '../../shared/id';
+import {FindRecord} from '../../shared/types';
+import {useSession} from '../../shared/SessionContext';
+import {logger} from '../../shared/LogService';
+import {IdentifyQueueService} from '../../ai/IdentifyQueueService';
+import {AnalyticsService} from '../../shared/AnalyticsService';
 
 type Props = {
   onSaved: () => void;
 };
 
-export function CameraCapture({ onSaved }: Props) {
+export function CameraCapture({onSaved}: Props) {
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [statusKind, setStatusKind] = useState<'info' | 'success' | 'error'>('info');
-  const { activeSession, startSession, addFindToActiveSession } = useSession();
+  const [statusKind, setStatusKind] = useState<'info' | 'success' | 'error'>(
+    'info',
+  );
+  const {activeSession, startSession, addFindToActiveSession} = useSession();
 
   // Animations
   const flashOpacity = useRef(new Animated.Value(0)).current;
@@ -40,7 +50,7 @@ export function CameraCapture({ onSaved }: Props) {
 
   const getLocation = async () => {
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
+      const {status} = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') return null;
     } catch {
       return null;
@@ -48,7 +58,9 @@ export function CameraCapture({ onSaved }: Props) {
     const last = await Location.getLastKnownPositionAsync();
     if (last) return last;
     try {
-      return await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      return await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
     } catch {
       return null;
     }
@@ -103,7 +115,10 @@ export function CameraCapture({ onSaved }: Props) {
 
     try {
       const session = activeSession ?? (await startSession());
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.6, skipProcessing: true });
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.6,
+        skipProcessing: true,
+      });
 
       // Show thumbnail for animation
       setCapturedUri(photo.uri);
@@ -134,7 +149,7 @@ export function CameraCapture({ onSaved }: Props) {
 
       // Auto-Pilot: Queue for AI immediately
       IdentifyQueueService.addToQueue(record.id).catch(err => {
-          logger.error("Capture: Auto-queue failed", err);
+        logger.error('Capture: Auto-queue failed', err);
       });
 
       setStatusKind('success');
@@ -157,12 +172,13 @@ export function CameraCapture({ onSaved }: Props) {
   /* State for info box visibility - simplified for Senior Mode */
   // Info box removed
 
-
   if (!permission?.granted) {
     return (
       <View style={classes.permissionContainer}>
         <Text style={classes.title}>Camera Access Needed</Text>
-        <TouchableOpacity style={classes.primaryButton} onPress={requestPermission}>
+        <TouchableOpacity
+          style={classes.primaryButton}
+          onPress={requestPermission}>
           <Text style={classes.primaryButtonText}>Enable Camera</Text>
         </TouchableOpacity>
       </View>
@@ -174,21 +190,24 @@ export function CameraCapture({ onSaved }: Props) {
       {/* Flash Overlay */}
       <View style={classes.cameraContainer}>
         <CameraView ref={cameraRef} style={classes.camera} facing="back" />
-        <Animated.View style={[classes.flashOverlay, { opacity: flashOpacity }]} pointerEvents="none" />
+        <Animated.View
+          style={[classes.flashOverlay, {opacity: flashOpacity}]}
+          pointerEvents="none"
+        />
 
         {/* Fly-away Thumbnail */}
         {capturedUri && (
           <Animated.Image
-            source={{ uri: capturedUri }}
+            source={{uri: capturedUri}}
             style={[
               classes.flyAwayThumbnail,
               {
                 transform: [
-                  { translateX: thumbnailTranslateX },
-                  { translateY: thumbnailTranslateY },
-                  { scale: thumbnailScale }
-                ]
-              }
+                  {translateX: thumbnailTranslateX},
+                  {translateY: thumbnailTranslateY},
+                  {scale: thumbnailScale},
+                ],
+              },
             ]}
           />
         )}
@@ -198,16 +217,21 @@ export function CameraCapture({ onSaved }: Props) {
             style={classes.captureButton}
             onPress={handleCapture}
             activeOpacity={0.5}
-            disabled={saving}
-          >
-             <View style={classes.shutterInner} />
+            disabled={saving}>
+            <View style={classes.shutterInner} />
           </TouchableOpacity>
           <Text style={classes.captureLabel}>TAP TO CAPTURE</Text>
         </View>
       </View>
 
       {statusMessage ? (
-        <View style={[classes.statusBanner, statusKind === 'success' ? classes.statusSuccess : classes.statusError]}>
+        <View
+          style={[
+            classes.statusBanner,
+            statusKind === 'success'
+              ? classes.statusSuccess
+              : classes.statusError,
+          ]}>
           <Text style={classes.statusText}>{statusMessage}</Text>
         </View>
       ) : null}
@@ -267,7 +291,7 @@ function createStyles() {
       justifyContent: 'center',
       marginBottom: 8,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
+      shadowOffset: {width: 0, height: 4},
       shadowOpacity: 0.5,
       shadowRadius: 10,
       elevation: 10,
@@ -285,7 +309,7 @@ function createStyles() {
       marginTop: 8,
       fontSize: 14,
       textShadowColor: 'rgba(0,0,0,0.8)',
-      textShadowOffset: { width: 0, height: 2 },
+      textShadowOffset: {width: 0, height: 2},
       textShadowRadius: 4,
     },
     statusBanner: {
@@ -299,7 +323,7 @@ function createStyles() {
       justifyContent: 'center',
       zIndex: 20,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 10 },
+      shadowOffset: {width: 0, height: 10},
       shadowOpacity: 0.5,
       shadowRadius: 20,
     },

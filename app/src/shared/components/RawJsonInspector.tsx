@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Clipboard, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../src/shared/ThemeContext';
+import React, {useState} from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Clipboard,
+  Alert,
+} from 'react-native';
+import {Ionicons} from '@expo/vector-icons';
+import {useTheme} from '../src/shared/ThemeContext';
 
 interface Props {
   data: any;
   label?: string;
 }
 
-export function RawJsonInspector({ data, label = 'Raw Data Inspector' }: Props) {
-  const { colors } = useTheme();
+export function RawJsonInspector({data, label = 'Raw Data Inspector'}: Props) {
+  const {colors} = useTheme();
   const [expanded, setExpanded] = useState(false);
 
   const jsonString = JSON.stringify(data, null, 2);
@@ -20,31 +27,36 @@ export function RawJsonInspector({ data, label = 'Raw Data Inspector' }: Props) 
   };
 
   return (
-    <View style={[styles.container, { borderColor: colors.border, backgroundColor: colors.background }]}>
+    <View
+      style={[
+        styles.container,
+        {borderColor: colors.border, backgroundColor: colors.background},
+      ]}>
       <TouchableOpacity
         style={styles.header}
         onPress={() => setExpanded(!expanded)}
-        activeOpacity={0.7}
-      >
+        activeOpacity={0.7}>
         <View style={styles.titleRow}>
           <Ionicons name="code-slash" size={20} color={colors.textSecondary} />
-          <Text style={[styles.title, { color: colors.textSecondary }]}>{label}</Text>
+          <Text style={[styles.title, {color: colors.textSecondary}]}>
+            {label}
+          </Text>
         </View>
         <Ionicons
-          name={expanded ? "chevron-up" : "chevron-down"}
+          name={expanded ? 'chevron-up' : 'chevron-down'}
           size={20}
           color={colors.textSecondary}
         />
       </TouchableOpacity>
 
       {expanded && (
-        <View style={[styles.content, { borderTopColor: colors.border }]}>
-            <TouchableOpacity style={styles.copyButton} onPress={copyToClipboard}>
-                <Text style={[styles.copyText, {color: colors.accent}]}>Copy JSON</Text>
-            </TouchableOpacity>
-          <Text style={[styles.code, { color: colors.text }]}>
-            {jsonString}
-          </Text>
+        <View style={[styles.content, {borderTopColor: colors.border}]}>
+          <TouchableOpacity style={styles.copyButton} onPress={copyToClipboard}>
+            <Text style={[styles.copyText, {color: colors.accent}]}>
+              Copy JSON
+            </Text>
+          </TouchableOpacity>
+          <Text style={[styles.code, {color: colors.text}]}>{jsonString}</Text>
         </View>
       )}
     </View>
@@ -85,11 +97,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   copyButton: {
-      alignSelf: 'flex-end',
-      marginBottom: 8,
+    alignSelf: 'flex-end',
+    marginBottom: 8,
   },
   copyText: {
-      fontSize: 12,
-      fontWeight: '600',
-  }
+    fontSize: 12,
+    fontWeight: '600',
+  },
 });

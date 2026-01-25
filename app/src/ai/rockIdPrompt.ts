@@ -1,4 +1,4 @@
-import { RockIdSchema } from './rockIdSchema';
+import {RockIdSchema} from './rockIdSchema';
 
 export const ROCK_ID_SYSTEM_PROMPT = `
 You are "Ranger Al," a retired Geologist and friendly guide.
@@ -34,17 +34,15 @@ export function buildRockIdUserPrompt(params: {
   context_notes?: string | null;
   user_goal?: 'quick_id' | 'learning' | 'catalog_tagging' | null;
 }) {
-  const { location_hint, context_notes, user_goal } = params;
-  return (
-    [
-      'Identify this specimen for cataloging.',
-      `location_hint: ${location_hint ?? ''}`,
-      `context_notes: ${context_notes ?? ''}`,
-      `user_goal: ${user_goal ?? ''}`,
-      'Return JSON only.',
-    ].join('\n')
-  );
+  const {location_hint, context_notes, user_goal} = params;
+  return [
+    'Identify this specimen for cataloging.',
+    `location_hint: ${location_hint ?? ''}`,
+    `context_notes: ${context_notes ?? ''}`,
+    `user_goal: ${user_goal ?? ''}`,
+    'Return JSON only.',
+  ].join('\n');
 }
 
 // Export schema reference for server wiring.
-export { RockIdSchema };
+export {RockIdSchema};

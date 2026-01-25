@@ -1,17 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { subscribeToFinds } from '../../shared/firestoreService';
-import { formatLocationSync } from '../../shared/format';
-import { FindRecord } from '../../shared/types';
-import { AnalysisEvent } from '../../ai/rockIdSchema';
-import { useTheme } from '../../shared/ThemeContext';
-import { useSelection } from '../../shared/SelectionContext';
-import { useSession } from '../../shared/SessionContext';
-import { Ionicons } from '@expo/vector-icons';
+import {useEffect, useMemo, useState} from 'react';
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import {LinearGradient} from 'expo-linear-gradient';
+import {subscribeToFinds} from '../../shared/firestoreService';
+import {formatLocationSync} from '../../shared/format';
+import {FindRecord} from '../../shared/types';
+import {AnalysisEvent} from '../../ai/rockIdSchema';
+import {useTheme} from '../../shared/ThemeContext';
+import {useSelection} from '../../shared/SelectionContext';
+import {useSession} from '../../shared/SessionContext';
+import {Ionicons} from '@expo/vector-icons';
 
-import { StatusIcon } from '../../../components/StatusIcon';
-import { getCategoryFromTags } from '../../../utils/CategoryMapper';
+import {StatusIcon} from '../../shared/components/StatusIcon';
+import {getCategoryFromTags} from '../../shared/CategoryMapper';
 
 const spacing = 12;
 
@@ -22,33 +29,36 @@ type Props = {
 
 type ViewMode = 'grid' | 'list';
 
-export function GalleryGrid({ refreshKey, onSelect }: Props) {
+export function GalleryGrid({refreshKey, onSelect}: Props) {
   const [items, setItems] = useState<FindRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'favorites' | 'session'>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
-  const { activeSession } = useSession();
+  const {activeSession} = useSession();
 
   // Responsive Columns
-  const { width } = useWindowDimensions();
+  const {width} = useWindowDimensions();
   const numColumns = width > 600 ? 3 : 2; // Tablet = 3, Phone = 2
   // Subtracting 48 instead of 32 to account for potential parent padding variation (safe buffer)
   const cardWidth = (width - 48 - spacing * (numColumns - 1)) / numColumns;
 
-  const { colors, mode } = useTheme();
-  const { isSelectionMode, selectedIds, toggleSelection, enterSelectionMode } = useSelection();
+  const {colors, mode} = useTheme();
+  const {isSelectionMode, selectedIds, toggleSelection, enterSelectionMode} =
+    useSelection();
 
   useEffect(() => {
     const unsubscribe = subscribeToFinds(
-      (finds) => {
+      finds => {
         setItems(finds);
         setError(null);
       },
-      (err) => {
-        setError("Failed to load finds. You might be offline or an error occurred.");
+      err => {
+        setError(
+          'Failed to load finds. You might be offline or an error occurred.',
+        );
         console.error(err);
-      }
+      },
     );
 
     // Return the unsubscribe function to clean up the listener on component unmount
@@ -63,7 +73,8 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
   const filteredItems = useMemo(() => {
     if (filter === 'all') return allItems;
     if (filter === 'favorites') return allItems.filter(item => item.favorite);
-    if (filter === 'session' && activeSession) return allItems.filter(item => item.sessionId === activeSession.id);
+    if (filter === 'session' && activeSession)
+      return allItems.filter(item => item.sessionId === activeSession.id);
     return allItems;
   }, [allItems, filter, activeSession]);
 
@@ -75,16 +86,16 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
 
     if (date.toDateString() === today.toDateString()) return 'Today';
     if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
   };
 
   // Helper to safely unwrap AI data (Migration: RockIdResult -> AnalysisEvent)
   const getAiResult = (data: FindRecord['aiData']) => {
-      if (!data) return null;
-      if ('result' in data && 'meta' in data) {
-          return (data as AnalysisEvent).result; // Cast to access result safely if types aren't perfectly aligned yet, or use type guard
-      }
-      return data; // Legacy RockIdResult
+    if (!data) return null;
+    if ('result' in data && 'meta' in data) {
+      return (data as AnalysisEvent).result; // Cast to access result safely if types aren't perfectly aligned yet, or use type guard
+    }
+    return data; // Legacy RockIdResult
   };
 
   const renderGridItem = (item: FindRecord) => {
@@ -100,9 +111,9 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
           {
             width: cardWidth,
             backgroundColor: colors.card,
-            borderColor: isSelected ? colors.accent : colors.border
+            borderColor: isSelected ? colors.accent : colors.border,
           },
-          isSelected && { borderWidth: 3 }
+          isSelected && {borderWidth: 3},
         ]}
         activeOpacity={0.85}
         onLongPress={() => enterSelectionMode(item.id)}
@@ -112,9 +123,8 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
           } else {
             onSelect?.(item);
           }
-        }}
-      >
-        <Image source={{ uri: item.photoUri }} style={styles.image} />
+        }}>
+        <Image source={{uri: item.photoUri}} style={styles.image} />
 
         {/* Subtle Gradient Overlay for depth */}
         <LinearGradient
@@ -137,24 +147,43 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
 
         {/* Rough Status Overlay - Only if not analyzed */}
         {!aiResult && !isSelected && (
-           <View style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center'}}>
-               <StatusIcon status="rough" size={40} theme={mode === 'high-contrast' ? 'beach' : 'journal'} />
-           </View>
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+            <StatusIcon
+              status="rough"
+              size={40}
+              theme={mode === 'high-contrast' ? 'beach' : 'journal'}
+            />
+          </View>
         )}
 
         <View style={styles.cardBody}>
           {/* Title */}
-          <Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1}>
+          <Text
+            style={[styles.titleText, {color: colors.text}]}
+            numberOfLines={1}>
             {displayLabel}
           </Text>
 
           {/* Location */}
-          <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
+          <Text
+            style={[styles.locationText, {color: colors.textSecondary}]}
+            numberOfLines={1}>
             {item.location_text || formatLocationSync(item.lat, item.long)}
           </Text>
 
           {/* Session/Date */}
-          <Text style={[styles.sessionText, { color: colors.textSecondary }]} numberOfLines={1}>
+          <Text
+            style={[styles.sessionText, {color: colors.textSecondary}]}
+            numberOfLines={1}>
             {formatDate(item.timestamp)}
           </Text>
         </View>
@@ -171,10 +200,13 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
       <TouchableOpacity
         key={item.id}
         style={[
-            styles.listItem,
-            { backgroundColor: colors.card, borderColor: isSelected ? colors.accent : colors.border },
-            isSelected && { borderLeftWidth: 4 }
-          ]}
+          styles.listItem,
+          {
+            backgroundColor: colors.card,
+            borderColor: isSelected ? colors.accent : colors.border,
+          },
+          isSelected && {borderLeftWidth: 4},
+        ]}
         activeOpacity={0.85}
         onLongPress={() => enterSelectionMode(item.id)}
         onPress={() => {
@@ -183,35 +215,52 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
           } else {
             onSelect?.(item);
           }
-        }}
-      >
-        <Image source={{ uri: item.photoUri }} style={styles.listImage} />
+        }}>
+        <Image source={{uri: item.photoUri}} style={styles.listImage} />
 
         <View style={styles.listContent}>
           <View style={styles.listTitleRow}>
             {item.favorite && (
-              <Ionicons name="star" size={16} color="#fbbf24" style={{ marginRight: 4 }} />
+              <Ionicons
+                name="star"
+                size={16}
+                color="#fbbf24"
+                style={{marginRight: 4}}
+              />
             )}
-            <Text style={[styles.listTitle, { color: colors.text }]} numberOfLines={1}>
+            <Text
+              style={[styles.listTitle, {color: colors.text}]}
+              numberOfLines={1}>
               {displayLabel}
             </Text>
             {/* Category Icon Mini */}
             {aiResult && (
-               <StatusIcon
-                  status="polished"
-                  size={24}
-                  category={getCategoryFromTags([aiResult.best_guess?.category || ''], aiResult.best_guess?.label)}
-                  theme={mode === 'high-contrast' ? 'beach' : 'journal'}
-                  style={{marginLeft: 8}}
-               />
+              <StatusIcon
+                status="polished"
+                size={24}
+                category={getCategoryFromTags(
+                  [aiResult.best_guess?.category || ''],
+                  aiResult.best_guess?.label,
+                )}
+                theme={mode === 'high-contrast' ? 'beach' : 'journal'}
+                style={{marginLeft: 8}}
+              />
             )}
             {!aiResult && (
-               <StatusIcon status="rough" size={24} theme={mode === 'high-contrast' ? 'beach' : 'journal'} style={{marginLeft: 8}} />
+              <StatusIcon
+                status="rough"
+                size={24}
+                theme={mode === 'high-contrast' ? 'beach' : 'journal'}
+                style={{marginLeft: 8}}
+              />
             )}
           </View>
 
-          <Text style={[styles.listMeta, { color: colors.textSecondary }]} numberOfLines={1}>
-            {(item.location_text || formatLocationSync(item.lat, item.long))} • {formatDate(item.timestamp)}
+          <Text
+            style={[styles.listMeta, {color: colors.textSecondary}]}
+            numberOfLines={1}>
+            {item.location_text || formatLocationSync(item.lat, item.long)} •{' '}
+            {formatDate(item.timestamp)}
           </Text>
         </View>
 
@@ -224,10 +273,21 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
 
   if (error) {
     return (
-      <View style={[styles.emptyBox, { backgroundColor: colors.card }]}>
-        <Ionicons name="cloud-offline-outline" size={48} color={colors.danger} style={{ marginBottom: 16 }} />
-        <Text style={[styles.emptyText, { color: colors.text }]}>Error Loading Finds</Text>
-        <Text style={[styles.emptySubText, { color: colors.textSecondary, marginTop: 8 }]}>
+      <View style={[styles.emptyBox, {backgroundColor: colors.card}]}>
+        <Ionicons
+          name="cloud-offline-outline"
+          size={48}
+          color={colors.danger}
+          style={{marginBottom: 16}}
+        />
+        <Text style={[styles.emptyText, {color: colors.text}]}>
+          Error Loading Finds
+        </Text>
+        <Text
+          style={[
+            styles.emptySubText,
+            {color: colors.textSecondary, marginTop: 8},
+          ]}>
           {error}
         </Text>
       </View>
@@ -236,10 +296,21 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
 
   if (items.length === 0) {
     return (
-      <View style={[styles.emptyBox, { backgroundColor: colors.card }]}>
-        <Ionicons name="camera-outline" size={48} color={colors.accent} style={{ marginBottom: 16 }} />
-        <Text style={[styles.emptyText, { color: colors.text }]}>Your collection is empty.</Text>
-        <Text style={[styles.emptySubText, { color: colors.textSecondary, marginTop: 8 }]}>
+      <View style={[styles.emptyBox, {backgroundColor: colors.card}]}>
+        <Ionicons
+          name="camera-outline"
+          size={48}
+          color={colors.accent}
+          style={{marginBottom: 16}}
+        />
+        <Text style={[styles.emptyText, {color: colors.text}]}>
+          Your collection is empty.
+        </Text>
+        <Text
+          style={[
+            styles.emptySubText,
+            {color: colors.textSecondary, marginTop: 8},
+          ]}>
           Ready for a walk? Tap Capture to start finding treasures.
         </Text>
       </View>
@@ -250,55 +321,92 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
     <View style={styles.container}>
       <View style={styles.sectionContainer}>
         <View style={styles.collectionHeader}>
-          <Text style={[styles.sectionHeader, { color: colors.text }]}>Your Finds ({allItems.length})</Text>
+          <Text style={[styles.sectionHeader, {color: colors.text}]}>
+            Your Finds ({allItems.length})
+          </Text>
 
           <View style={styles.headerActions}>
             {/* View Mode Switcher */}
             <View style={styles.viewSwitcher}>
               <TouchableOpacity
-                style={[styles.viewBtn, viewMode === 'grid' && { backgroundColor: colors.accent }]}
-                onPress={() => setViewMode('grid')}
-              >
-                <Ionicons name="grid" size={16} color={viewMode === 'grid' ? '#fff' : colors.textSecondary} />
+                style={[
+                  styles.viewBtn,
+                  viewMode === 'grid' && {backgroundColor: colors.accent},
+                ]}
+                onPress={() => setViewMode('grid')}>
+                <Ionicons
+                  name="grid"
+                  size={16}
+                  color={viewMode === 'grid' ? '#fff' : colors.textSecondary}
+                />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.viewBtn, viewMode === 'list' && { backgroundColor: colors.accent }]}
-                onPress={() => setViewMode('list')}
-              >
-                <Ionicons name="list" size={16} color={viewMode === 'list' ? '#fff' : colors.textSecondary} />
+                style={[
+                  styles.viewBtn,
+                  viewMode === 'list' && {backgroundColor: colors.accent},
+                ]}
+                onPress={() => setViewMode('list')}>
+                <Ionicons
+                  name="list"
+                  size={16}
+                  color={viewMode === 'list' ? '#fff' : colors.textSecondary}
+                />
               </TouchableOpacity>
             </View>
-
           </View>
         </View>
 
         {/* Filter Tabs */}
         <View style={styles.filterTabs}>
           {activeSession && (
-             <TouchableOpacity
-                style={[styles.filterTab, filter === 'session' && { backgroundColor: colors.accent }]}
-                onPress={() => setFilter('session')}
-              >
-                <Text style={[styles.filterTabText, { color: filter === 'session' ? '#fff' : colors.textSecondary }]}>
-                  Current Walk ({allItems.filter(i => i.sessionId === activeSession.id).length})
-                </Text>
-              </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.filterTab,
+                filter === 'session' && {backgroundColor: colors.accent},
+              ]}
+              onPress={() => setFilter('session')}>
+              <Text
+                style={[
+                  styles.filterTabText,
+                  {color: filter === 'session' ? '#fff' : colors.textSecondary},
+                ]}>
+                Current Walk (
+                {allItems.filter(i => i.sessionId === activeSession.id).length})
+              </Text>
+            </TouchableOpacity>
           )}
 
           <TouchableOpacity
-            style={[styles.filterTab, filter === 'all' && { backgroundColor: colors.accent }]}
-            onPress={() => setFilter('all')}
-          >
-            <Text style={[styles.filterTabText, { color: filter === 'all' ? '#fff' : colors.textSecondary }]}>
+            style={[
+              styles.filterTab,
+              filter === 'all' && {backgroundColor: colors.accent},
+            ]}
+            onPress={() => setFilter('all')}>
+            <Text
+              style={[
+                styles.filterTabText,
+                {color: filter === 'all' ? '#fff' : colors.textSecondary},
+              ]}>
               All ({allItems.length})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.filterTab, filter === 'favorites' && { backgroundColor: colors.accent }]}
-            onPress={() => setFilter('favorites')}
-          >
-            <Ionicons name="star" size={12} color={filter === 'favorites' ? '#fff' : '#fbbf24'} style={{marginRight: 4}} />
-            <Text style={[styles.filterTabText, { color: filter === 'favorites' ? '#fff' : colors.textSecondary }]}>
+            style={[
+              styles.filterTab,
+              filter === 'favorites' && {backgroundColor: colors.accent},
+            ]}
+            onPress={() => setFilter('favorites')}>
+            <Ionicons
+              name="star"
+              size={12}
+              color={filter === 'favorites' ? '#fff' : '#fbbf24'}
+              style={{marginRight: 4}}
+            />
+            <Text
+              style={[
+                styles.filterTabText,
+                {color: filter === 'favorites' ? '#fff' : colors.textSecondary},
+              ]}>
               Favorites ({allItems.filter(i => i.favorite).length})
             </Text>
           </TouchableOpacity>
@@ -306,15 +414,14 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
 
         {filteredItems.length === 0 ? (
           <View style={styles.emptyCollection}>
-            <Text style={[styles.emptySubText, { color: colors.textSecondary }]}>
-              {filter === 'all' ? 'No finds yet. Capture your first one!' :
-               'No favorite finds yet. Tap the star to save one!'}
+            <Text style={[styles.emptySubText, {color: colors.textSecondary}]}>
+              {filter === 'all'
+                ? 'No finds yet. Capture your first one!'
+                : 'No favorite finds yet. Tap the star to save one!'}
             </Text>
           </View>
         ) : viewMode === 'grid' ? (
-          <View style={styles.grid}>
-            {filteredItems.map(renderGridItem)}
-          </View>
+          <View style={styles.grid}>{filteredItems.map(renderGridItem)}</View>
         ) : (
           <View style={styles.listContainer}>
             {filteredItems.map(renderListItem)}
@@ -402,7 +509,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff', // Fallback for transparency
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
