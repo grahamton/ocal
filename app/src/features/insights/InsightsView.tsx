@@ -1,28 +1,33 @@
 import {useEffect, useState} from 'react';
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {listFinds} from '../../shared/db';
-import {useTheme} from '../../shared/ThemeContext';
-import {FindRecord} from '../../shared/types';
-import {GlassView} from '../../shared/components/GlassView';
+import {subscribeToFinds} from '@/shared/firestoreService'; // Updated import
+import {useTheme} from '@/shared/ThemeContext';
+import {FindRecord} from '@/shared/types';
+import {GlassView} from '@/shared/components/GlassView';
+import {AnalysisEvent, RockIdResult} from '@/ai/rockIdSchema'; // Added import for AnalysisEvent and RockIdResult
 
 export function InsightsView() {
   const {colors} = useTheme();
   const [finds, setFinds] = useState<FindRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      const data = await listFinds();
-      if (mounted) {
+    const unsubscribe = subscribeToFinds(
+      data => {
         setFinds(data);
         setLoading(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
+        setError(null);
+      },
+      err => {
+        setError('Failed to load insights. You might be offline or an error occurred.');
+        setLoading(false);
+        console.error(err);
+      },
+    );
+
+    return () => unsubscribe();
   }, []);
 
   // Time of day analysis
@@ -48,10 +53,14 @@ export function InsightsView() {
     const types: Record<string, number> = {};
     finds.forEach(f => {
       let aiLabel = 'Unknown';
-      if (f.aiData && 'result' in f.aiData) {
-        aiLabel = (f.aiData as any).result?.best_guess?.label || 'Unknown';
-      } else if (f.aiData) {
-        aiLabel = (f.aiData as any).best_guess?.label || 'Unknown';
+      if (f.aiData) {
+        if ('result' in f.aiData) {
+          // It's an AnalysisEvent
+          aiLabel = (f.aiData as AnalysisEvent).result?.best_guess?.label || 'Unknown';
+        } else {
+          // It's a direct RockIdResult (legacy)
+          aiLabel = (f.aiData as RockIdResult).best_guess?.label || 'Unknown';
+        }
       }
 
       const type = aiLabel !== 'Unknown' ? aiLabel : f.label || 'Unknown';
@@ -91,9 +100,20 @@ export function InsightsView() {
     );
   }
 
+  if (error) {
+    return (
+      <View style={[styles.container, styles.emptyContainer]}>
+        <Ionicons name="warning-outline" size={48} color={colors.danger} />
+        <Text style={[styles.empty, {color: colors.textSecondary}]}>
+          {error}
+        </Text>
+      </View>
+    );
+  }
+
   if (finds.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, styles.emptyContainer]}>
         <Text style={[styles.empty, {color: colors.textSecondary}]}>
           No data yet. Start collecting to see insights!
         </Text>
@@ -349,4 +369,9 @@ const styles = StyleSheet.create({
   listValue: {
     fontSize: 15,
   },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  }
 });

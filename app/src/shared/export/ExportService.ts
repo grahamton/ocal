@@ -1,7 +1,8 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import {listFinds, listSessions} from '../db';
-import {logger} from '../LogService';
+import * as firestoreService from './firestoreService'; // Updated import
+import {logger} from './LogService';
+import {RockIdResult} from '@/ai/rockIdSchema'; // Updated import
 
 export class ExportService {
   /**
@@ -9,8 +10,8 @@ export class ExportService {
    * Can be used for restore or manual debugging.
    */
   async exportBackupJson(): Promise<string> {
-    const finds = await listFinds({status: 'all'});
-    const sessions = await listSessions();
+    const finds = await firestoreService.getAllFinds(); // Updated call
+    const sessions = await firestoreService.getAllSessions(); // Updated call
 
     const backupData = {
       meta: {
@@ -37,30 +38,23 @@ export class ExportService {
    * Strips out large Base64 images to keep the file size manageable.
    */
   async exportAnalysisJson(): Promise<string> {
-    const finds = await listFinds({status: 'all'});
-    const sessions = await listSessions();
+    const finds = await firestoreService.getAllFinds(); // Updated call
+    const sessions = await firestoreService.getAllSessions(); // Updated call
 
     // Deep clone and sanitize
     const cleanFinds = finds.map(f => {
       const clean = JSON.parse(JSON.stringify(f));
 
       // Sanitize AI Data input images
-      if (clean.aiData) {
-        // Handle AnalysisEvent structure
-        if (clean.aiData.input?.sourceImages) {
-          clean.aiData.input.sourceImages = clean.aiData.input.sourceImages.map(
-            (img: any) => ({
-              ...img,
-              uri: img.uri?.startsWith('data:')
-                ? '[Base64 Data Omitted]'
-                : img.uri,
-            }),
-          );
-        }
-
-        // Handle legacy structure (if any) or deeply nested data urls
-        // Simple recursive cleaner for any other large strings?
-        // For now, specific targeting is safer.
+      if (clean.aiData && clean.aiData.input?.sourceImages) {
+        clean.aiData.input.sourceImages = clean.aiData.input.sourceImages.map(
+          (img: {uri: string}) => ({ // Explicitly type img
+            ...img,
+            uri: img.uri?.startsWith('data:')
+              ? '[Base64 Data Omitted]'
+              : img.uri,
+          }),
+        );
       }
       return clean;
     });
@@ -92,7 +86,7 @@ export class ExportService {
    * Focuses on Finds only.
    */
   async exportFindsCsv(): Promise<string> {
-    const finds = await listFinds({status: 'all'});
+    const finds = await firestoreService.getAllFinds(); // Updated call
 
     // Header
     const header = 'Date,ID,Label,Category,Location,Favorite,Note';
@@ -102,7 +96,7 @@ export class ExportService {
       // CSV escaping
       const escape = (str: string | null | undefined) => {
         if (!str) return '';
-        const safe = str.replace(/"/g, '""'); // Escape quotes
+        const safe = str.replace(/'"'/g, '""'); // Escape quotes
         return `"${safe}"`;
       };
 
@@ -113,16 +107,18 @@ export class ExportService {
       let aiLabel = 'Unknown';
       let aiCategory = '';
 
-      if (f.aiData && 'result' in f.aiData) {
-        // Wrapped AnalysisEvent
-        const res = (f.aiData as any).result;
-        aiLabel = res?.best_guess?.label || 'Unknown';
-        aiCategory = res?.best_guess?.category || '';
-      } else if (f.aiData) {
-        // Legacy RockIdResult
-        const res = f.aiData as any;
-        aiLabel = res?.best_guess?.label || 'Unknown';
-        aiCategory = res?.best_guess?.category || '';
+      if (f.aiData) {
+        if ('result' in f.aiData) {
+          // Wrapped AnalysisEvent
+          const res = f.aiData.result;
+          aiLabel = res?.best_guess?.label || 'Unknown';
+          aiCategory = res?.best_guess?.category || '';
+        } else {
+          // Legacy RockIdResult
+          const res = f.aiData as RockIdResult; // Cast to specific type
+          aiLabel = res?.best_guess?.label || 'Unknown';
+          aiCategory = res?.best_guess?.category || '';
+        }
       }
 
       const label = f.label || aiLabel;

@@ -1,7 +1,7 @@
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
-import {FindRecord, Session} from './types';
-import {logger} from './LogService';
+import {FindRecord, Session} from '@/shared/types';
+import {logger} from '@/shared/LogService';
 
 const USERS_COLLECTION = 'users';
 const FINDS_SUBCOLLECTION = 'finds';
@@ -33,10 +33,9 @@ export const addFind = async (find: FindRecord): Promise<FindRecord> => {
       timestamp: firestore.Timestamp.fromDate(new Date(find.timestamp)), // Convert string to Firestore Timestamp
       // Ensure aiData is handled correctly for Firestore (no custom objects, plain JSON)
       aiData: find.aiData ? JSON.parse(JSON.stringify(find.aiData)) : null,
-      synced: true, // Mark as synced now that it's in Firestore
     });
     logger.add('firestore', `Find added: ${find.id}`);
-    return {...find, synced: true};
+    return find;
   } catch (error) {
     logger.error('FirestoreService: Failed to add find', {
       findId: find.id,
@@ -91,6 +90,59 @@ export const deleteFind = async (findId: string): Promise<void> => {
     throw error;
   }
 };
+
+export const getAllFinds = async (): Promise<FindRecord[]> => {
+  const userId = getCurrentUserId();
+  if (!userId) {
+    logger.error('FirestoreService: Cannot get all finds - no user ID');
+    throw new Error('No authenticated user for Firestore operation.');
+  }
+  try {
+    const querySnapshot = await findRecordCollection(userId)
+      .orderBy('timestamp', 'desc')
+      .get();
+    const finds: FindRecord[] = [];
+    querySnapshot.forEach(doc => {
+      const data = doc.data();
+      finds.push({
+        ...(data as Omit<FindRecord, 'timestamp' | 'aiData'>),
+        id: doc.id,
+        timestamp: (data.timestamp as firestore.Timestamp).toDate().toISOString(),
+        aiData: data.aiData ? data.aiData : null,
+      });
+    });
+    logger.add('firestore', `Fetched all finds for user: ${userId}`);
+    return finds;
+  } catch (error) {
+    logger.error('FirestoreService: Error getting all finds', { error });
+    throw error;
+  }
+};
+
+export const getFind = async (findId: string): Promise<FindRecord | null> => {
+  const userId = getCurrentUserId();
+  if (!userId) {
+    logger.error('FirestoreService: Cannot get find - no user ID');
+    throw new Error('No authenticated user for Firestore operation.');
+  }
+  try {
+    const doc = await findRecordCollection(userId).doc(findId).get();
+    if (doc.exists) {
+      const data = doc.data();
+      return {
+        ...(data as Omit<FindRecord, 'timestamp' | 'aiData'>),
+        id: doc.id,
+        timestamp: (data?.timestamp as firestore.Timestamp).toDate().toISOString(),
+        aiData: data.aiData ? data.aiData : null,
+      };
+    }
+    return null;
+  } catch (error) {
+    logger.error('FirestoreService: Failed to get find', { findId, error });
+    throw error;
+  }
+};
+
 
 // Listener for real-time updates (for GalleryGrid)
 export const subscribeToFinds = (
@@ -255,6 +307,36 @@ export const subscribeToSessions = (
     );
   logger.add('firestore', `Subscribed to sessions for user: ${userId}`);
   return unsubscribe;
+};
+
+export const getAllSessions = async (): Promise<Session[]> => {
+  const userId = getCurrentUserId();
+  if (!userId) {
+    logger.error('FirestoreService: Cannot get all sessions - no user ID');
+    throw new Error('No authenticated user for Firestore operation.');
+  }
+  try {
+    const querySnapshot = await sessionCollection(userId)
+      .orderBy('startTime', 'desc')
+      .get();
+    const sessions: Session[] = [];
+    querySnapshot.forEach(doc => {
+      const data = doc.data();
+      sessions.push({
+        ...(data as Omit<Session, 'startTime' | 'endTime'>),
+        id: doc.id,
+        startTime: (data.startTime as firestore.Timestamp).toMillis(),
+        endTime: data.endTime
+          ? (data.endTime as firestore.Timestamp).toMillis()
+          : undefined,
+      });
+    });
+    logger.add('firestore', `Fetched all sessions for user: ${userId}`);
+    return sessions;
+  } catch (error) {
+    logger.error('FirestoreService: Error getting all sessions', { error });
+    throw error;
+  }
 };
 
 export const getSession = async (

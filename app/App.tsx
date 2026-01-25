@@ -45,7 +45,7 @@ import {AnalyticsService} from '@/shared/AnalyticsService';
 // import { MigrationStatusModal } from '@/shared/migration/MigrationStatusModal';
 
 export default function App() {
-  const [dbReady, setDbReady] = useState(true); // Firestore is always "ready"
+  const dbReady = true;
   const [fontsLoaded] = useFonts({
     Outfit_400Regular,
     Outfit_700Bold,

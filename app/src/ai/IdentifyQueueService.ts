@@ -6,8 +6,7 @@ import { logger } from '@/shared/LogService';
 import { AnalyticsService } from '@/shared/AnalyticsService';
 import { useAuth } from '@/shared/AuthContext';
 import { useSession } from '@/shared/SessionContext';
-import { FindRecord, Session } from '@/shared/types';
-import * as FileSystem from 'expo-file-system'; // For base64 conversion
+import { Session } from '@/shared/types';
 
 export const useIdentifyQueue = () => {
   const { user } = useAuth();
@@ -100,10 +99,15 @@ export const useIdentifyQueue = () => {
         aiData: {
           result: null, // Clear any partial AI data
           meta: {
-            // Minimal meta for failed attempt
+            schemaVersion: '0.0.0', // Placeholder
+            aiModel: 'unknown',     // Placeholder
+            aiModelVersion: 'unknown', // Placeholder
+            promptHash: 'na',       // Placeholder
+            pipelineVersion: '0.0.0', // Placeholder
+            runId: `failed-${findId}`, // Unique ID for failed run
             timestamp: new Date().toISOString(),
             error: msg,
-          } as any, // Cast to any to allow partial type
+          },
           input: {
             sourceImages: [],
             locationUsed: !!find?.location_text,

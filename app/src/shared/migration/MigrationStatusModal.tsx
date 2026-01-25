@@ -6,7 +6,6 @@ import {
   View,
   ActivityIndicator,
   ScrollView,
-  Platform,
 } from 'react-native';
 import {MigrationState, migrationService} from './MigrationService';
 import {Ionicons} from '@expo/vector-icons';

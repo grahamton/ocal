@@ -479,6 +479,7 @@ export interface AnalysisEvent {
     runId: string;
     runNumber?: number;
     timestamp: string;
+    error?: string; // Added error property
   };
   input: {
     sourceImages: {uri: string; shotType?: string}[];

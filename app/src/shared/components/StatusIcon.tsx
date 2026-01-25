@@ -47,7 +47,7 @@ export const StatusIcon: React.FC<StatusIconProps> = ({
     } else {
       pulseAnim.setValue(0);
     }
-  }, [status]);
+  }, [status, pulseAnim]);
 
   // Colors based on Theme
   const strokeColor = theme === 'beach' ? '#0F172A' : '#0F766E'; // Slate-900 or Teal-700

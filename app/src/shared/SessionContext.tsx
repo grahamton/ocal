@@ -35,12 +35,6 @@ export function SessionProvider({children}: {children: ReactNode}) {
   const {user} = useAuth();
 
   useEffect(() => {
-    if (!user) {
-      setSessions([]);
-      setActiveSession(null);
-      return;
-    }
-
     const unsubscribe = firestoreService.subscribeToSessions(
       newSessions => {
         setSessions(newSessions);

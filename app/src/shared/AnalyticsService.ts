@@ -24,7 +24,7 @@ export const AnalyticsService = {
   /**
    * Log a discrete event
    */
-  logEvent: (name: string, properties?: Record<string, any>) => {
+  logEvent: (name: string, properties?: Record<string, unknown>) => {
     try {
       if (__DEV__) {
         console.log(`[Analytics] ${name}`, properties);

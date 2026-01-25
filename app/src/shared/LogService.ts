@@ -61,10 +61,9 @@ class LogService {
   public async exportLogs(): Promise<void> {
     const fileName = `ocal_session_${new Date().getTime()}.json`;
     // Use cacheDirectory to avoid "documentDirectory" type issues if any, and it's temporary anyway
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dir =
-      (FileSystem as any).cacheDirectory ||
-      (FileSystem as any).documentDirectory;
+      FileSystem.cacheDirectory ||
+      FileSystem.documentDirectory;
     if (!dir) {
       throw new Error('No file system directory available');
     }
