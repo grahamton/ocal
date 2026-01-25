@@ -1,3 +1,5 @@
+import { AuthProvider } from './src/shared/AuthContext';
+import * as firestoreService from './src/shared/firestoreService';
 import { useEffect, useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Alert, Modal, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
@@ -8,7 +10,6 @@ import { GalleryGrid } from './src/features/gallery/GalleryGrid';
 import { InsightsView } from './src/features/insights/InsightsView';
 
 import { FindDetailModal } from './src/features/detail/FindDetailModal';
-import { setupDatabase, deleteFind } from './src/shared/db';
 import { FindRecord } from './src/shared/types';
 import { SessionProvider, useSession } from './src/shared/SessionContext';
 
@@ -28,7 +29,7 @@ import { AnalyticsService } from './src/shared/AnalyticsService';
 // import { MigrationStatusModal } from './src/shared/migration/MigrationStatusModal';
 
 export default function App() {
-  const [dbReady, setDbReady] = useState(false);
+  const [dbReady, setDbReady] = useState(true); // Firestore is always "ready"
   const [fontsLoaded] = useFonts({
     Outfit_400Regular,
     Outfit_700Bold,
@@ -36,11 +37,8 @@ export default function App() {
   });
 
   useEffect(() => {
-    (async () => {
-      await setupDatabase();
-      setDbReady(true);
-      AnalyticsService.logEvent('app_opened');
-    })();
+    // This effect is now just for analytics
+    AnalyticsService.logEvent('app_opened');
   }, []);
 
   const appIsReady = dbReady && fontsLoaded;
@@ -55,17 +53,19 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider>
-      <SessionProvider>
-        <SelectionProvider>
-          <SafeAreaProvider>
-            <GradientBackground>
-              <AppContent />
-            </GradientBackground>
-          </SafeAreaProvider>
-        </SelectionProvider>
-      </SessionProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <SessionProvider>
+          <SelectionProvider>
+            <SafeAreaProvider>
+              <GradientBackground>
+                <AppContent />
+              </GradientBackground>
+            </SafeAreaProvider>
+          </SelectionProvider>
+        </SessionProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 
@@ -112,7 +112,7 @@ function AppContent() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await Promise.all(Array.from(selectedIds).map(id => deleteFind(id)));
+              await Promise.all(Array.from(selectedIds).map(id => firestoreService.deleteFind(id))); // Changed here
               exitSelectionMode();
               handleRefresh();
               logger.add('user', `Deleted ${count} items`);
@@ -508,4 +508,3 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
 });
-

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View, ScrollView, Image, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
-import { updateFindMetadata, getFind, deleteFind, getSession } from '../../shared/db';
+import * as firestoreService from '../../shared/firestoreService';
 import { FindRecord } from '../../shared/types';
 import { IdentifyQueueService } from '../../ai/IdentifyQueueService';
 import { RockIdResult, AnalysisEvent } from '../../ai/rockIdSchema';
@@ -69,68 +69,18 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
       setSessionName(null);
 
       if (item.sessionId) {
-        getSession(item.sessionId).then(s => {
+        firestoreService.getSession(item.sessionId).then(s => {
             if (s) setSessionName(s.name);
         });
       }
     }
   }, [item, visible]);
 
-  // Poll for queue updates if waiting for AI
-  useEffect(() => {
-    if (!visible || !item || aiResult) return;
-
-    let mounted = true;
-    const checkQueue = async () => {
-      const qItem = await IdentifyQueueService.getQueueStatus(item.id);
-
-      if (!mounted) return;
-
-      if (qItem && (qItem.status === 'pending' || qItem.status === 'processing')) {
-        setAiLoading(true);
-        setTimeout(checkQueue, 2000);
-      } else if (qItem && qItem.status === 'completed') {
-        const fresh = await getFind(item.id);
-        if (fresh && fresh.aiData && mounted) {
-          const freshData = fresh.aiData as (RockIdResult | AnalysisEvent);
-          if ('result' in freshData && 'meta' in freshData) {
-             setAiResult((freshData as AnalysisEvent).result);
-          } else {
-             setAiResult(freshData as RockIdResult);
-          }
-          setLocalItem(fresh);
-          setAiLoading(false);
-        }
-      } else if (qItem && qItem.status === 'failed') {
-        setAiError(qItem.error || 'Request failed');
-        setAiLoading(false);
-      } else {
-        // Not in queue? It might have just finished (row deleted).
-        // Check the main table one last time.
-        const freshFind = await getFind(item.id);
-        if (freshFind && freshFind.aiData) {
-          const freshData = freshFind.aiData as (RockIdResult | AnalysisEvent);
-          if ('result' in freshData && 'meta' in freshData) {
-             setAiResult((freshData as AnalysisEvent).result);
-          } else {
-             setAiResult(freshData as RockIdResult);
-          }
-          setLocalItem(freshFind);
-        }
-        setAiLoading(false);
-      }
-    };
-
-    checkQueue();
-
-    return () => { mounted = false; };
-  }, [visible, item, aiResult]);
-
   const handleSave = async () => {
     if (!item || saving) return;
     setSaving(true);
     try {
-      await updateFindMetadata(item.id, {
+      await firestoreService.updateFind(item.id, {
         label: label.trim() || null,
         note: note.trim() || null,
         status: 'cataloged',
@@ -156,7 +106,7 @@ export function FindDetailModal({ visible, item, onClose, onSaved }: Props) {
             try {
                 // Safe access
                 if (item?.id) {
-                    await deleteFind(item.id);
+                    await firestoreService.deleteFind(item.id);
                     onClose?.();
                 }
             } catch {

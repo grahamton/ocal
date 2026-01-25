@@ -2,9 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, Vibration, Animated, Easing } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
-// Use legacy FileSystem API to avoid runtime errors in Expo 54 until the new API migration is done.
-import * as FileSystem from 'expo-file-system/legacy';
-import { insertFind } from '../../shared/db';
+import * as firestoreService from '../../shared/firestoreService';
+import * as storageService from '../../shared/storageService';
 import { createId } from '../../shared/id';
 import { FindRecord } from '../../shared/types';
 import { useSession } from '../../shared/SessionContext';
@@ -38,15 +37,6 @@ export function CameraCapture({ onSaved }: Props) {
   }, [permission?.granted, requestPermission]);
 
   const classes = useMemo(() => createStyles(), []);
-
-  const ensureDir = async () => {
-    const dir = `${FileSystem.documentDirectory}finds`;
-    const info = await FileSystem.getInfoAsync(dir);
-    if (!info.exists) {
-      await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
-    }
-    return dir;
-  };
 
   const getLocation = async () => {
     try {
@@ -119,21 +109,18 @@ export function CameraCapture({ onSaved }: Props) {
       setCapturedUri(photo.uri);
       animateFlyAway();
 
-      const dir = await ensureDir();
-      const id = createId();
-      const fileUri = `${dir}/${id}.jpg`;
-
-      // Async save in background while animation plays
-      await FileSystem.copyAsync({ from: photo.uri, to: fileUri });
+      // Upload image to Cloud Storage
+      const downloadURL = await storageService.uploadImage(photo.uri);
 
       const location = await getLocation();
+      const id = createId();
       const record: FindRecord = {
         id,
-        photoUri: fileUri,
+        photoUri: downloadURL, // Use the public URL from Cloud Storage
         lat: location?.coords.latitude ?? null,
         long: location?.coords.longitude ?? null,
         timestamp: new Date().toISOString(),
-        synced: false,
+        synced: true, // This is now synced to Firestore and Storage
         note: null,
         category: null,
         label: null,
@@ -142,7 +129,7 @@ export function CameraCapture({ onSaved }: Props) {
         favorite: false,
       };
 
-      await insertFind(record);
+      await firestoreService.addFind(record);
       await addFindToActiveSession(record.id, session.id);
 
       // Auto-Pilot: Queue for AI immediately

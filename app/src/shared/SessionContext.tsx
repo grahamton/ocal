@@ -1,16 +1,16 @@
 import { ReactNode, createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
-import { addFindToSession, createSession, endSession as endSessionDb, listSessions, updateSession } from './db';
+import * as firestoreService from './firestoreService';
 import { createId } from './id';
 import { Session } from './types';
+import { useAuth } from './AuthContext'; // Import useAuth to get the user ID
 
 type SessionContextValue = {
   sessions: Session[];
   activeSession: Session | null;
   startSession: (name?: string, locationName?: string) => Promise<Session>;
-  endSession: (name?: string) => Promise<Session | null>;
+  endSession: (name?: string) => Promise<void>;
   renameSession: (sessionId: string, newName: string) => Promise<void>;
-  endSessionById: (sessionId: string, name?: string) => Promise<Session | null>;
-  refreshSessions: () => Promise<void>;
+  endSessionById: (sessionId: string, name?: string) => Promise<void>;
   addFindToActiveSession: (findId: string, sessionIdOverride?: string) => Promise<void>;
 };
 
@@ -19,18 +19,28 @@ const SessionContext = createContext<SessionContextValue | undefined>(undefined)
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSession, setActiveSession] = useState<Session | null>(null);
-
-  const refreshSessions = useCallback(async () => {
-    const rows = await listSessions();
-    setSessions(rows);
-    const active = rows.find((session) => session.status === 'active') ?? null;
-    setActiveSession(active);
-  }, []);
+  const { user } = useAuth();
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    refreshSessions();
-  }, [refreshSessions]);
+    if (!user) {
+      setSessions([]);
+      setActiveSession(null);
+      return;
+    }
+
+    const unsubscribe = firestoreService.subscribeToSessions(
+      (newSessions) => {
+        setSessions(newSessions);
+        const active = newSessions.find((session) => session.status === 'active') ?? null;
+        setActiveSession(active);
+      },
+      (error) => {
+        console.error("Failed to subscribe to sessions", error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
 
   const startSession = useCallback(
     async (name?: string, locationName?: string) => {
@@ -55,9 +65,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         locationName: locationName?.trim() || undefined,
         finds: [],
       };
-      await createSession(newSession);
-      setActiveSession(newSession);
-      setSessions((prev) => [newSession, ...prev.filter((s) => s.id !== newSession.id)]);
+      
+      await firestoreService.addSession(newSession);
+      // No need to manually set state, the listener will do it.
       return newSession;
     },
     []
@@ -65,51 +75,45 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const endSession = useCallback(
     async (name?: string) => {
-      if (!activeSession) return null;
-      const ended = await endSessionDb(activeSession.id, Date.now(), name);
-      setActiveSession(null);
-      await refreshSessions();
-      return ended;
+      if (!activeSession) return;
+      const updates: Partial<Session> = { status: 'complete', endTime: Date.now() };
+      if (name) {
+        updates.name = name;
+      }
+      await firestoreService.updateSession(activeSession.id, updates);
+      // No need to manually set state, the listener will do it.
     },
-    [activeSession, refreshSessions]
+    [activeSession]
   );
 
   const renameSession = useCallback(
     async (sessionId: string, newName: string) => {
-        const session = sessions.find(s => s.id === sessionId);
-        if (!session) return;
-        const updated = { ...session, name: newName };
-        await updateSession(updated);
-        await refreshSessions();
+        await firestoreService.updateSession(sessionId, { name: newName });
+        // No need to manually set state, the listener will do it.
     },
-    [sessions, refreshSessions]
+    []
   );
-
-  // Actually, I'll rewrite the imports in a separate replace block if needed.
-  // Viewing file showed: import { addFindToSession, createSession, endSession as endSessionDb, listSessions } from './db';
-  // So updateSession is NOT imported.
-
 
   const endSessionById = useCallback(
     async (sessionId: string, name?: string) => {
-      const ended = await endSessionDb(sessionId, Date.now(), name);
-      if (activeSession?.id === sessionId) {
-        setActiveSession(null);
+      const updates: Partial<Session> = { status: 'complete', endTime: Date.now() };
+      if (name) {
+        updates.name = name;
       }
-      await refreshSessions();
-      return ended;
+      await firestoreService.updateSession(sessionId, updates);
+      // No need to manually set state, the listener will do it.
     },
-    [activeSession, refreshSessions]
+    []
   );
 
   const addFindToActiveSession = useCallback(
     async (findId: string, sessionIdOverride?: string) => {
       const sessionId = sessionIdOverride ?? activeSession?.id;
       if (!sessionId) return;
-      await addFindToSession(sessionId, findId);
-      await refreshSessions();
+      await firestoreService.addFindToSession(sessionId, findId);
+      // No need to manually set state, the listener will do it.
     },
-    [activeSession, refreshSessions]
+    [activeSession]
   );
 
   const value = useMemo(
@@ -119,11 +123,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       startSession,
       endSession,
       endSessionById,
-      refreshSessions,
       addFindToActiveSession,
       renameSession,
+      // refreshSessions is removed as data is now real-time
     }),
-    [sessions, activeSession, startSession, endSession, endSessionById, refreshSessions, addFindToActiveSession, renameSession]
+    [sessions, activeSession, startSession, endSession, endSessionById, addFindToActiveSession, renameSession]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

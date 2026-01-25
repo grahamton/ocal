@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { useTheme } from '../../shared/ThemeContext';
 import { exportService } from '../../shared/export/ExportService';
 import { importService } from '../../shared/export/ImportService';
 import { integrityService, IntegrityReport } from '../../shared/integrity/IntegrityService';
+import { migrationService, MigrationProgress } from '../../shared/migration/MigrationService';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { GlassView } from '../../shared/components/GlassView';
@@ -14,6 +14,26 @@ export function DataManager() {
   const { colors, mode } = useTheme();
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<IntegrityReport | null>(null);
+  const [migrationProgress, setMigrationProgress] = useState<MigrationProgress | null>(null);
+
+  const handleMigrate = async () => {
+    Alert.alert(
+      'Migrate to Cloud',
+      'This will upload all your local data (finds and sessions) to the cloud. This is a one-time operation. Do you want to proceed?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Migrate',
+          style: 'destructive',
+          onPress: async () => {
+            setLoading(true);
+            await migrationService.migrateData(setMigrationProgress);
+            setLoading(false);
+          },
+        },
+      ]
+    );
+  };
 
   const handleScan = async () => {
       try {
@@ -158,6 +178,46 @@ export function DataManager() {
              Your data is stored locally. Use these tools to back it up or move it.
          </Text>
       </View>
+
+      {migrationProgress && (
+        <View style={styles.migrationContainer}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Cloud Migration Progress</Text>
+            <Text style={{color: colors.textSecondary, marginBottom: 8}}>
+                {migrationProgress.status === 'migrating' && `Migrating item ${migrationProgress.completed} of ${migrationProgress.total}...`}
+                {migrationProgress.status === 'complete' && `Migration complete! ${migrationProgress.completed} items migrated.`}
+                {migrationProgress.status === 'error' && `Error: ${migrationProgress.error}`}
+            </Text>
+            {migrationProgress.status === 'migrating' && (
+                <View style={styles.progressBar}>
+                    <View style={{
+                        width: `${(migrationProgress.completed / migrationProgress.total) * 100}%`,
+                        height: '100%',
+                        backgroundColor: colors.accent,
+                    }} />
+                </View>
+            )}
+        </View>
+      )}
+
+      <View style={styles.divider} />
+
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Cloud Sync</Text>
+      <TouchableOpacity onPress={handleMigrate} disabled={loading}>
+        <GlassView style={styles.card} intensity={20}>
+            <View style={[styles.iconBox, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}>
+                <Ionicons name="cloud-upload-outline" size={24} color="#3b82f6" />
+            </View>
+            <View style={{flex: 1}}>
+                <Text style={[styles.actionTitle, { color: colors.text }]}>Migrate Data to Cloud</Text>
+                <Text style={[styles.actionDesc, { color: colors.textSecondary }]}>
+                    One-time process to upload all local finds and sessions to your cloud account.
+                </Text>
+            </View>
+        </GlassView>
+      </TouchableOpacity>
+      
+      <View style={styles.divider} />
+
 
       <View style={styles.actions}>
 
@@ -393,5 +453,15 @@ const styles = StyleSheet.create({
       fontSize: 10,
       fontWeight: 'bold',
       color: '#000',
+  },
+  migrationContainer: {
+    marginBottom: 24,
+  },
+  progressBar: {
+    height: 10,
+    width: '100%',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 5,
+    overflow: 'hidden',
   }
 });

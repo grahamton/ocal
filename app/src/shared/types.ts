@@ -7,7 +7,6 @@ export type FindRecord = {
   long: number | null;
   location_text?: string | null;
   timestamp: string;
-  synced: boolean;
   note: string | null;
   category: string | null;
   label: string | null;

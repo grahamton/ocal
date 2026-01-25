@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DeviceEventEmitter, Image, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { listFinds } from '../../shared/db';
+import { subscribeToFinds } from '../../shared/firestoreService';
 import { formatLocationSync } from '../../shared/format';
 import { FindRecord } from '../../shared/types';
 import { AnalysisEvent } from '../../ai/rockIdSchema';
@@ -24,6 +24,7 @@ type ViewMode = 'grid' | 'list';
 
 export function GalleryGrid({ refreshKey, onSelect }: Props) {
   const [items, setItems] = useState<FindRecord[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'favorites' | 'session'>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
@@ -39,20 +40,24 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
   const { isSelectionMode, selectedIds, toggleSelection, enterSelectionMode } = useSelection();
 
   useEffect(() => {
-    let active = true;
-    (async () => {
-      const rows = await listFinds();
-      if (active) setItems(rows);
-    })();
-    return () => {
-      active = false;
-    };
-  }, [refreshKey]);
+    const unsubscribe = subscribeToFinds(
+      (finds) => {
+        setItems(finds);
+        setError(null);
+      },
+      (err) => {
+        setError("Failed to load finds. You might be offline or an error occurred.");
+        console.error(err);
+      }
+    );
+
+    // Return the unsubscribe function to clean up the listener on component unmount
+    return () => unsubscribe();
+  }, [refreshKey]); // refreshKey can be used to manually re-trigger the subscription if needed
 
   const allItems = useMemo(() => {
-    return [...items].sort((a, b) =>
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
+    // Firestore already sorts by timestamp, so we can just use the items directly
+    return items;
   }, [items]);
 
   const filteredItems = useMemo(() => {
@@ -61,23 +66,6 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
     if (filter === 'session' && activeSession) return allItems.filter(item => item.sessionId === activeSession.id);
     return allItems;
   }, [allItems, filter, activeSession]);
-
-
-
-  // Auto-refresh when AI processing completes
-  // Auto-refresh when AI processing completes
-  useEffect(() => {
-    const subscription = DeviceEventEmitter.addListener('AI_IDENTIFY_SUCCESS', async () => {
-        // Refresh data
-        const rows = await listFinds();
-        setItems(rows);
-    });
-    return () => {
-        subscription.remove();
-    };
-  }, []);
-
-
 
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -233,6 +221,18 @@ export function GalleryGrid({ refreshKey, onSelect }: Props) {
       </TouchableOpacity>
     );
   };
+
+  if (error) {
+    return (
+      <View style={[styles.emptyBox, { backgroundColor: colors.card }]}>
+        <Ionicons name="cloud-offline-outline" size={48} color={colors.danger} style={{ marginBottom: 16 }} />
+        <Text style={[styles.emptyText, { color: colors.text }]}>Error Loading Finds</Text>
+        <Text style={[styles.emptySubText, { color: colors.textSecondary, marginTop: 8 }]}>
+          {error}
+        </Text>
+      </View>
+    );
+  }
 
   if (items.length === 0) {
     return (
