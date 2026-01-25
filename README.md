@@ -43,7 +43,6 @@ A dedicated **"Ranger's Workshop"** analysis for rock tumblers.
 ## 📚 Documentation
 
 - [**Conductor Dashboard**](./conductor/index.md): The central hub for project vision, tech stack, and development tracks.
-- [**Architecture**](./ARCHITECTURE.md): System design, data flow, and tech stack decisions.
 - [**Agent Guidance**](./docs/agent_guidance.md): "The Rulebook" for AI agents working on this repo.
 - [**Backlog**](./docs/BACKLOG.md): Pending features (Multi-Photo, etc).
 
