@@ -7,10 +7,10 @@ import {
   useState,
   useCallback,
 } from 'react';
-import * as firestoreService from './firestoreService';
-import {createId} from './id';
-import {Session} from './types';
-import {useAuth} from './AuthContext'; // Import useAuth to get the user ID
+import * as firestoreService from '@/shared/firestoreService';
+import {createId} from '@/shared/id';
+import {Session} from '@/shared/types';
+import {useAuth} from '@/shared/AuthContext';
 
 type SessionContextValue = {
   sessions: Session[];

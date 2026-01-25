@@ -10,14 +10,14 @@ import {
 } from 'react-native';
 import {CameraView, useCameraPermissions} from 'expo-camera';
 import * as Location from 'expo-location';
-import * as firestoreService from '../../shared/firestoreService';
-import * as storageService from '../../shared/storageService';
-import {createId} from '../../shared/id';
-import {FindRecord} from '../../shared/types';
-import {useSession} from '../../shared/SessionContext';
-import {logger} from '../../shared/LogService';
-import {useIdentifyQueue} from '../../ai/IdentifyQueueService'; // Updated import
-import {AnalyticsService} from '../../shared/AnalyticsService';
+import * as firestoreService from '@/shared/firestoreService';
+import * as storageService from '@/shared/storageService';
+import {createId} from '@/shared/id';
+import {FindRecord} from '@/shared/types';
+import {useSession} from '@/shared/SessionContext';
+import {logger} from '@/shared/LogService';
+import {useIdentifyQueue} from '@/ai/IdentifyQueueService';
+import {AnalyticsService} from '@/shared/AnalyticsService';
 
 type Props = {
   onSaved: () => void;
@@ -32,7 +32,7 @@ export function CameraCapture({onSaved}: Props) {
     'info',
   );
   const {activeSession, startSession, addFindToActiveSession} = useSession();
-  const {addToQueue} = useIdentifyQueue(); // Call the hook
+  const {addToQueue} = useIdentifyQueue();
 
   // Animations
   const flashOpacity = useRef(new Animated.Value(0)).current;

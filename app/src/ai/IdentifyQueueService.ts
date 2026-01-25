@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
 import { DeviceEventEmitter } from 'react-native';
-import { identifyRock } from './identifyRock';
-import * as firestoreService from '../shared/firestoreService';
-import { logger } from '../shared/LogService';
-import { AnalyticsService } from '../shared/AnalyticsService';
-import { useAuth } from '../shared/AuthContext';
-import { useSession } from '../shared/SessionContext';
-import { FindRecord, Session } from '../shared/types';
+import { identifyRock } from '@/ai/identifyRock';
+import * as firestoreService from '@/shared/firestoreService';
+import { logger } from '@/shared/LogService';
+import { AnalyticsService } from '@/shared/AnalyticsService';
+import { useAuth } from '@/shared/AuthContext';
+import { useSession } from '@/shared/SessionContext';
+import { FindRecord, Session } from '@/shared/types';
 import * as FileSystem from 'expo-file-system'; // For base64 conversion
 
 export const useIdentifyQueue = () => {

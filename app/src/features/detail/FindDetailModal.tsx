@@ -13,15 +13,15 @@ import {
 } from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
-import * as firestoreService from '../../shared/firestoreService';
-import {FindRecord} from '../../shared/types';
-import {useIdentifyQueue} from '../../ai/IdentifyQueueService'; // Updated import
-import {RockIdResult, AnalysisEvent} from '../../ai/rockIdSchema';
-import {formatLocationSync} from '../../shared/format';
-import {useTheme, ThemeColors} from '../../shared/ThemeContext';
-import {StatusIcon} from '../../shared/components/StatusIcon';
-import {getCategoryFromTags} from '../../shared/CategoryMapper';
-import {RawJsonInspector} from '../../shared/components/RawJsonInspector';
+import * as firestoreService from '@/shared/firestoreService';
+import {FindRecord} from '@/shared/types';
+import {useIdentifyQueue} from '@/ai/IdentifyQueueService';
+import {RockIdResult, AnalysisEvent} from '@/ai/rockIdSchema';
+import {formatLocationSync} from '@/shared/format';
+import {useTheme, ThemeColors} from '@/shared/ThemeContext';
+import {StatusIcon} from '@/shared/components/StatusIcon';
+import {getCategoryFromTags} from '@/shared/CategoryMapper';
+import {RawJsonInspector} from '@/shared/components/RawJsonInspector';
 
 type Props = {
   visible: boolean;
@@ -67,7 +67,7 @@ export function FindDetailModal({visible, item, onClose, onSaved}: Props) {
   const [sessionName, setSessionName] = useState<string | null>(null);
   const [showContext, setShowContext] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const {addToQueue} = useIdentifyQueue(); // Call the hook
+  const {addToQueue} = useIdentifyQueue();
 
   useEffect(() => {
     if (item && visible) {
@@ -156,7 +156,7 @@ export function FindDetailModal({visible, item, onClose, onSaved}: Props) {
     setAiLoading(true);
     setAiError(null);
     try {
-      await addToQueue(item.id); // Updated call
+      await addToQueue(item.id);
     } catch {
       setAiError('Could not start analysis.');
       setAiLoading(false);

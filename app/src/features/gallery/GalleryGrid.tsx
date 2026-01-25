@@ -8,17 +8,17 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import {LinearGradient} from 'expo-linear-gradient';
-import {subscribeToFinds} from '../../shared/firestoreService';
-import {formatLocationSync} from '../../shared/format';
-import {FindRecord} from '../../shared/types';
-import {AnalysisEvent} from '../../ai/rockIdSchema';
-import {useTheme} from '../../shared/ThemeContext';
-import {useSelection} from '../../shared/SelectionContext';
-import {useSession} from '../../shared/SessionContext';
+import {subscribeToFinds} from '@/shared/firestoreService';
+import {formatLocationSync} from '@/shared/format';
+import {FindRecord} from '@/shared/types';
+import {AnalysisEvent} from '@/ai/rockIdSchema';
+import {useTheme} from '@/shared/ThemeContext';
+import {useSelection} from '@/shared/SelectionContext';
+import {useSession} from '@/shared/SessionContext';
 import {Ionicons} from '@expo/vector-icons';
 
-import {StatusIcon} from '../../shared/components/StatusIcon';
-import {getCategoryFromTags} from '../../shared/CategoryMapper';
+import {StatusIcon} from '@/shared/components/StatusIcon';
+import {getCategoryFromTags} from '@/shared/CategoryMapper';
 
 const spacing = 12;
 

@@ -1,5 +1,5 @@
-import {AuthProvider} from './src/shared/AuthContext';
-import * as firestoreService from './src/shared/firestoreService';
+import {AuthProvider} from '@/shared/AuthContext';
+import * as firestoreService from '@/shared/firestoreService';
 import {useEffect, useState, useCallback} from 'react';
 import {Ionicons} from '@expo/vector-icons';
 import {
@@ -23,26 +23,26 @@ import {
   Outfit_700Bold,
   Outfit_800ExtraBold,
 } from '@expo-google-fonts/outfit';
-import {CameraCapture} from './src/features/capture/CameraCapture';
-import {GalleryGrid} from './src/features/gallery/GalleryGrid';
-import {InsightsView} from './src/features/insights/InsightsView';
+import {CameraCapture} from '@/features/capture/CameraCapture';
+import {GalleryGrid} from '@/features/gallery/GalleryGrid';
+import {InsightsView} from '@/features/insights/InsightsView';
 
-import {FindDetailModal} from './src/features/detail/FindDetailModal';
-import {FindRecord} from './src/shared/types';
-import {SessionProvider, useSession} from './src/shared/SessionContext';
+import {FindDetailModal} from '@/features/detail/FindDetailModal';
+import {FindRecord} from '@/shared/types';
+import {SessionProvider, useSession} from '@/shared/SessionContext';
 
-// import { NextActionPrompt } from './src/shared/NextActionPrompt';
-import {GradientBackground} from './src/shared/components/GradientBackground';
-import {GlassView} from './src/shared/components/GlassView';
-import {THEME} from './src/shared/theme';
-import {SelectionProvider, useSelection} from './src/shared/SelectionContext';
-import {BatchActionBar} from './src/shared/components/BatchActionBar';
+// import { NextActionPrompt } from '@/shared/NextActionPrompt';
+import {GradientBackground} from '@/shared/components/GradientBackground';
+import {GlassView} from '@/shared/components/GlassView';
+import {THEME} from '@/shared/theme';
+import {SelectionProvider, useSelection} from '@/shared/SelectionContext';
+import {BatchActionBar} from '@/shared/components/BatchActionBar';
 
-import {ThemeProvider} from './src/shared/ThemeContext';
-import {StatusIcon} from './src/shared/components/StatusIcon';
-import {AnalyticsService} from './src/shared/AnalyticsService';
-// import { migrationService } from './src/shared/migration/MigrationService';
-// import { MigrationStatusModal } from './src/shared/migration/MigrationStatusModal';
+import {ThemeProvider} from '@/shared/ThemeContext';
+import {StatusIcon} from '@/shared/components/StatusIcon';
+import {AnalyticsService} from '@/shared/AnalyticsService';
+// import { migrationService } from '@/shared/migration/MigrationService';
+// import { MigrationStatusModal } from '@/shared/migration/MigrationStatusModal';
 
 export default function App() {
   const [dbReady, setDbReady] = useState(true); // Firestore is always "ready"
@@ -85,10 +85,10 @@ export default function App() {
   );
 }
 
-import {SessionControlModal} from './src/shared/components/SessionControlModal';
-import {logger} from './src/shared/LogService';
-import {useTheme} from './src/shared/ThemeContext';
-import {SettingsModal} from './src/shared/components/SettingsModal';
+import {SessionControlModal} from '@/shared/components/SessionControlModal';
+import {logger} from '@/shared/LogService';
+import {useTheme} from '@/shared/ThemeContext';
+import {SettingsModal} from '@/shared/components/SettingsModal';
 
 function AppContent() {
   const insets = useSafeAreaInsets();

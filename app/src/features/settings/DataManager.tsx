@@ -8,21 +8,21 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import {useTheme} from '../../shared/ThemeContext';
-import {exportService} from '../../shared/export/ExportService';
-import {importService} from '../../shared/export/ImportService';
+import {useTheme} from '@/shared/ThemeContext';
+import {exportService} from '@/shared/export/ExportService';
+import {importService} from '@/shared/export/ImportService';
 import {
   integrityService,
   IntegrityReport,
-} from '../../shared/integrity/IntegrityService';
+} from '@/shared/integrity/IntegrityService';
 import {
   migrationService,
   MigrationProgress,
-} from '../../shared/migration/MigrationService';
+} from '@/shared/migration/MigrationService';
 import {Ionicons} from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import {GlassView} from '../../shared/components/GlassView';
-import {StatusIcon} from '../../shared/components/StatusIcon';
+import {GlassView} from '@/shared/components/GlassView';
+import {StatusIcon} from '@/shared/components/StatusIcon';
 
 export function DataManager() {
   const {colors, mode} = useTheme();

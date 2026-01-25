@@ -10,3 +10,4 @@ Each track should have its own folder in the `tracks/` directory, containing a d
 |----------------------|--------------------------------------|---------|--------------------------------------------------------|
 | `arch-firebase-sync` | Architectural Refactor: Cloud Sync | Pending | [Plan](./tracks/arch-firebase-sync/plan.md) |
 | `ai-context-enrichment` | AI Context Enrichment | Pending | [Plan](./tracks/ai-context-enrichment/plan.md) |
+| `refactor-path-aliases` | Refactor to Path Aliases | Pending | [Plan](./tracks/refactor-path-aliases/plan.md) |

@@ -1,10 +1,10 @@
-import {RockIdResult, AnalysisEvent} from './rockIdSchema';
-import { Session } from '../shared/types';
+import {RockIdResult, AnalysisEvent} from '@/ai/rockIdSchema';
+import {Session} from '@/shared/types';
 import {
   getRangerSystemPrompt,
   getRangerSchema,
   RangerMode,
-} from './RangerConfig';
+} from '@/ai/RangerConfig';
 
 export type IdentifyInput = {
   imageUrls?: string[];
