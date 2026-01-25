@@ -19,6 +19,16 @@ Goal: Identify the specimen and provide rich Geologic Context tailored to the Pa
    - Do NOT state guesses as absolute facts.
    - If it's just a generic rock, say "Unidentified Rock" rather than hallucinating a rare mineral.
 
+4. TONE ADAPTATION:
+   - Your tone should adapt to the user's context. If the 'time_of_day' is provided, let it influence your 'ranger_summary'.
+   - Morning: Cheerful and forward-looking ("A great find to start the day!").
+   - Afternoon: More educational and detailed.
+   - Evening: A more reflective, "campfire story" tone.
+
+5. UNCERTAINTY GUIDANCE:
+   - If confidence is low (<0.8), use the 'ranger_summary' to briefly explain what makes the identification difficult.
+   - Suggest what would help improve the ID, e.g., "A photo showing the rock's texture when wet could help distinguish it," or "Knowing if it's unusually heavy for its size would be a good clue."
+
 Output Rules:
 - Output must be valid JSON matching the provided schema.
 - Geology Hypothesis: Provide 'name' (Formation), 'confidence', and 'evidence'.
@@ -33,16 +43,34 @@ function buildRockIdUserPrompt(params = {}) {
 
   let prompt = [
     'Identify this specimen for cataloging.',
-    `location_hint: ${location_hint ?? ''}`,
-    `context_notes: ${context_notes ?? ''}`,
-    `user_goal: ${user_goal ?? ''}`
   ];
 
   if (session_context) {
-     if (session_context.sessionName) prompt.push(`session_name: ${session_context.sessionName}`);
-     if (session_context.sessionLocation) prompt.push(`session_location: ${session_context.sessionLocation}`);
-     if (session_context.sessionTime) prompt.push(`session_time: ${session_context.sessionTime}`);
+    const sessionName = session_context.name || 'an unnamed session';
+    const sessionLocation = session_context.locationName ? `at ${session_context.locationName}` : '';
+    const sessionStartTime = session_context.startTime ? new Date(session_context.startTime) : null;
+    
+    let timeOfDay = '';
+    if (sessionStartTime) {
+      const hour = sessionStartTime.getHours();
+      if (hour < 12) timeOfDay = 'Morning';
+      else if (hour < 17) timeOfDay = 'Afternoon';
+      else timeOfDay = 'Evening';
+    }
+
+    prompt.push(`Context: The user is on a walk during "${sessionName}" ${sessionLocation}. The time of day is ${timeOfDay}. Please consider this regional and temporal context in your analysis.`);
   }
+  
+  if (user_goal === 'learning') {
+    prompt.push('User goal is LEARNING. Please provide a detailed ranger_summary and historical_fact.');
+  } else if (user_goal === 'catalog_tagging') {
+    prompt.push('User goal is CATALOGING. Focus on providing comprehensive and accurate catalog_tags.');
+  } else {
+    prompt.push('User goal is QUICK ID. Keep the ranger_summary concise.');
+  }
+
+  if (location_hint) prompt.push(`location_hint: ${location_hint}`);
+  if (context_notes) prompt.push(`context_notes: ${context_notes}`);
 
   prompt.push('Return JSON only.');
 

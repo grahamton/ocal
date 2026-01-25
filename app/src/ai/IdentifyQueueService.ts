@@ -1,196 +1,121 @@
-import * as SQLite from 'expo-sqlite';
-import * as Network from 'expo-network';
-import {DeviceEventEmitter} from 'react-native';
-import {identifyRock} from './identifyRock';
-import {updateFindMetadata, listFinds, getSession} from '../shared/db';
-import * as FileSystem from 'expo-file-system/legacy';
-import {logger} from '../shared/LogService';
-import {AnalyticsService} from '../shared/AnalyticsService';
+import { useCallback } from 'react';
+import { DeviceEventEmitter } from 'react-native';
+import { identifyRock } from './identifyRock';
+import * as firestoreService from '../shared/firestoreService';
+import { logger } from '../shared/LogService';
+import { AnalyticsService } from '../shared/AnalyticsService';
+import { useAuth } from '../shared/AuthContext';
+import { useSession } from '../shared/SessionContext';
+import { FindRecord, Session } from '../shared/types';
+import * as FileSystem from 'expo-file-system'; // For base64 conversion
 
-const db = SQLite.openDatabaseSync('ocal.db');
+export const useIdentifyQueue = () => {
+  const { user } = useAuth();
+  const { activeSession } = useSession();
 
-export type QueueItem = {
-  id: number;
-  findId: string;
-  status: 'pending' | 'processing' | 'failed' | 'completed';
-  attempts: number;
-  lastAttempt: number | null;
-  error: string | null;
-};
-
-export class IdentifyQueueService {
-  private static isProcessing = false;
-
-  static async addToQueue(findId: string) {
-    // Check if already in queue
-    const existing = await db.getAllAsync(
-      'SELECT id FROM find_queue WHERE findId = ? AND status IN (?, ?)',
-      findId,
-      'pending',
-      'processing',
-    );
-
-    if (existing.length > 0) return; // Already queued
-
-    await db.runAsync(
-      'INSERT INTO find_queue (findId, status, attempts, lastAttempt) VALUES (?, ?, ?, ?)',
-      findId,
-      'pending',
-      0,
-      Date.now(),
-    );
-
-    // Trigger process attempt immediately
-    this.processQueue();
-  }
-
-  static async getQueueStatus(findId: string): Promise<QueueItem | null> {
-    const rows = await db.getAllAsync<QueueItem>(
-      'SELECT * FROM find_queue WHERE findId = ? ORDER BY id DESC LIMIT 1',
-      findId,
-    );
-    return rows[0] || null;
-  }
-
-  static async processQueue() {
-    if (this.isProcessing) return;
-
-    const net = await Network.getNetworkStateAsync();
-    if (!net.isConnected || !net.isInternetReachable) {
-      logger.add('system', 'Queue processing paused: Offline');
+  const addToQueue = useCallback(async (findId: string) => {
+    if (!user) {
+      logger.error('IdentifyQueue: No authenticated user to process queue.');
       return;
     }
 
-    this.isProcessing = true;
-
     try {
-      // Fetch next pending item
-      const rows = await db.getAllAsync<QueueItem>(
-        'SELECT * FROM find_queue WHERE status = ? ORDER BY lastAttempt ASC LIMIT 1',
-        'pending',
-      );
+      // 1. Mark Find as Processing in Firestore
+      await firestoreService.updateFind(findId, { status: 'pending_ai_analysis' });
 
-      if (rows.length === 0) {
-        this.isProcessing = false;
-        return;
-      }
-
-      const item = rows[0];
-      await this.processItem(item);
-
-      // Keep processing if there are more
-      // Keep processing if there are more, with a small delay to respect rate limits
-      this.isProcessing = false;
-      setTimeout(() => this.processQueue(), 1000);
-    } catch (e) {
-      logger.error('Queue processing error', e);
-      this.isProcessing = false;
-    }
-  }
-
-  private static async processItem(item: QueueItem) {
-    try {
-      // Mark as processing
-      await db.runAsync(
-        'UPDATE find_queue SET status = ? WHERE id = ?',
-        'processing',
-        item.id,
-      );
-
-      // 1. Get Find Data
-      // optimizing: we could just select the fields we need
-      // but listFinds is handy, though it gets all.
-      // Let's query directly for speed/efficiency
-      const finds = await listFinds();
-      const find = finds.find(f => f.id === item.findId);
-
+      // 2. Get Find Data from Firestore (fresh state)
+      const find = await firestoreService.getFind(findId);
       if (!find) {
-        // Find deleted? Mark failed/completed
-        await db.runAsync(
-          'UPDATE find_queue SET status = ? WHERE id = ?',
-          'failed',
-          item.id,
-        );
+        logger.error('IdentifyQueue: Find not found in Firestore', { findId });
         return;
       }
 
-      // 2. Prepare Payload
-      const fileData = await FileSystem.readAsStringAsync(find.photoUri, {
-        encoding: FileSystem.EncodingType.Base64,
+      // 3. Fetch image data from Cloud Storage URL
+      // Since photoUri is now a Cloud Storage URL, we can fetch it.
+      // We assume it's publicly accessible, or we'd need signed URLs.
+      const response = await fetch(find.photoUri);
+      const blob = await response.blob();
+      const reader = new FileReader();
+      
+      let dataUrl: string | null = null;
+      await new Promise<void>((resolve, reject) => {
+        reader.onloadend = () => {
+          dataUrl = reader.result as string;
+          resolve();
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
       });
-      const dataUrl = `data:image/jpeg;base64,${fileData}`;
 
-      // 2a. Get Session Context if available
-      let sessionContext = null;
-      if (find.sessionId) {
-        const session = await getSession(find.sessionId);
-        if (session) {
-          const date = new Date(session.startTime);
-          const hours = date.getHours();
-          const timeOfDay =
-            hours < 12 ? 'Morning' : hours < 17 ? 'Afternoon' : 'Evening';
-
-          sessionContext = {
-            sessionName: session.name,
-            sessionLocation: session.locationName,
-            sessionTime: timeOfDay,
-          };
-        }
+      if (!dataUrl) {
+        throw new Error('Could not convert image to data URL for AI processing.');
       }
 
-      // 3. Call AI
+      // 4. Prepare Payload for AI
+      // The sessionContext will now be the full Session object
+      const sessionContextForAI: Session | null = activeSession ? {
+        id: activeSession.id,
+        name: activeSession.name,
+        startTime: activeSession.startTime,
+        locationName: activeSession.locationName,
+        finds: [], // We don't need to send the finds array for AI context
+        status: activeSession.status,
+        endTime: activeSession.endTime,
+      } : null;
+
       const analysisEvent = await identifyRock({
-        provider: 'gemini', // OpenAI quota exceeded, using Gemini
+        provider: 'gemini',
         imageDataUrls: [dataUrl],
-        locationHint:
-          find.lat && find.long ? `${find.lat}, ${find.long}` : null,
+        locationHint: find.lat && find.long ? `${find.lat}, ${find.long}` : null,
         contextNotes: find.note || find.label || 'Field find',
         userGoal: 'quick_id',
-        sessionContext,
-        temperature: 0.7, // Balanced creativity
+        sessionContext: sessionContextForAI,
+        temperature: 0.7,
       });
 
-      const aiResult = analysisEvent.result;
-      console.log(
-        'AI Result received for',
-        find.id,
-        aiResult.best_guess?.label,
-      );
-
-      // 4. Save Result (Store full AnalysisEvent for traceability)
-      await updateFindMetadata(find.id, {
+      // 5. Save Result (Store full AnalysisEvent for traceability)
+      await firestoreService.updateFind(findId, {
         aiData: analysisEvent,
+        status: 'cataloged', // Mark as cataloged after AI processing
       });
 
-      // 5. Cleanup Queue
-      await db.runAsync('DELETE FROM find_queue WHERE id = ?', item.id);
+      logger.add('ai', 'Find processed successfully by AI', { findId, aiResult: analysisEvent.result.best_guess?.label });
+      AnalyticsService.logEvent('ai_identify_success', {
+        confidence: analysisEvent.result.best_guess?.confidence,
+        category: analysisEvent.result.best_guess?.category,
+      });
 
       // Notify UI
-      DeviceEventEmitter.emit('AI_IDENTIFY_SUCCESS', {findId: find.id});
+      DeviceEventEmitter.emit('AI_IDENTIFY_SUCCESS', { findId: find.id });
 
-      logger.add('ai', 'Queue item processed successfully', {findId: find.id});
-      AnalyticsService.logEvent('ai_identify_success', {
-        confidence: aiResult.best_guess.confidence,
-        category: aiResult.best_guess.category,
-      });
     } catch (error) {
       const msg = (error as Error).message || String(error);
-      logger.error(`Process Item Error: ${msg}`, error);
+      logger.error(`IdentifyQueue: Failed to process find ${findId}`, error);
 
-      AnalyticsService.logEvent('ai_identify_failed', {error: msg});
+      AnalyticsService.logEvent('ai_identify_failed', { error: msg, findId });
 
-      // Update retry count
-      const nextAttempts = item.attempts + 1;
-      const status = nextAttempts >= 3 ? 'failed' : 'pending';
+      // Update Find status to indicate failure
+      await firestoreService.updateFind(findId, {
+        status: 'ai_analysis_failed',
+        aiData: {
+          result: null, // Clear any partial AI data
+          meta: {
+            // Minimal meta for failed attempt
+            timestamp: new Date().toISOString(),
+            error: msg,
+          } as any, // Cast to any to allow partial type
+          input: {
+            sourceImages: [],
+            locationUsed: !!find?.location_text,
+            userGoal: find?.userGoal || 'quick_id',
+          },
+        },
+      });
 
-      await db.runAsync(
-        'UPDATE find_queue SET status = ?, attempts = ?, lastAttempt = ?, error = ? WHERE id = ?',
-        status,
-        nextAttempts,
-        Date.now(),
-        msg,
-        item.id,
-      );
+      // Notify UI (if needed, or UI can listen to Firestore changes)
+      DeviceEventEmitter.emit('AI_IDENTIFY_FAILED', { findId: find.id, error: msg });
     }
-  }
-}
+  }, [user, activeSession]); // Dependencies for useCallback
+
+  return { addToQueue };
+};

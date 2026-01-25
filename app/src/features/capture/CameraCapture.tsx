@@ -16,7 +16,7 @@ import {createId} from '../../shared/id';
 import {FindRecord} from '../../shared/types';
 import {useSession} from '../../shared/SessionContext';
 import {logger} from '../../shared/LogService';
-import {IdentifyQueueService} from '../../ai/IdentifyQueueService';
+import {useIdentifyQueue} from '../../ai/IdentifyQueueService'; // Updated import
 import {AnalyticsService} from '../../shared/AnalyticsService';
 
 type Props = {
@@ -32,6 +32,7 @@ export function CameraCapture({onSaved}: Props) {
     'info',
   );
   const {activeSession, startSession, addFindToActiveSession} = useSession();
+  const {addToQueue} = useIdentifyQueue(); // Call the hook
 
   // Animations
   const flashOpacity = useRef(new Animated.Value(0)).current;
@@ -135,7 +136,6 @@ export function CameraCapture({onSaved}: Props) {
         lat: location?.coords.latitude ?? null,
         long: location?.coords.longitude ?? null,
         timestamp: new Date().toISOString(),
-        synced: true, // This is now synced to Firestore and Storage
         note: null,
         category: null,
         label: null,
@@ -148,7 +148,8 @@ export function CameraCapture({onSaved}: Props) {
       await addFindToActiveSession(record.id, session.id);
 
       // Auto-Pilot: Queue for AI immediately
-      IdentifyQueueService.addToQueue(record.id).catch(err => {
+      // The new addToQueue will handle marking status to pending_ai_analysis
+      addToQueue(record.id).catch(err => {
         logger.error('Capture: Auto-queue failed', err);
       });
 

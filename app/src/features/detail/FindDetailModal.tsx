@@ -15,7 +15,7 @@ import {Ionicons} from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
 import * as firestoreService from '../../shared/firestoreService';
 import {FindRecord} from '../../shared/types';
-import {IdentifyQueueService} from '../../ai/IdentifyQueueService';
+import {useIdentifyQueue} from '../../ai/IdentifyQueueService'; // Updated import
 import {RockIdResult, AnalysisEvent} from '../../ai/rockIdSchema';
 import {formatLocationSync} from '../../shared/format';
 import {useTheme, ThemeColors} from '../../shared/ThemeContext';
@@ -67,6 +67,7 @@ export function FindDetailModal({visible, item, onClose, onSaved}: Props) {
   const [sessionName, setSessionName] = useState<string | null>(null);
   const [showContext, setShowContext] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const {addToQueue} = useIdentifyQueue(); // Call the hook
 
   useEffect(() => {
     if (item && visible) {
@@ -155,7 +156,7 @@ export function FindDetailModal({visible, item, onClose, onSaved}: Props) {
     setAiLoading(true);
     setAiError(null);
     try {
-      await IdentifyQueueService.addToQueue(item.id);
+      await addToQueue(item.id); // Updated call
     } catch {
       setAiError('Could not start analysis.');
       setAiLoading(false);
@@ -976,8 +977,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     padding: 16,
-    fontSize: 16,
-    minHeight: 120,
+    fontSize: 15,
+    minHeight: 80,
+    backgroundColor: colors.background,
+    borderColor: colors.border,
+    color: colors.text,
   },
   actionFooter: {
     position: 'absolute',

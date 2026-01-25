@@ -1,4 +1,5 @@
 import {RockIdResult, AnalysisEvent} from './rockIdSchema';
+import { Session } from '../shared/types';
 import {
   getRangerSystemPrompt,
   getRangerSchema,
@@ -11,11 +12,7 @@ export type IdentifyInput = {
   locationHint?: string | null;
   contextNotes?: string | null;
   userGoal?: 'quick_id' | 'learning' | 'catalog_tagging' | null;
-  sessionContext?: {
-    sessionName?: string;
-    sessionTime?: string;
-    sessionLocation?: string;
-  } | null;
+  sessionContext?: Session | null;
   provider?: 'openai' | 'gemini';
   endpoint?: string; // override function URL; default uses ENV or relative path
   outputMode?: RangerMode;
