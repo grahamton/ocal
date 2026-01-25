@@ -27,18 +27,24 @@ A dedicated **"Ranger's Workshop"** analysis for rock tumblers.
 
 - **High Contrast**: Designed for bright sunlight readability.
 - **Offline First**: Works without cell service (syncs when back online).
+- **Cloud Sync (Firebase Integration)**: Data and images are backed up and synchronized across devices via Firebase Authentication, Firestore, and Cloud Storage.
 - **Masonry Layout**: "Museum Plaque" style presentation of facts.
 
 ## 📱 Getting Started
 
-1.  **Install**: `npm install`
-2.  **Run (Dev)**: `npm start`
-3.  **Build (Android)**: `npx eas-cli build -p android --profile preview`
+1.  **Install Dependencies**: `npm install`
+2.  **Firebase Project Setup**:
+    -   Create a Firebase project and register your Android app with the package name `com.rainbowfetch.ocal`.
+    -   Download `google-services.json` and place it in the `app/` directory.
+    -   Ensure your Firebase project has Authentication (Anonymous enabled), Firestore, and Cloud Storage configured.
+3.  **Run (Dev)**: `npm start`
+4.  **Build (Android)**: `npx eas-cli build -p android --profile preview`
 
 ## 📚 Documentation
 
+- [**Conductor Dashboard**](./conductor/index.md): The central hub for project vision, tech stack, and development tracks.
 - [**Architecture**](./ARCHITECTURE.md): System design, data flow, and tech stack decisions.
-- [**Agent Guidance**](./AGENTS.md): "The Rulebook" for AI agents working on this repo.
+- [**Agent Guidance**](./docs/agent_guidance.md): "The Rulebook" for AI agents working on this repo.
 - [**Backlog**](./docs/BACKLOG.md): Pending features (Multi-Photo, etc).
 
 ## ⚖️ License
@@ -49,4 +55,4 @@ See [LICENSE](./LICENSE) for details. Unauthorized copying or distribution is pr
 ## 🤝 Contributing
 
 This is a private repository. External contributions are not currently accepted.
-Please read `AGENTS.md` before making authorized changes to ensure you match the design ethos.
+Please read the [**Agent Guidance**](./docs/agent_guidance.md) before making authorized changes to ensure you match the design ethos.

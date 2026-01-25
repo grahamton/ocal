@@ -32,13 +32,14 @@ _Reference Sources (Screenshots) and (Architecture)_
 - **Tabs:** Only **CAPTURE** and **GALLERY**. (The "Inbox" is dead).
 - **Gallery Headers:** **"All"** and **"Favorites"**. (The "Review" tab is dead).
 
-### B. The "Auto-Queue" Data Flow
+### B. The Cloud-Synced Data Flow
 
-1.  **Capture:** User taps "Save" in `CaptureScreen`.
-2.  **Immediate Persistence:** Item is saved to SQLite (`finds` table) with `status: 'pending'`.
-3.  **Visual Feedback:** The item appears immediately at the top of the `GalleryScreen` grid with the **"Rough" (Dashed)** icon.
-4.  **Background Service:** `IdentifyQueueService` detects the pending item and initiates the API call to Gemini.
-5.  **Optimistic UI:** The UI never blocks. The card updates live when the background service finishes.
+1.  **Capture:** User taps the shutter button in `CameraCapture`.
+2.  **Image Upload:** The photo is immediately uploaded to **Cloud Storage for Firebase**.
+3.  **Immediate Persistence:** A new `FindRecord` document, containing the public image URL from Cloud Storage, is saved to **Firestore** in the `users/{userId}/finds` collection.
+4.  **Visual Feedback:** The `GalleryScreen` has a real-time listener to Firestore. It immediately picks up the new find and displays it at the top of the grid with the **"Rough" (Dashed)** icon.
+5.  **Background Service:** `IdentifyQueueService` (client-side) detects the new pending item and triggers the AI analysis via a Firebase Cloud Function.
+6.  **Optimistic UI:** The UI never blocks. The card updates live when the background service finishes and the Firestore document is updated.
 
 ---
 
@@ -98,7 +99,7 @@ Never use text to indicate status. Use the **Dynamic Icon System**:
 
 1.  **Rough (Pending):**
     - _Visual:_ Dashed Outline of a pebble.
-    - _Meaning:_ "Saved to device. Waiting for AI."
+    - _Meaning:_ "Saved. Waiting for AI analysis."
 2.  **Polishing (Processing):**
     - _Visual:_ Pulsing animation of the outline.
     - _Meaning:_ "The Curator is analyzing..."
@@ -117,12 +118,12 @@ Never use text to indicate status. Use the **Dynamic Icon System**:
 - **Theme:**
   - **Capture:** High Contrast (Black/Neon).
   - **Gallery:** Journal (Paper/Teal/Glassmorphism).
-- **State:** React Context (`SessionContext`). No Redux.
+- **State:** React Context (`SessionContext`, `AuthContext`). No Redux.
 
 ---
 
 ## 8. Current Implementation Priorities
 
-1.  **Phase 5: Poster Mode:** Build the "Fossil Plate" grid generator for social sharing.
-2.  **Multimodal Experiments:** Test video/multi-image input with Gemini 2.0 for 3D understanding.
-3.  **Refine Geologic Context:** Use feedback from the new AI output to tune prompts for specific formations.
+1.  **Build Web/Desktop Gallery**: Leverage the new cloud-synced backend to create a web-based gallery view for users to manage their collection on a larger screen.
+2.  **Poster Mode**: Build the "Fossil Plate" grid generator for social sharing.
+3.  **Refine Geologic Context**: Use feedback from the new AI output to tune prompts for specific geological formations.
