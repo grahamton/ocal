@@ -41,8 +41,8 @@ import {BatchActionBar} from '@/shared/components/BatchActionBar';
 import {ThemeProvider} from '@/shared/ThemeContext';
 import {StatusIcon} from '@/shared/components/StatusIcon';
 import {AnalyticsService} from '@/shared/AnalyticsService';
-// import { migrationService } from '@/shared/migration/MigrationService';
-// import { MigrationStatusModal } from '@/shared/migration/MigrationStatusModal';
+import {migrationService} from '@/shared/migration/MigrationService';
+import {MigrationStatusModal} from '@/shared/migration/MigrationStatusModal';
 
 export default function App() {
   const dbReady = true;
@@ -53,8 +53,11 @@ export default function App() {
   });
 
   useEffect(() => {
-    // This effect is now just for analytics
     AnalyticsService.logEvent('app_opened');
+    // Run one-time SQLite → Firestore migration for testers with local data.
+    // MigrationService checks for the 'ocal_migration_done' flag and is a no-op
+    // on fresh installs or after migration has already run.
+    migrationService.runMigration();
   }, []);
 
   const appIsReady = dbReady && fontsLoaded;
@@ -76,6 +79,7 @@ export default function App() {
             <SafeAreaProvider>
               <GradientBackground>
                 <AppContent />
+                <MigrationStatusModal />
               </GradientBackground>
             </SafeAreaProvider>
           </SelectionProvider>

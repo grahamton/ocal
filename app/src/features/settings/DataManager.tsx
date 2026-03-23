@@ -17,7 +17,7 @@ import {
 } from '@/shared/integrity/IntegrityService';
 import {
   migrationService,
-  MigrationProgress,
+  MigrationState,
 } from '@/shared/migration/MigrationService';
 import {Ionicons} from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
@@ -28,8 +28,8 @@ export function DataManager() {
   const {colors, mode} = useTheme();
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<IntegrityReport | null>(null);
-  const [migrationProgress, setMigrationProgress] =
-    useState<MigrationProgress | null>(null);
+  const [migrationState, setMigrationState] =
+    useState<MigrationState | null>(null);
 
   const handleMigrate = async () => {
     Alert.alert(
@@ -40,10 +40,9 @@ export function DataManager() {
         {
           text: 'Migrate',
           style: 'destructive',
-          onPress: async () => {
-            setLoading(true);
-            await migrationService.migrateData(setMigrationProgress);
-            setLoading(false);
+          onPress: () => {
+            migrationService.subscribe(setMigrationState);
+            migrationService.runMigration();
           },
         },
       ],
@@ -63,24 +62,21 @@ export function DataManager() {
     }
   };
 
-  const handleCleanupOrphans = async () => {
-    if (!report || report.orphanFiles.length === 0) return;
+  const handleResetFailedAi = async () => {
+    if (!report || report.failedAi === 0) return;
 
     Alert.alert(
-      'Clean Up Orphans',
-      `Permanently delete ${report.orphanFiles.length} files?`,
+      'Reset Failed Analyses',
+      `Re-queue ${report.failedAi} failed AI item(s) for retry?`,
       [
         {text: 'Cancel', style: 'cancel'},
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: 'Reset',
           onPress: async () => {
             setLoading(true);
-            const deleted = await integrityService.cleanupOrphans(
-              report.orphanFiles,
-            );
-            Alert.alert('Cleanup Complete', `Deleted ${deleted} files.`);
-            handleScan(); // Rescan
+            const count = await integrityService.resetFailedAi();
+            Alert.alert('Done', `Reset ${count} items for retry.`);
+            handleScan();
           },
         },
       ],
@@ -204,24 +200,26 @@ export function DataManager() {
         </Text>
       </View>
 
-      {migrationProgress && (
+      {migrationState && migrationState.status !== 'idle' && migrationState.status !== 'done' && (
         <View style={styles.migrationContainer}>
           <Text style={[styles.sectionTitle, {color: colors.text}]}>
             Cloud Migration Progress
           </Text>
           <Text style={{color: colors.textSecondary, marginBottom: 8}}>
-            {migrationProgress.status === 'migrating' &&
-              `Migrating item ${migrationProgress.completed} of ${migrationProgress.total}...`}
-            {migrationProgress.status === 'complete' &&
-              `Migration complete! ${migrationProgress.completed} items migrated.`}
-            {migrationProgress.status === 'error' &&
-              `Error: ${migrationProgress.error}`}
+            {migrationState.status === 'migrating' &&
+              `Migrating item ${migrationState.processedItems} of ${migrationState.totalItems}...`}
+            {migrationState.status === 'done' &&
+              `Migration complete! ${migrationState.processedItems} items migrated.`}
+            {migrationState.status === 'error' &&
+              `Error: ${migrationState.error}`}
+            {(migrationState.status === 'checking' || migrationState.status === 'backing_up' || migrationState.status === 'validating') &&
+              'Preparing migration...'}
           </Text>
-          {migrationProgress.status === 'migrating' && (
+          {migrationState.status === 'migrating' && migrationState.totalItems > 0 && (
             <View style={styles.progressBar}>
               <View
                 style={{
-                  width: `${(migrationProgress.completed / migrationProgress.total) * 100}%`,
+                  width: `${(migrationState.processedItems / migrationState.totalItems) * 100}%`,
                   height: '100%',
                   backgroundColor: colors.accent,
                 }}
@@ -396,13 +394,36 @@ export function DataManager() {
               </Text>
             </View>
             <View style={styles.statRow}>
-              <Text style={{color: colors.textSecondary}}>Total Assets:</Text>
+              <Text style={{color: colors.textSecondary}}>Pending AI:</Text>
               <Text style={{color: colors.text, fontWeight: 'bold'}}>
-                {report.totalFiles}
+                {report.pendingAi}
               </Text>
             </View>
 
-            {/* Issues */}
+            {/* Failed AI */}
+            <View
+              style={[
+                styles.issueBox,
+                report.failedAi > 0
+                  ? {borderColor: '#f59e0b'}
+                  : {borderColor: 'transparent'},
+              ]}>
+              <Text
+                style={{
+                  color: report.failedAi > 0 ? '#f59e0b' : colors.textSecondary,
+                }}>
+                Failed AI: {report.failedAi}
+              </Text>
+              {report.failedAi > 0 && (
+                <TouchableOpacity
+                  onPress={handleResetFailedAi}
+                  style={styles.smallBtn}>
+                  <Text style={styles.smallBtnText}>Retry</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Missing Photos */}
             <View
               style={[
                 styles.issueBox,
@@ -420,45 +441,10 @@ export function DataManager() {
                 Missing Photos: {report.missingPhotos.length}
               </Text>
               {report.missingPhotos.length > 0 && (
-                <View>
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      color: colors.textSecondary,
-                      marginBottom: 4,
-                    }}>
-                    (Database records exist without files)
-                  </Text>
-                  <TouchableOpacity
-                    onPress={handleArchiveMissing}
-                    style={styles.smallBtn}>
-                    <Text style={styles.smallBtnText}>Archive Items</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-
-            <View
-              style={[
-                styles.issueBox,
-                report.orphanFiles.length > 0
-                  ? {borderColor: '#f59e0b'}
-                  : {borderColor: 'transparent'},
-              ]}>
-              <Text
-                style={{
-                  color:
-                    report.orphanFiles.length > 0
-                      ? '#f59e0b'
-                      : colors.textSecondary,
-                }}>
-                Orphan Files: {report.orphanFiles.length}
-              </Text>
-              {report.orphanFiles.length > 0 && (
                 <TouchableOpacity
-                  onPress={handleCleanupOrphans}
+                  onPress={handleArchiveMissing}
                   style={styles.smallBtn}>
-                  <Text style={styles.smallBtnText}>Clean Up</Text>
+                  <Text style={styles.smallBtnText}>Archive Items</Text>
                 </TouchableOpacity>
               )}
             </View>

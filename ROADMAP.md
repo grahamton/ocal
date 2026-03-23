@@ -63,21 +63,20 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
   - [x] **UI Polish**: Removed distraction (percentage bar) to focus on the ID result.
 - Status: **Complete** (Jan 2026).
 
-## Phase 4 - SQLite Migration & Export **Complete**
+## Phase 4 - Firestore Migration & Data Export **Complete**
 
-- Scope: Migrate from AsyncStorage to SQLite for performance, querying, and data export
-- Rationale: **Foundation for all future features** - Poster and Session Enhancements require efficient filtering and geospatial queries. Migration is easier now while tester datasets are small. See `docs/roadmap_reprioritization_research.md` and `docs/database_enhancements_research.md` for analysis.
+- Scope: Migrate from local storage (AsyncStorage/SQLite) to Firestore + Firebase Cloud Storage as the permanent cloud-first data layer.
+- Rationale: Cloud-first architecture enables cross-device access, real-time sync, and a foundation for future features. See `docs/database_enhancements_research.md` for analysis.
 - Milestones:
-  - [x] Install `react-native-sqlite-storage` and configure
-  - [x] Design schema with indexes (finds, sessions, metadata)
-  - [x] Build migration service (AsyncStorage → SQLite with validation)
-  - [x] Implement schema versioning for future migrations
-  - [x] Add data export utilities (CSV, JSON, SQLite file)
-  - [x] Create "Data Manager" UI for backup/restore
-  - [x] Test migration with real tester data
-- Tests/QA: Migration integrity tests; performance benchmarks; export/import validation; backward compatibility
-- Timeline: **2-3 weeks**
-- Risks: Data loss during migration (mitigated by backup); schema design mistakes (mitigated by versioning)
+  - [x] Implement `firestoreService.ts` — full CRUD + real-time subscriptions for finds and sessions
+  - [x] Implement `storageService.ts` — photo upload to Firebase Cloud Storage
+  - [x] Build `MigrationService` — one-time SQLite → Firestore migration for existing tester data
+  - [x] Add data export utilities (CSV, JSON backup) via `ExportService`
+  - [x] Add backup restore (JSON → Firestore) via `ImportService`
+  - [x] Create "Data Manager" UI for backup/restore/health check
+  - [x] Integrity health check reporting AI analysis status
+- Notes:
+  - Transitional SQLite read layer (`db.ts`) is retained until all testers have migrated. Remove `db.ts`, `MigrationService`, and `expo-sqlite` in a future cleanup once `ocal_migration_done` flag is confirmed across all devices.
 - Status: **Complete** (Jan 2026)
 
 ## Phase 5 - Poster (In Progress)

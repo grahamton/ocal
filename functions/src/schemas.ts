@@ -2,28 +2,30 @@ import { z } from 'zod';
 
 /**
  * Request schema for the identifyRock endpoint.
- * - Accepts a data URL (data:image/...;base64,...) for simplicity in minimal example.
- * - latitude/longitude optional (useful for geologic context and safety checks).
+ *
+ * Matches the payload sent by the client's identifyRock.ts:
+ *   - image_data_urls: base64 data URLs of the rock photo(s)
+ *   - image_urls: Firebase Storage URLs (alternative to data URLs)
+ *   - location_hint: human-readable location string for geologic context
+ *   - context_notes: user notes / label about the find
+ *   - user_goal: hint about what the user wants ('quick_id', etc.)
+ *   - session_context: active session metadata (name, location, startTime)
+ *   - system_prompt: the full Ranger Al system prompt from RangerConfig.ts
+ *   - output_schema: the Ranger Al JSON schema from RangerConfig.ts
+ *   - provider: AI provider override ('gemini' | 'openai'), defaults to 'gemini'
+ *   - temperature: sampling temperature override
  */
 export const IdentifyRequestSchema = z.object({
-  imageBase64: z.string().min(1),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  metadata: z.record(z.any()).optional(),
+  image_data_urls: z.array(z.string()).optional(),
+  image_urls: z.array(z.string()).optional(),
+  location_hint: z.string().optional(),
+  context_notes: z.string().optional(),
+  user_goal: z.string().optional(),
+  session_context: z.any().optional(),
+  system_prompt: z.string().optional(),
+  output_schema: z.any().optional(),
+  provider: z.string().optional(),
+  temperature: z.number().optional(),
 });
 
 export type IdentifyRequest = z.infer<typeof IdentifyRequestSchema>;
-
-/**
- * AI response schema (what we expect the model to return).
- * This is intentionally conservative and easy for UIs to consume.
- */
-export const IdentifyResponseSchema = z.object({
-  id: z.string().optional(),
-  labels: z.array(z.string()).min(1),
-  confidence: z.number().min(0).max(1),
-  context_text: z.string().optional(),
-  safety_flags: z.array(z.string()).optional(),
-});
-
-export type IdentifyResponse = z.infer<typeof IdentifyResponseSchema>;

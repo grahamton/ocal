@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {listFinds, updateFindMetadata} from '../../shared/db';
-import {useSession} from '../../shared/SessionContext';
-import {FindRecord} from '../../shared/types';
-import {THEME} from '../../shared/theme';
-import {LedgerTile} from './LedgerTile';
+import {subscribeToFinds, updateFind} from '@/shared/firestoreService';
+import {useSession} from '@/shared/SessionContext';
+import {FindRecord} from '@/shared/types';
+import {THEME} from '@/shared/theme';
+import {LedgerTile} from '@/features/capture/LedgerTile';
 
 type Props = {
   refreshKey: number;
@@ -21,37 +21,37 @@ type Props = {
 
 // Simple ledger: pick keeps, then review.
 export function SessionLedger({
-  refreshKey,
-  onUpdated,
   onRequestReview,
   onKept,
 }: Props) {
   const {activeSession} = useSession();
   const [items, setItems] = useState<FindRecord[]>([]);
 
-  const load = useCallback(async () => {
+  useEffect(() => {
     if (!activeSession) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setItems([]);
       return;
     }
-    const rows = await listFinds({sessionId: activeSession.id});
-    setItems(rows);
+
+    const unsubscribe = subscribeToFinds(
+      finds => {
+        setItems(finds.filter(f => f.sessionId === activeSession.id));
+      },
+      err => {
+        console.warn('SessionLedger: failed to subscribe to finds', err);
+      },
+    );
+
+    return () => unsubscribe();
   }, [activeSession]);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
-  }, [load, refreshKey]);
-
-  const toggleKeep = async (id: string, current: boolean) => {
-    await updateFindMetadata(id, {favorite: !current});
+  const toggleKeep = useCallback(async (id: string, current: boolean) => {
+    await updateFind(id, {favorite: !current});
     if (!current && onKept) {
       onKept();
     }
-    // Trigger refreshKey increment in parent to reload us and update UI
-    if (onUpdated) onUpdated();
-    else load();
-  };
+  }, [onKept]);
 
   if (!activeSession) return null;
 

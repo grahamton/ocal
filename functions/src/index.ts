@@ -1,33 +1,45 @@
 import * as functions from 'firebase-functions';
-import fetch from 'node-fetch';
-import { IdentifyRequestSchema, IdentifyResponseSchema } from './schemas';
+import { GoogleGenerativeAI, Part } from '@google/generative-ai';
+import { IdentifyRequestSchema } from './schemas';
 import { z } from 'zod';
 
 /**
- * Minimal identifyRock Cloud Function.
+ * identifyRock Cloud Function.
+ *
+ * Accepts a POST request from the Ocal app client (identifyRock.ts).
+ * Uses Gemini to identify rock specimens and returns a full RockIdResult
+ * matching the Ranger Al schema defined in the client's RangerConfig.ts.
  *
  * Env vars:
- * - PROVIDER = 'openai' | 'gemini'   (optional; default 'openai')
- * - OPENAI_API_KEY
- * - OPENAI_MODEL (optional)
- *
- * Notes:
- * - For production, prefer uploading images to Cloud Storage and sending a signed URL
- *   rather than embedding base64 in the request body.
+ *   GEMINI_API_KEY  — required
+ *   GEMINI_MODEL    — optional, defaults to 'gemini-2.0-flash'
  */
 
 type Req = functions.https.Request;
 type Res = functions.Response;
 
-const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
+const DEFAULT_SYSTEM_PROMPT = `
+You are "Ranger Al," a retired Geologist and friendly guide for senior beachcombers on the Pacific Coast.
+Identify the specimen and provide rich geologic context. Output must be valid JSON.
+`.trim();
 
 export const identifyRock = functions.https.onRequest(async (req: Req, res: Res) => {
+  // CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  if (req.method === 'OPTIONS') {
+    res.set('Access-Control-Allow-Methods', 'POST');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+    res.status(204).send('');
+    return;
+  }
+
   if (req.method !== 'POST') {
     res.set('Allow', 'POST').status(405).send('Method Not Allowed');
     return;
   }
 
-  let body;
+  // Validate request
+  let body: z.infer<typeof IdentifyRequestSchema>;
   try {
     body = IdentifyRequestSchema.parse(req.body);
   } catch (err) {
@@ -36,109 +48,124 @@ export const identifyRock = functions.https.onRequest(async (req: Req, res: Res)
     return;
   }
 
-  const provider = process.env.PROVIDER ?? 'openai';
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  if (!GEMINI_API_KEY) {
+    res.status(500).json({ error: 'Server misconfigured: missing GEMINI_API_KEY' });
+    return;
+  }
 
-  const systemPrompt = `
-You are Ocal Curator, a concise assistant that identifies rocks from photos and provides short context and safety flags.
-When given a photo (data URL) and coordinates, respond with a single JSON object ONLY, matching this schema:
-{
-  "labels": ["label1", "label2", ...],
-  "confidence": number between 0 and 1,
-  "context_text": "2-4 sentence explanation (optional)",
-  "safety_flags": ["hazard1", ...] (optional),
-  "id": "optional short id"
-}
-Do NOT include any other text outside the JSON. If unsure, set confidence low and include "unknown" in labels.
-`;
+  const MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash';
+  const temperature = body.temperature ?? 0.7;
+  const systemPrompt = body.system_prompt ?? DEFAULT_SYSTEM_PROMPT;
 
-  const userMessage = `Image: ${body.imageBase64}\nLatitude: ${body.latitude ?? 'unknown'}\nLongitude: ${body.longitude ?? 'unknown'}\nMetadata: ${JSON.stringify(body.metadata ?? {})}`;
+  // Build the user message parts
+  const parts: Part[] = [];
+
+  // Add image(s) — prefer data URLs, fall back to image URLs
+  const dataUrls = body.image_data_urls ?? [];
+  for (const dataUrl of dataUrls) {
+    // Strip the data URL prefix: data:image/jpeg;base64,<data>
+    const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (match) {
+      parts.push({
+        inlineData: {
+          mimeType: match[1],
+          data: match[2],
+        },
+      });
+    }
+  }
+
+  // Build contextual text prompt
+  const contextLines: string[] = [];
+
+  if (body.location_hint) {
+    contextLines.push(`Location: ${body.location_hint}`);
+  }
+  if (body.context_notes) {
+    contextLines.push(`User notes: ${body.context_notes}`);
+  }
+  if (body.user_goal) {
+    contextLines.push(`Goal: ${body.user_goal}`);
+  }
+  if (body.session_context) {
+    const ctx = body.session_context as Record<string, unknown>;
+    if (ctx.locationName) contextLines.push(`Session location: ${ctx.locationName}`);
+    if (ctx.startTime) {
+      const sessionTime = new Date(ctx.startTime as number).toLocaleString();
+      contextLines.push(`Session started: ${sessionTime}`);
+    }
+    if (ctx.name) contextLines.push(`Session name: ${ctx.name}`);
+  }
+
+  const textPrompt = contextLines.length > 0
+    ? `Please identify this specimen.\n\n${contextLines.join('\n')}\n\nRespond with a JSON object only.`
+    : 'Please identify this specimen. Respond with a JSON object only.';
+
+  parts.push({ text: textPrompt });
 
   try {
-    let assistantText = '';
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-    if (provider === 'openai') {
-      const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-      const MODEL = process.env.OPENAI_MODEL ?? 'gpt-4o-mini-vision';
+    const generationConfig: Record<string, unknown> = {
+      temperature,
+      responseMimeType: 'application/json',
+    };
 
-      if (!OPENAI_API_KEY) {
-        res.status(500).json({ error: 'Server misconfigured: missing OPENAI_API_KEY' });
-        return;
-      }
-
-      const resp = await fetch(OPENAI_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMessage },
-          ],
-          max_tokens: 800,
-          temperature: 0.0,
-        }),
-      });
-
-      if (!resp.ok) {
-        const txt = await resp.text();
-        res.status(502).json({ error: 'Upstream OpenAI error', detail: txt });
-        return;
-      }
-
-      const respJson = await resp.json();
-      assistantText = respJson?.choices?.[0]?.message?.content ?? '';
-    } else if (provider === 'gemini') {
-      // Placeholder: implement Gemini / Google Generative API call here.
-      res.status(501).json({ error: 'Gemini provider not implemented in this template.' });
-      return;
-    } else {
-      res.status(500).json({ error: `Unknown provider ${provider}` });
-      return;
+    // If the client provided an output schema, use it for structured output
+    if (body.output_schema) {
+      generationConfig.responseSchema = body.output_schema.schema ?? body.output_schema;
     }
 
-    // Extract JSON object from assistantText
-    let parsed: any = null;
-    try {
-      const start = assistantText.indexOf('{');
-      const end = assistantText.lastIndexOf('}');
-      if (start !== -1 && end !== -1 && end > start) {
-        const str = assistantText.slice(start, end + 1);
-        parsed = JSON.parse(str);
-      } else {
-        parsed = null;
-      }
-    } catch (err) {
-      parsed = null;
-    }
-
-    if (parsed) {
-      try {
-        const validated = IdentifyResponseSchema.parse({
-          id: parsed.id,
-          labels: parsed.labels ?? (parsed.label ? [parsed.label] : undefined),
-          confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0,
-          context_text: parsed.context_text ?? parsed.context ?? '',
-          safety_flags: parsed.safety_flags ?? parsed.flags ?? [],
-        });
-        res.status(200).json(validated);
-        return;
-      } catch (valErr) {
-        functions.logger.warn('AI returned JSON that failed validation', { error: (valErr as any).toString(), raw: parsed });
-      }
-    }
-
-    // Fallback
-    res.status(200).json({
-      labels: ['unknown'],
-      confidence: 0,
-      context_text: assistantText,
-      safety_flags: [],
+    const model = genAI.getGenerativeModel({
+      model: MODEL,
+      systemInstruction: systemPrompt,
+      generationConfig: generationConfig as Parameters<typeof genAI.getGenerativeModel>[0]['generationConfig'],
     });
-  } catch (err: any) {
-    functions.logger.error('identifyRock error', err);
-    res.status(500).json({ error: 'Server error', detail: String(err?.message ?? err) });
+
+    const result = await model.generateContent({ contents: [{ role: 'user', parts }] });
+    const responseText = result.response.text();
+
+    // Parse JSON from the response
+    let parsed: unknown = null;
+    try {
+      // Gemini with responseMimeType=application/json returns clean JSON
+      parsed = JSON.parse(responseText);
+    } catch {
+      // Fallback: extract JSON object from text
+      const start = responseText.indexOf('{');
+      const end = responseText.lastIndexOf('}');
+      if (start !== -1 && end > start) {
+        try {
+          parsed = JSON.parse(responseText.slice(start, end + 1));
+        } catch {
+          parsed = null;
+        }
+      }
+    }
+
+    if (!parsed) {
+      functions.logger.warn('identifyRock: Could not parse Gemini response', { responseText });
+      res.status(200).json({
+        best_guess: { label: 'Unknown', confidence: 0, category: 'unknown' },
+        ranger_summary: 'Unable to identify this specimen from the photo.',
+        alternatives: [],
+        specimen_context: {
+          age: 'Unknown',
+          geology_hypothesis: { name: null, confidence: 'low', evidence: [] },
+          type: 'Unknown',
+          historical_fact: '',
+        },
+        lapidary_guidance: { is_tumble_candidate: false, tumble_reason: 'Could not assess.' },
+        red_flags: [],
+      });
+      return;
+    }
+
+    res.status(200).json(parsed);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    functions.logger.error('identifyRock error', { message });
+    res.status(500).json({ error: 'Server error', detail: message });
   }
 });

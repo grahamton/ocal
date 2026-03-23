@@ -1,6 +1,6 @@
 # Ocal: Agent Guidance (v2.0 - "The Magic Container")
 
-## Current Date: 2026-01-01
+## Current Date: 2026-02-18
 
 - this is for model knowledge in case out of date tools/models are suggested
 
