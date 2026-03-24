@@ -1,5 +1,4 @@
-import * as FileSystem from 'expo-file-system/legacy';
-import {clearAllDataForDev} from './db';
+import * as FileSystem from 'expo-file-system';
 
 const findsDir = `${FileSystem.documentDirectory}finds`;
 
@@ -9,8 +8,6 @@ export async function resetLocalDataForDev() {
       'resetLocalDataForDev is only available in development builds.',
     );
   }
-
-  await clearAllDataForDev();
 
   const info = await FileSystem.getInfoAsync(findsDir);
   if (info.exists) {

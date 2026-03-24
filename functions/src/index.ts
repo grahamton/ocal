@@ -54,7 +54,7 @@ export const identifyRock = functions.https.onRequest(async (req: Req, res: Res)
     return;
   }
 
-  const MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash';
+  const MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.1-flash';
   const temperature = body.temperature ?? 0.7;
   const systemPrompt = body.system_prompt ?? DEFAULT_SYSTEM_PROMPT;
 
@@ -147,22 +147,34 @@ export const identifyRock = functions.https.onRequest(async (req: Req, res: Res)
     if (!parsed) {
       functions.logger.warn('identifyRock: Could not parse Gemini response', { responseText });
       res.status(200).json({
-        best_guess: { label: 'Unknown', confidence: 0, category: 'unknown' },
-        ranger_summary: 'Unable to identify this specimen from the photo.',
-        alternatives: [],
-        specimen_context: {
-          age: 'Unknown',
-          geology_hypothesis: { name: null, confidence: 'low', evidence: [] },
-          type: 'Unknown',
-          historical_fact: '',
+        result: {
+          best_guess: { label: 'Unknown', confidence: 0, category: 'unknown' },
+          ranger_summary: 'Unable to identify this specimen from the photo.',
+          alternatives: [],
+          specimen_context: {
+            age: 'Unknown',
+            geology_hypothesis: { name: null, confidence: 'low', evidence: [] },
+            type: 'Unknown',
+            historical_fact: '',
+          },
+          lapidary_guidance: { is_tumble_candidate: false, tumble_reason: 'Could not assess.' },
+          red_flags: [],
         },
-        lapidary_guidance: { is_tumble_candidate: false, tumble_reason: 'Could not assess.' },
-        red_flags: [],
+        meta: {
+          model: MODEL,
+          version: '3.1.0',
+        },
       });
       return;
     }
 
-    res.status(200).json(parsed);
+    res.status(200).json({
+      result: parsed,
+      meta: {
+        model: MODEL,
+        version: '3.1.0',
+      },
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     functions.logger.error('identifyRock error', { message });

@@ -1,7 +1,7 @@
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {GlassView} from './GlassView';
 import {THEME} from '../theme';
-import {useSelection} from '../SelectionContext';
+import {useSelectionStore} from '../store/useSelectionStore';
 import {IdentifyQueueService} from '../../ai/IdentifyQueueService';
 import {logger} from '../LogService';
 
@@ -15,7 +15,7 @@ export function BatchActionBar({
   onPoster,
   onDelete,
 }: Omit<Props, 'onIdentify'>) {
-  const {selectedIds, exitSelectionMode} = useSelection();
+  const {selectedIds, exitSelectionMode} = useSelectionStore();
   const count = selectedIds.size;
 
   const handleBatchIdentify = async () => {

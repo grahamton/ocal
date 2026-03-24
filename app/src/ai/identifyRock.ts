@@ -1,4 +1,4 @@
-import {RockIdResult, AnalysisEvent} from '@/ai/rockIdSchema';
+import {AnalysisEvent} from '@/ai/rockIdSchema';
 import {Session} from '@/shared/types';
 import {
   getRangerSystemPrompt,
@@ -54,7 +54,12 @@ export async function identifyRock(
     throw new Error(`${err?.error || 'Identify request failed'}${detail}`);
   }
 
-  const result = (await res.json()) as RockIdResult;
+  const responseEnvelope = (await res.json()) as {
+    result: AnalysisEvent['result'];
+    meta: {model: string; version: string};
+  };
+
+  const {result, meta: responseMeta} = responseEnvelope;
 
   // Client-side Safety Net: Normalize catalog tags
   if (result.catalog_tags) {
@@ -76,8 +81,8 @@ export async function identifyRock(
   const analysisEvent: AnalysisEvent = {
     meta: {
       schemaVersion: '1.0.0',
-      aiModel: 'gemini-1.5-flash', // Hardcoded for now, should ideally come from env or response
-      aiModelVersion: '001',
+      aiModel: responseMeta.model,
+      aiModelVersion: responseMeta.version,
       promptHash: 'na', // TODO: Implement real hash
       pipelineVersion: '1.0.0',
       runId: 'uuid-' + Date.now(), // Simple UUID for prototype

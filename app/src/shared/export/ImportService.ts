@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import {addFind, addSession} from '@/shared/firestoreService';
 
 export class ImportService {
