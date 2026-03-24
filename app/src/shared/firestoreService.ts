@@ -28,16 +28,19 @@ export const addFind = async (find: FindRecord): Promise<FindRecord> => {
   }
   try {
     const findRef = findRecordCollection(userId).doc(find.id);
-    await findRef.set({
+    // Fire and forget - Firestore handles offline queuing
+    findRef.set({
       ...find,
-      timestamp: firestore.Timestamp.fromDate(new Date(find.timestamp)), // Convert string to Firestore Timestamp
-      // Ensure aiData is handled correctly for Firestore (no custom objects, plain JSON)
+      timestamp: firestore.Timestamp.fromDate(new Date(find.timestamp)),
       aiData: find.aiData ? JSON.parse(JSON.stringify(find.aiData)) : null,
+    }).catch(error => {
+      logger.error('FirestoreService: Background addFind failed', { findId: find.id, error });
     });
-    logger.add('firestore', `Find added: ${find.id}`);
+    
+    logger.add('firestore', `Find added (queued): ${find.id}`);
     return find;
   } catch (error) {
-    logger.error('FirestoreService: Failed to add find', {
+    logger.error('FirestoreService: Failed to initiate add find', {
       findId: find.id,
       error,
     });
@@ -56,7 +59,8 @@ export const updateFind = async (
   }
   try {
     const findRef = findRecordCollection(userId).doc(findId);
-    await findRef.update({
+    // Fire and forget
+    findRef.update({
       ...updates,
       ...(updates.timestamp && {
         timestamp: firestore.Timestamp.fromDate(new Date(updates.timestamp)),
@@ -64,10 +68,13 @@ export const updateFind = async (
       ...(updates.aiData && {
         aiData: JSON.parse(JSON.stringify(updates.aiData)),
       }),
+    }).catch(error => {
+      logger.error('FirestoreService: Background updateFind failed', { findId, error });
     });
-    logger.add('firestore', `Find updated: ${findId}`);
+    
+    logger.add('firestore', `Find updated (queued): ${findId}`);
   } catch (error) {
-    logger.error('FirestoreService: Failed to update find', {
+    logger.error('FirestoreService: Failed to initiate update find', {
       findId,
       updates,
       error,
@@ -83,10 +90,14 @@ export const deleteFind = async (findId: string): Promise<void> => {
     throw new Error('No authenticated user for Firestore operation.');
   }
   try {
-    await findRecordCollection(userId).doc(findId).delete();
-    logger.add('firestore', `Find deleted: ${findId}`);
+    // Fire and forget
+    findRecordCollection(userId).doc(findId).delete().catch(error => {
+      logger.error('FirestoreService: Background deleteFind failed', { findId, error });
+    });
+    
+    logger.add('firestore', `Find deleted (queued): ${findId}`);
   } catch (error) {
-    logger.error('FirestoreService: Failed to delete find', {findId, error});
+    logger.error('FirestoreService: Failed to initiate delete find', {findId, error});
     throw error;
   }
 };
@@ -198,17 +209,21 @@ export const addSession = async (session: Session): Promise<Session> => {
   }
   try {
     const sessionRef = sessionCollection(userId).doc(session.id);
-    await sessionRef.set({
+    // Fire and forget
+    sessionRef.set({
       ...session,
-      startTime: firestore.Timestamp.fromMillis(session.startTime), // Convert number to Firestore Timestamp
+      startTime: firestore.Timestamp.fromMillis(session.startTime),
       ...(session.endTime && {
         endTime: firestore.Timestamp.fromMillis(session.endTime),
       }),
+    }).catch(error => {
+      logger.error('FirestoreService: Background addSession failed', { sessionId: session.id, error });
     });
-    logger.add('firestore', `Session added: ${session.id}`);
+    
+    logger.add('firestore', `Session added (queued): ${session.id}`);
     return session;
   } catch (error) {
-    logger.error('FirestoreService: Failed to add session', {
+    logger.error('FirestoreService: Failed to initiate add session', {
       sessionId: session.id,
       error,
     });
@@ -227,7 +242,8 @@ export const updateSession = async (
   }
   try {
     const sessionRef = sessionCollection(userId).doc(sessionId);
-    await sessionRef.update({
+    // Fire and forget
+    sessionRef.update({
       ...updates,
       ...(updates.startTime && {
         startTime: firestore.Timestamp.fromMillis(updates.startTime),
@@ -235,10 +251,13 @@ export const updateSession = async (
       ...(updates.endTime && {
         endTime: firestore.Timestamp.fromMillis(updates.endTime),
       }),
+    }).catch(error => {
+      logger.error('FirestoreService: Background updateSession failed', { sessionId, error });
     });
-    logger.add('firestore', `Session updated: ${sessionId}`);
+    
+    logger.add('firestore', `Session updated (queued): ${sessionId}`);
   } catch (error) {
-    logger.error('FirestoreService: Failed to update session', {
+    logger.error('FirestoreService: Failed to initiate update session', {
       sessionId,
       updates,
       error,
@@ -258,12 +277,16 @@ export const addFindToSession = async (
   }
   try {
     const sessionRef = sessionCollection(userId).doc(sessionId);
-    await sessionRef.update({
+    // Fire and forget
+    sessionRef.update({
       finds: firestore.FieldValue.arrayUnion(findId),
+    }).catch(error => {
+      logger.error('FirestoreService: Background addFindToSession failed', { sessionId, findId, error });
     });
-    logger.add('firestore', `Added find ${findId} to session ${sessionId}`);
+    
+    logger.add('firestore', `Added find ${findId} to session ${sessionId} (queued)`);
   } catch (error) {
-    logger.error('FirestoreService: Failed to add find to session', {
+    logger.error('FirestoreService: Failed to initiate add find to session', {
       sessionId,
       findId,
       error,

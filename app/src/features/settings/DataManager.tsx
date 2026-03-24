@@ -15,10 +15,6 @@ import {
   integrityService,
   IntegrityReport,
 } from '@/shared/integrity/IntegrityService';
-import {
-  migrationService,
-  MigrationState,
-} from '@/shared/migration/MigrationService';
 import {Ionicons} from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import {GlassView} from '@/shared/components/GlassView';
@@ -28,26 +24,6 @@ export function DataManager() {
   const {colors, mode} = useTheme();
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<IntegrityReport | null>(null);
-  const [migrationState, setMigrationState] =
-    useState<MigrationState | null>(null);
-
-  const handleMigrate = async () => {
-    Alert.alert(
-      'Migrate to Cloud',
-      'This will upload all your local data (finds and sessions) to the cloud. This is a one-time operation. Do you want to proceed?',
-      [
-        {text: 'Cancel', style: 'cancel'},
-        {
-          text: 'Migrate',
-          style: 'destructive',
-          onPress: () => {
-            migrationService.subscribe(setMigrationState);
-            migrationService.runMigration();
-          },
-        },
-      ],
-    );
-  };
 
   const handleScan = async () => {
     try {
@@ -199,63 +175,6 @@ export function DataManager() {
           Your data is stored locally. Use these tools to back it up or move it.
         </Text>
       </View>
-
-      {migrationState && migrationState.status !== 'idle' && migrationState.status !== 'done' && (
-        <View style={styles.migrationContainer}>
-          <Text style={[styles.sectionTitle, {color: colors.text}]}>
-            Cloud Migration Progress
-          </Text>
-          <Text style={{color: colors.textSecondary, marginBottom: 8}}>
-            {migrationState.status === 'migrating' &&
-              `Migrating item ${migrationState.processedItems} of ${migrationState.totalItems}...`}
-            {migrationState.status === 'done' &&
-              `Migration complete! ${migrationState.processedItems} items migrated.`}
-            {migrationState.status === 'error' &&
-              `Error: ${migrationState.error}`}
-            {(migrationState.status === 'checking' || migrationState.status === 'backing_up' || migrationState.status === 'validating') &&
-              'Preparing migration...'}
-          </Text>
-          {migrationState.status === 'migrating' && migrationState.totalItems > 0 && (
-            <View style={styles.progressBar}>
-              <View
-                style={{
-                  width: `${(migrationState.processedItems / migrationState.totalItems) * 100}%`,
-                  height: '100%',
-                  backgroundColor: colors.accent,
-                }}
-              />
-            </View>
-          )}
-        </View>
-      )}
-
-      <View style={styles.divider} />
-
-      <Text style={[styles.sectionTitle, {color: colors.text}]}>
-        Cloud Sync
-      </Text>
-      <TouchableOpacity onPress={handleMigrate} disabled={loading}>
-        <GlassView style={styles.card} intensity={20}>
-          <View
-            style={[
-              styles.iconBox,
-              {backgroundColor: 'rgba(59, 130, 246, 0.1)'},
-            ]}>
-            <Ionicons name="cloud-upload-outline" size={24} color="#3b82f6" />
-          </View>
-          <View style={{flex: 1}}>
-            <Text style={[styles.actionTitle, {color: colors.text}]}>
-              Migrate Data to Cloud
-            </Text>
-            <Text style={[styles.actionDesc, {color: colors.textSecondary}]}>
-              One-time process to upload all local finds and sessions to your
-              cloud account.
-            </Text>
-          </View>
-        </GlassView>
-      </TouchableOpacity>
-
-      <View style={styles.divider} />
 
       <View style={styles.actions}>
         <TouchableOpacity onPress={handleExportAnalysis} disabled={loading}>

@@ -1,8 +1,8 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as firestoreService from './firestoreService'; // Updated import
 import {logger} from './LogService';
-import {RockIdResult} from '@/ai/rockIdSchema'; // Updated import
+import {AnalysisEvent} from '@/ai/rockIdSchema'; // Updated import
 
 export class ExportService {
   /**
@@ -108,17 +108,9 @@ export class ExportService {
       let aiCategory = '';
 
       if (f.aiData) {
-        if ('result' in f.aiData) {
-          // Wrapped AnalysisEvent
-          const res = f.aiData.result;
-          aiLabel = res?.best_guess?.label || 'Unknown';
-          aiCategory = res?.best_guess?.category || '';
-        } else {
-          // Legacy RockIdResult
-          const res = f.aiData as RockIdResult; // Cast to specific type
-          aiLabel = res?.best_guess?.label || 'Unknown';
-          aiCategory = res?.best_guess?.category || '';
-        }
+        const res = f.aiData.result;
+        aiLabel = res?.best_guess?.label || 'Unknown';
+        aiCategory = res?.best_guess?.category || '';
       }
 
       const label = f.label || aiLabel;

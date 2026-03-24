@@ -1,0 +1,67 @@
+import React, { useCallback, useState } from 'react';
+import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/shared/ThemeContext';
+import { CameraCapture } from '@/features/capture/CameraCapture';
+import { MainHeader } from '@/shared/components/MainHeader';
+import { logger } from '@/shared/LogService';
+
+export default function CaptureScreen() {
+  const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(prev => prev + 1);
+  }, []);
+
+  const handleManualRefresh = useCallback(async () => {
+    setRefreshing(true);
+    handleRefresh();
+    setTimeout(() => setRefreshing(false), 1000);
+  }, [handleRefresh]);
+
+  return (
+    <View style={[styles.safe, { paddingTop: insets.top }]}>
+      <ScrollView
+        style={styles.pageScroll}
+        contentContainerStyle={[styles.pageContent, { paddingBottom: 120 }]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleManualRefresh}
+            tintColor={colors.accent}
+          />
+        }
+      >
+        <MainHeader />
+        <View style={styles.section}>
+          <CameraCapture
+            onSaved={() => {
+              logger.add('user', 'Captured photo');
+              handleRefresh();
+            }}
+          />
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+  },
+  pageScroll: {
+    flex: 1,
+  },
+  pageContent: {
+    padding: 16,
+    gap: 24,
+  },
+  section: {
+    gap: 16,
+  },
+});

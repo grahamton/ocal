@@ -13,7 +13,7 @@ import {formatLocationSync} from '@/shared/format';
 import {FindRecord} from '@/shared/types';
 import {AnalysisEvent} from '@/ai/rockIdSchema';
 import {useTheme} from '@/shared/ThemeContext';
-import {useSelection} from '@/shared/SelectionContext';
+import {useSelectionStore} from '@/shared/store/useSelectionStore';
 import {useSession} from '@/shared/SessionContext';
 import {Ionicons} from '@expo/vector-icons';
 
@@ -45,7 +45,7 @@ export function GalleryGrid({refreshKey, onSelect}: Props) {
 
   const {colors, mode} = useTheme();
   const {isSelectionMode, selectedIds, toggleSelection, enterSelectionMode} =
-    useSelection();
+    useSelectionStore();
 
   useEffect(() => {
     const unsubscribe = subscribeToFinds(
@@ -89,13 +89,9 @@ export function GalleryGrid({refreshKey, onSelect}: Props) {
     return date.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
   };
 
-  // Helper to safely unwrap AI data (Migration: RockIdResult -> AnalysisEvent)
+  // Helper to safely unwrap AI data
   const getAiResult = (data: FindRecord['aiData']) => {
-    if (!data) return null;
-    if ('result' in data && 'meta' in data) {
-      return (data as AnalysisEvent).result; // Cast to access result safely if types aren't perfectly aligned yet, or use type guard
-    }
-    return data; // Legacy RockIdResult
+    return data?.result || null;
   };
 
   const renderGridItem = (item: FindRecord) => {

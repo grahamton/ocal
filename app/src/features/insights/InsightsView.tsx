@@ -5,7 +5,7 @@ import {subscribeToFinds} from '@/shared/firestoreService'; // Updated import
 import {useTheme} from '@/shared/ThemeContext';
 import {FindRecord} from '@/shared/types';
 import {GlassView} from '@/shared/components/GlassView';
-import {AnalysisEvent, RockIdResult} from '@/ai/rockIdSchema'; // Added import for AnalysisEvent and RockIdResult
+import {AnalysisEvent} from '@/ai/rockIdSchema';
 
 export function InsightsView() {
   const {colors} = useTheme();
@@ -54,13 +54,7 @@ export function InsightsView() {
     finds.forEach(f => {
       let aiLabel = 'Unknown';
       if (f.aiData) {
-        if ('result' in f.aiData) {
-          // It's an AnalysisEvent
-          aiLabel = (f.aiData as AnalysisEvent).result?.best_guess?.label || 'Unknown';
-        } else {
-          // It's a direct RockIdResult (legacy)
-          aiLabel = (f.aiData as RockIdResult).best_guess?.label || 'Unknown';
-        }
+        aiLabel = f.aiData.result?.best_guess?.label || 'Unknown';
       }
 
       const type = aiLabel !== 'Unknown' ? aiLabel : f.label || 'Unknown';

@@ -16,7 +16,7 @@ import * as Sharing from 'expo-sharing';
 import * as firestoreService from '@/shared/firestoreService';
 import {FindRecord} from '@/shared/types';
 import {useIdentifyQueue} from '@/ai/IdentifyQueueService';
-import {RockIdResult, AnalysisEvent} from '@/ai/rockIdSchema';
+import {AnalysisEvent} from '@/ai/rockIdSchema';
 import {formatLocationSync} from '@/shared/format';
 import {useTheme, ThemeColors} from '@/shared/ThemeContext';
 import {StatusIcon} from '@/shared/components/StatusIcon';
@@ -62,8 +62,8 @@ export function FindDetailModal({visible, item, onClose, onSaved}: Props) {
   const [favorite, setFavorite] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [aiResult, setAiResult] = useState<RockIdResult | null>(null);
   const [localItem, setLocalItem] = useState<FindRecord | null>(item);
+  const aiResult = localItem?.aiData?.result || null;
   const [sessionName, setSessionName] = useState<string | null>(null);
   const [showContext, setShowContext] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -75,15 +75,6 @@ export function FindDetailModal({visible, item, onClose, onSaved}: Props) {
       setNote(item.note ?? '');
       setFavorite(item.favorite);
       setAiError(null);
-
-      const rawAiData = item.aiData as RockIdResult | AnalysisEvent | null;
-      // Check if wrapped in AnalysisEvent (has 'result' property)
-      if (rawAiData && 'result' in rawAiData && 'meta' in rawAiData) {
-        setAiResult((rawAiData as AnalysisEvent).result);
-      } else {
-        setAiResult((rawAiData as RockIdResult) || null);
-      }
-
       setLocalItem(item);
       setAiLoading(false);
       setSessionName(null);
@@ -273,11 +264,11 @@ export function FindDetailModal({visible, item, onClose, onSaved}: Props) {
                   {sessionName ? ` • ${sessionName}` : ''} •{' '}
                   {formatDate(localItem.timestamp)}
                   {/* Traceability Badge */}
-                  {localItem.aiData && 'meta' in localItem.aiData && (
+                  {localItem?.aiData?.meta && (
                     <Text style={{fontSize: 10, color: colors.accent}}>
                       {' '}
                       • v
-                      {(localItem.aiData as AnalysisEvent).meta?.schemaVersion}
+                      {localItem.aiData.meta.schemaVersion}
                     </Text>
                   )}
                 </Text>
