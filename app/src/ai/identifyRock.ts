@@ -54,15 +54,19 @@ export async function identifyRock(
     throw new Error(`${err?.error || 'Identify request failed'}${detail}`);
   }
 
-  const responseEnvelope = (await res.json()) as {
-    result: AnalysisEvent['result'];
-    meta: {model: string; version: string};
+  const responseEnvelope = (await res.json().catch(() => ({}))) as {
+    result?: AnalysisEvent['result'];
+    meta?: {model: string; version: string};
   };
 
   const {result, meta: responseMeta} = responseEnvelope;
 
+  if (!result || !responseMeta) {
+    throw new Error('AI response was incomplete or malformed.');
+  }
+
   // Client-side Safety Net: Normalize catalog tags
-  if (result.catalog_tags) {
+  if (result && result.catalog_tags) {
     const normalize = (s: string) =>
       s.toLowerCase().trim().replace(/\s+/g, '_');
     const keysToNormalize = ['type', 'color', 'pattern', 'luster', 'features'];

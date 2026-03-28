@@ -1,7 +1,7 @@
 import storage from '@react-native-firebase/storage';
 import auth from '@react-native-firebase/auth';
-import {createId} from './id';
-import {logger} from './LogService';
+import {createId} from '@/shared/id';
+import {logger} from '@/shared/LogService';
 
 const getCurrentUserId = (): string | null => {
   return auth().currentUser?.uid || null;

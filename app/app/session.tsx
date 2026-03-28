@@ -30,7 +30,7 @@ export default function SessionScreen() {
       // If no active session, go back
       router.back();
     }
-  }, [activeSession]);
+  }, [activeSession, router]);
 
   const handleSave = async () => {
     if (!activeSession || !name.trim()) return;

@@ -8,7 +8,10 @@ Each track should have its own folder in the `tracks/` directory, containing a d
 
 | ID                   | Title                                | Status  | Link                                                   |
 |----------------------|--------------------------------------|---------|--------------------------------------------------------|
-| `arch-firebase-sync` | Architectural Refactor: Cloud Sync | Pending | [Plan](./tracks/arch-firebase-sync/plan.md) |
-| `ai-context-enrichment` | AI Context Enrichment | Pending | [Plan](./tracks/ai-context-enrichment/plan.md) |
-| `refactor-path-aliases` | Refactor to Path Aliases | Pending | [Plan](./tracks/refactor-path-aliases/plan.md) |
-| `code-quality-cleanup` | Code Quality Cleanup | Pending | [Plan](./tracks/code-quality-cleanup/plan.md) |
+| `arch-firebase-sync` | Architectural Refactor: Cloud Sync | Complete | [Plan](./tracks/arch-firebase-sync/plan.md) |
+| `ai-context-enrichment` | AI Context Enrichment | Complete | [Plan](./tracks/ai-context-enrichment/plan.md) |
+| `refactor-path-aliases` | Refactor to Path Aliases | Complete | [Plan](./tracks/refactor-path-aliases/plan.md) |
+| `code-quality-cleanup` | Code Quality Cleanup | Complete | [Plan](./tracks/code-quality-cleanup/plan.md) |
+| `feature-poster`      | The Poster Feature      | Complete | [Plan](./tracks/feature-poster/plan.md) |
+| `session-ui-enhancements` | Session UI Enhancements | Complete | [Plan](./tracks/session-ui-enhancements/plan.md) |
+| `play-store-readiness` | Play Store Readiness   | Complete | [Plan](./tracks/play-store-readiness/plan.md) |

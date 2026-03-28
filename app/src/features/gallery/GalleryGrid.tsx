@@ -5,13 +5,13 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ScrollView,
   useWindowDimensions,
 } from 'react-native';
 import {LinearGradient} from 'expo-linear-gradient';
 import {subscribeToFinds} from '@/shared/firestoreService';
 import {formatLocationSync} from '@/shared/format';
 import {FindRecord} from '@/shared/types';
-import {AnalysisEvent} from '@/ai/rockIdSchema';
 import {useTheme} from '@/shared/ThemeContext';
 import {useSelectionStore} from '@/shared/store/useSelectionStore';
 import {useSession} from '@/shared/SessionContext';
@@ -25,22 +25,39 @@ const spacing = 12;
 type Props = {
   refreshKey: number;
   onSelect?: (item: FindRecord) => void;
+  initialSessionId?: string | null;
 };
 
 type ViewMode = 'grid' | 'list';
+type FilterMode = 'all' | 'favorites' | 'session';
 
-export function GalleryGrid({refreshKey, onSelect}: Props) {
+export function GalleryGrid({refreshKey, onSelect, initialSessionId}: Props) {
   const [items, setItems] = useState<FindRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'favorites' | 'session'>('all');
+  const [filter, setFilter] = useState<FilterMode>(initialSessionId ? 'session' : 'all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
-  const {activeSession} = useSession();
+  const {activeSession, sessions} = useSession();
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(initialSessionId || null);
+
+  // Sync selectedSessionId with activeSession when it changes, but ONLY if no initialSessionId
+  useEffect(() => {
+    if (activeSession && !selectedSessionId && !initialSessionId) {
+      setSelectedSessionId(activeSession.id);
+    }
+  }, [activeSession, initialSessionId]);
+
+  // Handle updates to initialSessionId
+  useEffect(() => {
+    if (initialSessionId) {
+      setSelectedSessionId(initialSessionId);
+      setFilter('session');
+    }
+  }, [initialSessionId]);
 
   // Responsive Columns
   const {width} = useWindowDimensions();
   const numColumns = width > 600 ? 3 : 2; // Tablet = 3, Phone = 2
-  // Subtracting 48 instead of 32 to account for potential parent padding variation (safe buffer)
   const cardWidth = (width - 48 - spacing * (numColumns - 1)) / numColumns;
 
   const {colors, mode} = useTheme();
@@ -61,22 +78,20 @@ export function GalleryGrid({refreshKey, onSelect}: Props) {
       },
     );
 
-    // Return the unsubscribe function to clean up the listener on component unmount
     return () => unsubscribe();
-  }, [refreshKey]); // refreshKey can be used to manually re-trigger the subscription if needed
+  }, [refreshKey]);
 
   const allItems = useMemo(() => {
-    // Firestore already sorts by timestamp, so we can just use the items directly
     return items;
   }, [items]);
 
   const filteredItems = useMemo(() => {
     if (filter === 'all') return allItems;
     if (filter === 'favorites') return allItems.filter(item => item.favorite);
-    if (filter === 'session' && activeSession)
-      return allItems.filter(item => item.sessionId === activeSession.id);
+    if (filter === 'session' && selectedSessionId)
+      return allItems.filter(item => item.sessionId === selectedSessionId);
     return allItems;
-  }, [allItems, filter, activeSession]);
+  }, [allItems, filter, selectedSessionId]);
 
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -89,7 +104,6 @@ export function GalleryGrid({refreshKey, onSelect}: Props) {
     return date.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
   };
 
-  // Helper to safely unwrap AI data
   const getAiResult = (data: FindRecord['aiData']) => {
     return data?.result || null;
   };
@@ -122,13 +136,11 @@ export function GalleryGrid({refreshKey, onSelect}: Props) {
         }}>
         <Image source={{uri: item.photoUri}} style={styles.image} />
 
-        {/* Subtle Gradient Overlay for depth */}
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.3)']}
           style={styles.gradientOverlay}
         />
 
-        {/* Favorite Star (Top-Left) */}
         {item.favorite && (
           <View style={styles.favoriteBadge}>
             <Ionicons name="star" size={16} color="#fbbf24" />
@@ -141,7 +153,6 @@ export function GalleryGrid({refreshKey, onSelect}: Props) {
           </View>
         )}
 
-        {/* Rough Status Overlay - Only if not analyzed */}
         {!aiResult && !isSelected && (
           <View
             style={{
@@ -162,21 +173,18 @@ export function GalleryGrid({refreshKey, onSelect}: Props) {
         )}
 
         <View style={styles.cardBody}>
-          {/* Title */}
           <Text
             style={[styles.titleText, {color: colors.text}]}
             numberOfLines={1}>
             {displayLabel}
           </Text>
 
-          {/* Location */}
           <Text
             style={[styles.locationText, {color: colors.textSecondary}]}
             numberOfLines={1}>
             {item.location_text || formatLocationSync(item.lat, item.long)}
           </Text>
 
-          {/* Session/Date */}
           <Text
             style={[styles.sessionText, {color: colors.textSecondary}]}
             numberOfLines={1}>
@@ -229,7 +237,6 @@ export function GalleryGrid({refreshKey, onSelect}: Props) {
               numberOfLines={1}>
               {displayLabel}
             </Text>
-            {/* Category Icon Mini */}
             {aiResult && (
               <StatusIcon
                 status="polished"
@@ -266,6 +273,10 @@ export function GalleryGrid({refreshKey, onSelect}: Props) {
       </TouchableOpacity>
     );
   };
+
+  const recentSessions = useMemo(() => {
+    return sessions.slice(0, 5); // Show last 5 sessions
+  }, [sessions]);
 
   if (error) {
     return (
@@ -322,7 +333,6 @@ export function GalleryGrid({refreshKey, onSelect}: Props) {
           </Text>
 
           <View style={styles.headerActions}>
-            {/* View Mode Switcher */}
             <View style={styles.viewSwitcher}>
               <TouchableOpacity
                 style={[
@@ -354,24 +364,6 @@ export function GalleryGrid({refreshKey, onSelect}: Props) {
 
         {/* Filter Tabs */}
         <View style={styles.filterTabs}>
-          {activeSession && (
-            <TouchableOpacity
-              style={[
-                styles.filterTab,
-                filter === 'session' && {backgroundColor: colors.accent},
-              ]}
-              onPress={() => setFilter('session')}>
-              <Text
-                style={[
-                  styles.filterTabText,
-                  {color: filter === 'session' ? '#fff' : colors.textSecondary},
-                ]}>
-                Current Walk (
-                {allItems.filter(i => i.sessionId === activeSession.id).length})
-              </Text>
-            </TouchableOpacity>
-          )}
-
           <TouchableOpacity
             style={[
               styles.filterTab,
@@ -383,7 +375,7 @@ export function GalleryGrid({refreshKey, onSelect}: Props) {
                 styles.filterTabText,
                 {color: filter === 'all' ? '#fff' : colors.textSecondary},
               ]}>
-              All ({allItems.length})
+              All
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -403,17 +395,68 @@ export function GalleryGrid({refreshKey, onSelect}: Props) {
                 styles.filterTabText,
                 {color: filter === 'favorites' ? '#fff' : colors.textSecondary},
               ]}>
-              Favorites ({allItems.filter(i => i.favorite).length})
+              Favorites
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterTab,
+              filter === 'session' && {backgroundColor: colors.accent},
+            ]}
+            onPress={() => {
+              setFilter('session');
+              if (!selectedSessionId && activeSession) {
+                setSelectedSessionId(activeSession.id);
+              }
+            }}>
+            <Text
+              style={[
+                styles.filterTabText,
+                {color: filter === 'session' ? '#fff' : colors.textSecondary},
+              ]}>
+              By Walk
             </Text>
           </TouchableOpacity>
         </View>
 
+        {/* Session Picker (Sub-filters) */}
+        {filter === 'session' && sessions.length > 0 && (
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.sessionPickerScroll}
+          >
+            {recentSessions.map(session => (
+              <TouchableOpacity
+                key={session.id}
+                style={[
+                  styles.sessionChip,
+                  selectedSessionId === session.id && {
+                    backgroundColor: colors.accent + '20',
+                    borderColor: colors.accent,
+                  },
+                  {borderColor: colors.border}
+                ]}
+                onPress={() => setSelectedSessionId(session.id)}>
+                <Text
+                  style={[
+                    styles.sessionChipText,
+                    {color: selectedSessionId === session.id ? colors.accent : colors.textSecondary}
+                  ]}>
+                  {session.name}
+                  {session.status === 'active' && ' 🔴'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+
         {filteredItems.length === 0 ? (
           <View style={styles.emptyCollection}>
             <Text style={[styles.emptySubText, {color: colors.textSecondary}]}>
-              {filter === 'all'
-                ? 'No finds yet. Capture your first one!'
-                : 'No favorite finds yet. Tap the star to save one!'}
+              {filter === 'session' && !selectedSessionId 
+                ? 'Select a walk to see finds.' 
+                : 'No finds match this filter.'}
             </Text>
           </View>
         ) : viewMode === 'grid' ? (
@@ -461,48 +504,51 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontFamily: 'Outfit_800ExtraBold',
   },
-  analyzeAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  analyzeAllText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
-  },
   filterTabs: {
     flexDirection: 'row',
     gap: 8,
     paddingHorizontal: 4,
   },
   filterTab: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 16,
+    borderRadius: 20,
     backgroundColor: 'rgba(0,0,0,0.05)',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   filterTabText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
-  // Grid View Styles
+  sessionPickerScroll: {
+    paddingHorizontal: 4,
+    gap: 8,
+    paddingBottom: 4,
+  },
+  sessionChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    backgroundColor: 'transparent',
+  },
+  sessionChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing,
     paddingHorizontal: 4,
-    marginBottom: 40, // Extra space at bottom
+    marginBottom: 40,
   },
   tile: {
-    // width handled inline
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 2,
-    backgroundColor: '#fff', // Fallback for transparency
+    backgroundColor: '#fff',
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
@@ -514,7 +560,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: '40%', // Subtle darkened bottom
+    height: '40%',
   },
   image: {
     width: '100%',
@@ -557,7 +603,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontSize: 12,
   },
-  // List View Styles
   listContainer: {
     gap: 8,
     paddingHorizontal: 4,
@@ -591,7 +636,6 @@ const styles = StyleSheet.create({
   listMeta: {
     fontSize: 13,
   },
-  // Empty States
   emptyBox: {
     padding: 32,
     borderRadius: 16,

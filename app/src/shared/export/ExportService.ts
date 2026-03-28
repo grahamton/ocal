@@ -1,8 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import * as firestoreService from './firestoreService'; // Updated import
-import {logger} from './LogService';
-import {AnalysisEvent} from '@/ai/rockIdSchema'; // Updated import
+import * as firestoreService from '@/shared/firestoreService';
+import {logger} from '@/shared/LogService';
 
 export class ExportService {
   /**

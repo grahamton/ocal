@@ -115,24 +115,38 @@ export function CameraCapture({onSaved}: Props) {
     Vibration.vibrate([0, 80, 50, 80]); // "Heavy" double bump
 
     try {
-      const session = activeSession ?? (await startSession());
+      logger.add('capture', 'Taking picture...');
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.6,
         skipProcessing: true,
       });
 
+      if (!photo) throw new Error('No photo captured');
+
       // Show thumbnail for animation
       setCapturedUri(photo.uri);
       animateFlyAway();
 
-      // Upload image to Cloud Storage
+      setStatusMessage('Uploading...');
+      logger.add('capture', 'Uploading to cloud storage...');
       const downloadURL = await storageService.uploadImage(photo.uri);
+
+      setStatusMessage('Saving Find...');
+      logger.add('capture', 'Saving to Firestore...');
+      
+      let session;
+      try {
+        session = activeSession ?? (await startSession());
+      } catch (sessErr) {
+        logger.error('Failed to get/start session', sessErr);
+        throw new Error('Session error. Please try starting a walk manually.');
+      }
 
       const location = await getLocation();
       const id = createId();
       const record: FindRecord = {
         id,
-        photoUri: downloadURL, // Use the public URL from Cloud Storage
+        photoUri: downloadURL,
         lat: location?.coords.latitude ?? null,
         long: location?.coords.longitude ?? null,
         timestamp: new Date().toISOString(),
@@ -147,26 +161,25 @@ export function CameraCapture({onSaved}: Props) {
       await firestoreService.addFind(record);
       await addFindToActiveSession(record.id, session.id);
 
-      // Auto-Pilot: Queue for AI immediately
-      // The new addToQueue will handle marking status to pending_ai_analysis
-      addToQueue(record.id).catch(err => {
-        logger.error('Capture: Auto-queue failed', err);
-      });
-
       setStatusKind('success');
       setStatusMessage('Saved!');
       // Second confirmation vibration
       Vibration.vibrate(50);
       AnalyticsService.logEvent('find_captured');
-      onSaved();
+      
+      // Small delay before clearing status to let user see 'Saved!'
+      setTimeout(() => {
+        onSaved();
+      }, 500);
     } catch (error) {
-      logger.error('Capture error', error);
+      logger.error('Capture process failed', error);
       setStatusKind('error');
-      setStatusMessage('Error saving.');
+      setStatusMessage((error as Error).message || 'Error saving.');
       Vibration.vibrate([0, 200, 100, 200]); // Long error buzz
     } finally {
       setSaving(false);
-      setTimeout(() => setStatusMessage(null), 3000);
+      // Keep error messages visible longer
+      setTimeout(() => setStatusMessage(null), statusKind === 'error' ? 5000 : 2000);
     }
   };
 

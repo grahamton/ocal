@@ -19,6 +19,8 @@ type SessionContextValue = {
   endSession: (name?: string) => Promise<void>;
   renameSession: (sessionId: string, newName: string) => Promise<void>;
   endSessionById: (sessionId: string, name?: string) => Promise<void>;
+  deleteSession: (sessionId: string) => Promise<void>;
+  cancelActiveSession: () => Promise<void>;
   addFindToActiveSession: (
     findId: string,
     sessionIdOverride?: string,
@@ -123,6 +125,17 @@ export function SessionProvider({children}: {children: ReactNode}) {
     [],
   );
 
+  const deleteSession = useCallback(async (sessionId: string) => {
+    // Note: This only deletes the session record, finds remain but become orphaned from this session.
+    // In a full cleanup, we might want to delete finds too or null their sessionId.
+    await firestoreService.deleteSession(sessionId);
+  }, []);
+
+  const cancelActiveSession = useCallback(async () => {
+    if (!activeSession) return;
+    await firestoreService.deleteSession(activeSession.id);
+  }, [activeSession]);
+
   const addFindToActiveSession = useCallback(
     async (findId: string, sessionIdOverride?: string) => {
       const sessionId = sessionIdOverride ?? activeSession?.id;
@@ -140,6 +153,8 @@ export function SessionProvider({children}: {children: ReactNode}) {
       startSession,
       endSession,
       endSessionById,
+      deleteSession,
+      cancelActiveSession,
       addFindToActiveSession,
       renameSession,
       // refreshSessions is removed as data is now real-time
@@ -150,6 +165,8 @@ export function SessionProvider({children}: {children: ReactNode}) {
       startSession,
       endSession,
       endSessionById,
+      deleteSession,
+      cancelActiveSession,
       addFindToActiveSession,
       renameSession,
     ],

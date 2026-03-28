@@ -1,9 +1,9 @@
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-import {GlassView} from './GlassView';
-import {THEME} from '../theme';
-import {useSelectionStore} from '../store/useSelectionStore';
-import {IdentifyQueueService} from '../../ai/IdentifyQueueService';
-import {logger} from '../LogService';
+import {GlassView} from '@/shared/components/GlassView';
+import {THEME} from '@/shared/theme';
+import {useSelectionStore} from '@/shared/store/useSelectionStore';
+import useIdentifyQueue from '@/ai/IdentifyQueueService';
+import {logger} from '@/shared/LogService';
 
 type Props = {
   // onIdentify moved internal
@@ -16,13 +16,14 @@ export function BatchActionBar({
   onDelete,
 }: Omit<Props, 'onIdentify'>) {
   const {selectedIds, exitSelectionMode} = useSelectionStore();
+  const {addToQueue} = useIdentifyQueue();
   const count = selectedIds.size;
 
   const handleBatchIdentify = async () => {
     // Queue all selected
     try {
       const ids = Array.from(selectedIds);
-      await Promise.all(ids.map(id => IdentifyQueueService.addToQueue(id)));
+      await Promise.all(ids.map(id => addToQueue(id)));
       // Optional: Show toast?
       exitSelectionMode();
     } catch (e) {

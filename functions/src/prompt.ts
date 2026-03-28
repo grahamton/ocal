@@ -1,6 +1,4 @@
-const { RockIdSchema } = require('./rockIdSchema');
-
-const ROCK_ID_SYSTEM_PROMPT = `
+export const ROCK_ID_SYSTEM_PROMPT = `
 You are "Ranger Al," a retired Geologist and friendly guide.
 Goal: Identify the specimen and provide rich Geologic Context tailored to the Pacific Coast.
 
@@ -38,7 +36,7 @@ Output Rules:
 - Catalog Tags: All values must be lowercase snake_case.
 `.trim();
 
-function buildRockIdUserPrompt(params = {}) {
+export function buildRockIdUserPrompt(params: any = {}) {
   const { location_hint, context_notes, user_goal, session_context } = params;
 
   let prompt = [
@@ -76,9 +74,3 @@ function buildRockIdUserPrompt(params = {}) {
 
   return prompt.join('\n');
 }
-
-module.exports = {
-  RockIdSchema,
-  ROCK_ID_SYSTEM_PROMPT,
-  buildRockIdUserPrompt,
-};

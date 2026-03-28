@@ -486,5 +486,5 @@ export interface AnalysisEvent {
     locationUsed: boolean;
     userGoal: string;
   };
-  result: RockIdResult;
+  result?: RockIdResult;
 }

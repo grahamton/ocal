@@ -14,20 +14,21 @@ import {
 import {Ionicons} from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
 import * as firestoreService from '@/shared/firestoreService';
-import {FindRecord} from '@/shared/types';
-import {useIdentifyQueue} from '@/ai/IdentifyQueueService';
-import {AnalysisEvent} from '@/ai/rockIdSchema';
+import {FindRecord, Session} from '@/shared/types';
+import useIdentifyQueue from '@/ai/IdentifyQueueService';
 import {formatLocationSync} from '@/shared/format';
 import {useTheme, ThemeColors} from '@/shared/ThemeContext';
 import {StatusIcon} from '@/shared/components/StatusIcon';
 import {getCategoryFromTags} from '@/shared/CategoryMapper';
 import {RawJsonInspector} from '@/shared/components/RawJsonInspector';
+import {THEME} from '@/shared/theme';
 
 type Props = {
   visible: boolean;
   item: FindRecord | null;
   onClose: () => void;
   onSaved: () => void;
+  onFilterBySession?: (sessionId: string) => void;
 };
 
 function ContextItem({
@@ -54,7 +55,7 @@ function ContextItem({
   );
 }
 
-export function FindDetailModal({visible, item, onClose, onSaved}: Props) {
+export function FindDetailModal({visible, item, onClose, onSaved, onFilterBySession}: Props) {
   const {colors, mode} = useTheme();
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
@@ -64,7 +65,7 @@ export function FindDetailModal({visible, item, onClose, onSaved}: Props) {
   const [aiError, setAiError] = useState<string | null>(null);
   const [localItem, setLocalItem] = useState<FindRecord | null>(item);
   const aiResult = localItem?.aiData?.result || null;
-  const [sessionName, setSessionName] = useState<string | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [showContext, setShowContext] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const {addToQueue} = useIdentifyQueue();
@@ -77,11 +78,11 @@ export function FindDetailModal({visible, item, onClose, onSaved}: Props) {
       setAiError(null);
       setLocalItem(item);
       setAiLoading(false);
-      setSessionName(null);
+      setSession(null);
 
       if (item.sessionId) {
         firestoreService.getSession(item.sessionId).then(s => {
-          if (s) setSessionName(s.name);
+          if (s) setSession(s);
         });
       }
     }
@@ -261,8 +262,7 @@ export function FindDetailModal({visible, item, onClose, onSaved}: Props) {
                 <Text style={[styles.metadata, {color: colors.textSecondary}]}>
                   {localItem.location_text ||
                     formatLocationSync(localItem.lat, localItem.long)}
-                  {sessionName ? ` • ${sessionName}` : ''} •{' '}
-                  {formatDate(localItem.timestamp)}
+                  {' • '}{formatDate(localItem.timestamp)}
                   {/* Traceability Badge */}
                   {localItem?.aiData?.meta && (
                     <Text style={{fontSize: 10, color: colors.accent}}>
@@ -272,6 +272,27 @@ export function FindDetailModal({visible, item, onClose, onSaved}: Props) {
                     </Text>
                   )}
                 </Text>
+
+                {/* Session Context Bar */}
+                {session && (
+                  <View style={[styles.sessionBar, {backgroundColor: mode === 'high-contrast' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.03)'}]}>
+                    <View style={{flex: 1}}>
+                      <Text style={[styles.sessionLabel, {color: colors.textSecondary}]}>FOUND DURING</Text>
+                      <Text style={[styles.sessionName, {color: colors.text}]} numberOfLines={1}>{session.name}</Text>
+                      {session.locationName && (
+                        <Text style={[styles.sessionLocation, {color: colors.textSecondary}]} numberOfLines={1}>
+                          <Ionicons name="map-outline" size={12} /> {session.locationName}
+                        </Text>
+                      )}
+                    </View>
+                    <TouchableOpacity 
+                      style={[styles.viewSessionBtn, {backgroundColor: colors.accent}]}
+                      onPress={() => onFilterBySession?.(session.id)}
+                    >
+                      <Text style={styles.viewSessionBtnText}>View Walk</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
 
               {/* Dynamic Content Renderer */}
@@ -895,6 +916,38 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
+  sessionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 4,
+    gap: 12,
+  },
+  sessionLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  sessionName: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  sessionLocation: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  viewSessionBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  viewSessionBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
 
   // Scientist View Styles
   labCard: {
@@ -970,9 +1023,9 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 15,
     minHeight: 80,
-    backgroundColor: colors.background,
-    borderColor: colors.border,
-    color: colors.text,
+    backgroundColor: THEME.colors.background,
+    borderColor: THEME.colors.border,
+    color: THEME.colors.text,
   },
   actionFooter: {
     position: 'absolute',
@@ -1125,3 +1178,4 @@ const styles = StyleSheet.create({
     gap: 12,
   },
 });
+

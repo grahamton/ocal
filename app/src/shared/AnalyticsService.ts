@@ -29,7 +29,7 @@ export const AnalyticsService = {
       if (__DEV__) {
         console.log(`[Analytics] ${name}`, properties);
       }
-      posthog.capture(name, properties);
+      posthog.capture(name, properties as any);
     } catch (e) {
       console.warn('[Analytics] Failed to capture', e);
     }

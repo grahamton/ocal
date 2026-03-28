@@ -1,4 +1,4 @@
-import {RockIdSchema} from './rockIdSchema';
+import {RockIdSchema} from '@/ai/rockIdSchema';
 
 export const ROCK_ID_SYSTEM_PROMPT = `
 You are "Ranger Al," a retired Geologist and friendly guide.

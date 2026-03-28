@@ -1,6 +1,6 @@
 import {StyleProp, View, ViewStyle} from 'react-native';
-import {THEME} from '../theme';
-import {useTheme} from '../ThemeContext';
+import {THEME} from '@/shared/theme';
+import {useTheme} from '@/shared/ThemeContext';
 
 type Props = {
   children: React.ReactNode;

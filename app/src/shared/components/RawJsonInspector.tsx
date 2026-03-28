@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {useTheme} from '../src/shared/ThemeContext';
+import {useTheme} from '@/shared/ThemeContext';
 
 interface Props {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

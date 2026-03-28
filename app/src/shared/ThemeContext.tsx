@@ -7,9 +7,9 @@ import React, {
   useMemo,
 } from 'react';
 
-import {PALETTE_JOURNAL, PALETTE_HIGH_CONTRAST, ThemeMode} from './theme';
+import {PALETTE_JOURNAL, PALETTE_HIGH_CONTRAST, ThemeMode} from '@/shared/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {AnalyticsService} from './AnalyticsService';
+import {AnalyticsService} from '@/shared/AnalyticsService';
 
 export type ThemeColors = typeof PALETTE_JOURNAL;
 

@@ -12,10 +12,10 @@ import {
   Alert,
 } from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {useTheme} from '../ThemeContext';
-import {useSession} from '../SessionContext';
-import {Session} from '../types';
-import {formatTimestamp} from '../format';
+import {useTheme} from '@/shared/ThemeContext';
+import {useSession} from '@/shared/SessionContext';
+import {Session} from '@/shared/types';
+import {formatTimestamp} from '@/shared/format';
 
 type Props = {
   visible: boolean;
@@ -24,7 +24,7 @@ type Props = {
 };
 
 export function SessionControlModal({visible, onClose, session}: Props) {
-  const {renameSession, endSession} = useSession();
+  const {renameSession, endSession, cancelActiveSession} = useSession();
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const {colors, mode} = useTheme();
@@ -64,6 +64,31 @@ export function SessionControlModal({visible, onClose, session}: Props) {
               onClose();
             } catch {
               Alert.alert('Error', 'Could not end session.');
+            } finally {
+              setSaving(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleCancelSession = () => {
+    Alert.alert(
+      'Discard this Walk?',
+      'This will delete the current walk record. Finds captured will remain in your bucket but won\'t be grouped by this walk.',
+      [
+        {text: 'Keep Walk', style: 'cancel'},
+        {
+          text: 'Discard Walk',
+          style: 'destructive',
+          onPress: async () => {
+            setSaving(true);
+            try {
+              await cancelActiveSession();
+              onClose();
+            } catch {
+              Alert.alert('Error', 'Could not discard walk.');
             } finally {
               setSaving(false);
             }
@@ -153,20 +178,30 @@ export function SessionControlModal({visible, onClose, session}: Props) {
           </View>
 
           <View style={styles.actions}>
-            <TouchableOpacity
-              style={[
-                styles.endBtn,
-                {
-                  borderColor: colors.danger,
-                  backgroundColor: 'rgba(239, 68, 68, 0.05)',
-                },
-              ]}
-              onPress={handleEndSession}
-              disabled={saving}>
-              <Text style={[styles.endBtnText, {color: colors.danger}]}>
-                End Session
-              </Text>
-            </TouchableOpacity>
+            <View style={{flexDirection: 'column', gap: 12, flex: 1}}>
+              <TouchableOpacity
+                style={[
+                  styles.endBtn,
+                  {
+                    borderColor: colors.danger,
+                    backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                  },
+                ]}
+                onPress={handleEndSession}
+                disabled={saving}>
+                <Text style={[styles.endBtnText, {color: colors.danger}]}>
+                  End Walk
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={handleCancelSession}
+                disabled={saving}>
+                <Text style={{color: colors.textSecondary, textAlign: 'center', fontSize: 13, textDecorationLine: 'underline'}}>
+                  Discard Walk
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={[styles.saveBtn, {backgroundColor: colors.text}]}
@@ -176,7 +211,7 @@ export function SessionControlModal({visible, onClose, session}: Props) {
                 <ActivityIndicator color={colors.background} />
               ) : (
                 <Text style={[styles.saveBtnText, {color: colors.background}]}>
-                  Save Name
+                  Update Name
                 </Text>
               )}
             </TouchableOpacity>

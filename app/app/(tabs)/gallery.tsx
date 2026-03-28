@@ -8,6 +8,8 @@ import { MainHeader } from '@/shared/components/MainHeader';
 import { StatusIcon } from '@/shared/components/StatusIcon';
 import { useSelectionStore } from '@/shared/store/useSelectionStore';
 import { BatchActionBar } from '@/shared/components/BatchActionBar';
+import { PosterModal } from '@/shared/components/PosterModal';
+import { FindDetailModal } from '@/features/detail/FindDetailModal';
 import { logger } from '@/shared/LogService';
 import { FindRecord } from '@/shared/types';
 import * as firestoreService from '@/shared/firestoreService';
@@ -18,8 +20,25 @@ export default function GalleryScreen() {
   const { colors, mode } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isPosterModalVisible, setIsPosterModalVisible] = useState(false);
+  const [selectedFinds, setSelectedFinds] = useState<FindRecord[]>([]);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<FindRecord | null>(null);
 
   const { isSelectionMode, selectedIds, exitSelectionMode } = useSelectionStore();
+
+  const handleOpenPoster = async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      const allFinds = await firestoreService.getAllFinds();
+      const filtered = allFinds.filter(f => selectedIds.has(f.id));
+      setSelectedFinds(filtered);
+      setIsPosterModalVisible(true);
+    } catch (error) {
+      logger.error('Failed to prepare poster data', error);
+      Alert.alert('Error', 'Failed to prepare poster data');
+    }
+  };
 
   const handleRefresh = useCallback(() => {
     setRefreshKey(prev => prev + 1);
@@ -28,12 +47,18 @@ export default function GalleryScreen() {
   const handleManualRefresh = useCallback(async () => {
     setRefreshing(true);
     handleRefresh();
+    setSelectedSessionId(null);
     setTimeout(() => setRefreshing(false), 1000);
   }, [handleRefresh]);
 
   const openDetail = (item: FindRecord) => {
     logger.add('nav', 'Opened detail view', { id: item.id });
-    router.push({ pathname: '/detail/[id]', params: { id: item.id } });
+    setSelectedItem(item);
+  };
+
+  const handleFilterBySession = (sessionId: string) => {
+    setSelectedSessionId(sessionId);
+    setSelectedItem(null); // Close modal
   };
 
   const handleBatchDelete = async () => {
@@ -95,7 +120,11 @@ export default function GalleryScreen() {
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Gallery</Text>
             </View>
           </View>
-          <GalleryGrid refreshKey={refreshKey} onSelect={openDetail} />
+          <GalleryGrid 
+            refreshKey={refreshKey} 
+            onSelect={openDetail} 
+            initialSessionId={selectedSessionId}
+          />
         </View>
       </ScrollView>
 
@@ -103,11 +132,28 @@ export default function GalleryScreen() {
       {isSelectionMode && (
         <View style={[styles.floatingActionBar, { paddingBottom: insets.bottom + 10, backgroundColor: colors.card, borderTopColor: colors.border }]}>
           <BatchActionBar
-            onPoster={() => Alert.alert('Poster', 'Batch poster coming soon')}
+            onPoster={handleOpenPoster}
             onDelete={handleBatchDelete}
           />
         </View>
       )}
+
+      <FindDetailModal
+        visible={!!selectedItem}
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+        onSaved={handleRefresh}
+        onFilterBySession={handleFilterBySession}
+      />
+
+      <PosterModal
+        visible={isPosterModalVisible}
+        onClose={() => {
+          setIsPosterModalVisible(false);
+          exitSelectionMode();
+        }}
+        selectedItems={selectedFinds}
+      />
     </View>
   );
 }

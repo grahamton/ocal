@@ -10,17 +10,12 @@ export default function CaptureScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  const handleRefresh = useCallback(() => {
-    setRefreshKey(prev => prev + 1);
-  }, []);
 
   const handleManualRefresh = useCallback(async () => {
     setRefreshing(true);
-    handleRefresh();
+    // No specific refresh logic needed for capture yet
     setTimeout(() => setRefreshing(false), 1000);
-  }, [handleRefresh]);
+  }, []);
 
   return (
     <View style={[styles.safe, { paddingTop: insets.top }]}>
@@ -41,7 +36,6 @@ export default function CaptureScreen() {
           <CameraCapture
             onSaved={() => {
               logger.add('user', 'Captured photo');
-              handleRefresh();
             }}
           />
         </View>

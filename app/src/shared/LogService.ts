@@ -3,7 +3,7 @@ import * as Sharing from 'expo-sharing';
 
 export type LogEntry = {
   timestamp: string; // ISO string
-  category: 'nav' | 'user' | 'system' | 'error' | 'ai';
+  category: 'nav' | 'user' | 'system' | 'error' | 'ai' | 'firestore' | 'storage';
   message: string;
   metadata?: Record<string, unknown>;
 };

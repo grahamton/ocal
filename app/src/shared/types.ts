@@ -1,4 +1,4 @@
-import {AnalysisEvent} from '../ai/rockIdSchema';
+import {AnalysisEvent} from '@/ai/rockIdSchema';
 
 export type FindRecord = {
   id: string;
@@ -13,6 +13,7 @@ export type FindRecord = {
   status: 'draft' | 'cataloged' | 'archived' | 'pending_ai_analysis' | 'ai_analysis_failed';
   sessionId: string | null;
   favorite: boolean;
+  userGoal?: 'quick_id' | 'learning' | 'catalog_tagging' | null;
   aiData?: AnalysisEvent | null;
 };
 

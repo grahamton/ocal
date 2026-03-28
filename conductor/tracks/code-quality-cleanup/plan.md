@@ -38,3 +38,5 @@ Each item below represents a specific ESLint issue identified during the initial
 - All ESLint errors and warnings are resolved.
 - The `npm run lint` command executes without any reported issues.
 - No new regressions are introduced.
+
+**Note**: A final cleanup pass was performed on 2026-03-24 to address new warnings introduced during the Expo Router migration and refactoring.

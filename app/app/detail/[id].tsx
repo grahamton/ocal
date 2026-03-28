@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/shared/ThemeContext';
 import * as firestoreService from '@/shared/firestoreService';
 import { FindRecord } from '@/shared/types';
-import { FindDetailModal } from '@/features/detail/FindDetailModal'; // We can still use the component inside the screen or refactor it
+import { FindDetailModal } from '@/features/detail/FindDetailModal';
 
 export default function DetailScreen() {
   const { id } = useLocalSearchParams();

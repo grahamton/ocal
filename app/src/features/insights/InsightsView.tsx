@@ -5,7 +5,6 @@ import {subscribeToFinds} from '@/shared/firestoreService'; // Updated import
 import {useTheme} from '@/shared/ThemeContext';
 import {FindRecord} from '@/shared/types';
 import {GlassView} from '@/shared/components/GlassView';
-import {AnalysisEvent} from '@/ai/rockIdSchema';
 
 export function InsightsView() {
   const {colors} = useTheme();

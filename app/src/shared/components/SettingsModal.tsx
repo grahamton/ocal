@@ -2,8 +2,8 @@ import React from 'react';
 import {Modal, StyleSheet, View, Text, TouchableOpacity} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
-import {useTheme} from '../ThemeContext';
-import {DataManager} from '../../features/settings/DataManager';
+import {useTheme} from '@/shared/ThemeContext';
+import {DataManager} from '@/features/settings/DataManager';
 
 export function SettingsModal({
   visible,

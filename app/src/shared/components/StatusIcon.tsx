@@ -1,7 +1,7 @@
 import React, {useEffect} from 'react';
 import {Animated, View, ViewStyle} from 'react-native';
 import Svg, {Path, Defs, LinearGradient, Stop} from 'react-native-svg';
-import {IconCategory} from '../CategoryMapper';
+import {IconCategory} from '@/shared/CategoryMapper';
 
 export type StatusIconStatus = 'rough' | 'polishing' | 'polished';
 export type StatusIconTheme = 'journal' | 'beach';

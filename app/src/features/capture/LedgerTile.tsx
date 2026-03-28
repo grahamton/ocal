@@ -7,9 +7,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {GlassView} from '../../shared/components/GlassView';
-import {THEME} from '../../shared/theme';
-import {FindRecord} from '../../shared/types';
+import {GlassView} from '@/shared/components/GlassView';
+import {THEME} from '@/shared/theme';
+import {FindRecord} from '@/shared/types';
 
 type Props = {
   item: FindRecord;

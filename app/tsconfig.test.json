@@ -9,7 +9,11 @@
     "skipLibCheck": true,
     "noEmit": false,
     "sourceMap": false,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src/shared/**/*", "tests/**/*"]
 }

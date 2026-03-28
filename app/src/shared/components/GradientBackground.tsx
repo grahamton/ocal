@@ -1,5 +1,5 @@
 import {StyleSheet, View, ViewProps} from 'react-native';
-import {useTheme} from '../ThemeContext';
+import {useTheme} from '@/shared/ThemeContext';
 
 export function GradientBackground({children, style, ...props}: ViewProps) {
   const {colors} = useTheme();

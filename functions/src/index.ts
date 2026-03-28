@@ -1,29 +1,28 @@
-import * as functions from 'firebase-functions';
+import { onRequest, Request } from 'firebase-functions/v2/https';
+import { Response } from 'firebase-functions';
+import * as logger from 'firebase-functions/logger';
 import { GoogleGenerativeAI, Part } from '@google/generative-ai';
 import { IdentifyRequestSchema } from './schemas';
+import { buildRockIdUserPrompt, ROCK_ID_SYSTEM_PROMPT } from './prompt';
 import { z } from 'zod';
+import * as admin from 'firebase-admin';
+
+// Initialize Firebase Admin
+if (admin.apps.length === 0) {
+  admin.initializeApp();
+}
 
 /**
- * identifyRock Cloud Function.
+ * identify Cloud Function (v2).
  *
- * Accepts a POST request from the Ocal app client (identifyRock.ts).
- * Uses Gemini to identify rock specimens and returns a full RockIdResult
- * matching the Ranger Al schema defined in the client's RangerConfig.ts.
+ * Accepts a POST request from the Ocal app client.
+ * Uses Gemini to identify rock specimens and returns a full RockIdResult.
  *
- * Env vars:
+ * Secrets:
  *   GEMINI_API_KEY  — required
- *   GEMINI_MODEL    — optional, defaults to 'gemini-2.0-flash'
  */
 
-type Req = functions.https.Request;
-type Res = functions.Response;
-
-const DEFAULT_SYSTEM_PROMPT = `
-You are "Ranger Al," a retired Geologist and friendly guide for senior beachcombers on the Pacific Coast.
-Identify the specimen and provide rich geologic context. Output must be valid JSON.
-`.trim();
-
-export const identifyRock = functions.https.onRequest(async (req: Req, res: Res) => {
+export const identifyRockHandler = async (req: Request, res: Response) => {
   // CORS
   res.set('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') {
@@ -34,7 +33,7 @@ export const identifyRock = functions.https.onRequest(async (req: Req, res: Res)
   }
 
   if (req.method !== 'POST') {
-    res.set('Allow', 'POST').status(405).send('Method Not Allowed');
+    res.status(405).send('Method Not Allowed');
     return;
   }
 
@@ -44,27 +43,28 @@ export const identifyRock = functions.https.onRequest(async (req: Req, res: Res)
     body = IdentifyRequestSchema.parse(req.body);
   } catch (err) {
     const zErr = err as z.ZodError;
+    logger.error('Invalid request body', zErr.format());
     res.status(400).json({ error: 'Invalid request', details: zErr.format() });
     return;
   }
 
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
   if (!GEMINI_API_KEY) {
+    logger.error('Missing GEMINI_API_KEY');
     res.status(500).json({ error: 'Server misconfigured: missing GEMINI_API_KEY' });
     return;
   }
 
   const MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.1-flash';
   const temperature = body.temperature ?? 0.7;
-  const systemPrompt = body.system_prompt ?? DEFAULT_SYSTEM_PROMPT;
+  const systemPrompt = body.system_prompt ?? ROCK_ID_SYSTEM_PROMPT;
 
   // Build the user message parts
   const parts: Part[] = [];
 
-  // Add image(s) — prefer data URLs, fall back to image URLs
+  // Add image(s) from data URLs
   const dataUrls = body.image_data_urls ?? [];
   for (const dataUrl of dataUrls) {
-    // Strip the data URL prefix: data:image/jpeg;base64,<data>
     const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
     if (match) {
       parts.push({
@@ -76,43 +76,31 @@ export const identifyRock = functions.https.onRequest(async (req: Req, res: Res)
     }
   }
 
-  // Build contextual text prompt
-  const contextLines: string[] = [];
-
-  if (body.location_hint) {
-    contextLines.push(`Location: ${body.location_hint}`);
-  }
-  if (body.context_notes) {
-    contextLines.push(`User notes: ${body.context_notes}`);
-  }
-  if (body.user_goal) {
-    contextLines.push(`Goal: ${body.user_goal}`);
-  }
-  if (body.session_context) {
-    const ctx = body.session_context as Record<string, unknown>;
-    if (ctx.locationName) contextLines.push(`Session location: ${ctx.locationName}`);
-    if (ctx.startTime) {
-      const sessionTime = new Date(ctx.startTime as number).toLocaleString();
-      contextLines.push(`Session started: ${sessionTime}`);
+  // Add image URLs if provided
+  if (body.image_urls && body.image_urls.length > 0) {
+    for (const url of body.image_urls) {
+      parts.push({ text: `Image URL to analyze: ${url}` });
     }
-    if (ctx.name) contextLines.push(`Session name: ${ctx.name}`);
   }
 
-  const textPrompt = contextLines.length > 0
-    ? `Please identify this specimen.\n\n${contextLines.join('\n')}\n\nRespond with a JSON object only.`
-    : 'Please identify this specimen. Respond with a JSON object only.';
+  // Build contextual text prompt using the helper
+  const textPrompt = buildRockIdUserPrompt({
+    location_hint: body.location_hint,
+    context_notes: body.context_notes,
+    user_goal: body.user_goal,
+    session_context: body.session_context,
+  });
 
   parts.push({ text: textPrompt });
 
   try {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-    const generationConfig: Record<string, unknown> = {
+    const generationConfig: any = {
       temperature,
       responseMimeType: 'application/json',
     };
 
-    // If the client provided an output schema, use it for structured output
     if (body.output_schema) {
       generationConfig.responseSchema = body.output_schema.schema ?? body.output_schema;
     }
@@ -120,19 +108,16 @@ export const identifyRock = functions.https.onRequest(async (req: Req, res: Res)
     const model = genAI.getGenerativeModel({
       model: MODEL,
       systemInstruction: systemPrompt,
-      generationConfig: generationConfig as Parameters<typeof genAI.getGenerativeModel>[0]['generationConfig'],
+      generationConfig,
     });
 
     const result = await model.generateContent({ contents: [{ role: 'user', parts }] });
     const responseText = result.response.text();
 
-    // Parse JSON from the response
-    let parsed: unknown = null;
+    let parsed: any = null;
     try {
-      // Gemini with responseMimeType=application/json returns clean JSON
       parsed = JSON.parse(responseText);
     } catch {
-      // Fallback: extract JSON object from text
       const start = responseText.indexOf('{');
       const end = responseText.lastIndexOf('}');
       if (start !== -1 && end > start) {
@@ -145,27 +130,8 @@ export const identifyRock = functions.https.onRequest(async (req: Req, res: Res)
     }
 
     if (!parsed) {
-      functions.logger.warn('identifyRock: Could not parse Gemini response', { responseText });
-      res.status(200).json({
-        result: {
-          best_guess: { label: 'Unknown', confidence: 0, category: 'unknown' },
-          ranger_summary: 'Unable to identify this specimen from the photo.',
-          alternatives: [],
-          specimen_context: {
-            age: 'Unknown',
-            geology_hypothesis: { name: null, confidence: 'low', evidence: [] },
-            type: 'Unknown',
-            historical_fact: '',
-          },
-          lapidary_guidance: { is_tumble_candidate: false, tumble_reason: 'Could not assess.' },
-          red_flags: [],
-        },
-        meta: {
-          model: MODEL,
-          version: '3.1.0',
-        },
-      });
-      return;
+      logger.warn('Could not parse Gemini response', { responseText });
+      throw new Error('Failed to parse AI response as JSON');
     }
 
     res.status(200).json({
@@ -173,11 +139,22 @@ export const identifyRock = functions.https.onRequest(async (req: Req, res: Res)
       meta: {
         model: MODEL,
         version: '3.1.0',
+        timestamp: new Date().toISOString(),
       },
     });
-  } catch (err: unknown) {
+  } catch (err: any) {
     const message = err instanceof Error ? err.message : String(err);
-    functions.logger.error('identifyRock error', { message });
-    res.status(500).json({ error: 'Server error', detail: message });
+    logger.error('identify error', { message, stack: err.stack });
+    res.status(500).json({ error: 'AI Identification failed', detail: message });
   }
-});
+};
+
+// Export both names for compatibility
+export const identify = onRequest({
+  secrets: ['GEMINI_API_KEY'],
+  timeoutSeconds: 60,
+  memory: '512MiB',
+  region: 'us-central1'
+}, identifyRockHandler);
+
+export const identifyRock = identify;

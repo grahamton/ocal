@@ -79,29 +79,27 @@ Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-techn
   - Transitional SQLite read layer (`db.ts`) is retained until all testers have migrated. Remove `db.ts`, `MigrationService`, and `expo-sqlite` in a future cleanup once `ocal_migration_done` flag is confirmed across all devices.
 - Status: **Complete** (Jan 2026)
 
-## Phase 5 - Poster (In Progress)
+## Phase 5 - Poster **Complete**
 
 - Scope: Grid generation and image export; follow "fossil plate" style from workflow analysis with monochrome/colour toggles and optional background clearing.
 - Milestones:
-  - [ ] Select finds by filter ("Last Month", trip) + checkboxes _(efficient with SQLite)_
-  - [ ] Layout engine for 3x3 or 4x4 with captions (editable)
-  - [ ] Export high-res PDF/JPG; share sheet
+  - [x] Select finds by filter ("Last Month", trip) + checkboxes
+  - [x] Layout engine for 2x2, 3x3, or 4x4 with captions
+  - [x] Export high-res JPG; share sheet
 - Tests/QA: Layout determinism; export fidelity on varied devices; large image handling
-- Risks: Memory on-device; rendering speed; print resolution correctness
-- Status: **Research complete** - Prototypes in `feature/after-the-gallery` branch
-- Dependencies: **Benefits from Phase 4 (SQLite)** for efficient filtering
+- Status: **Complete** (March 2026).
+- Dependencies: Integrated with Firestore and `useSelectionStore`.
 
-## Phase 6 - Session Enhancements (Backlog)
+## Phase 6 - Session Enhancements **Complete**
 
-- Scope: Improve session visibility, AI context integration, and workflow
+- Scope: Improve session visibility, AI context integration, and workflow.
 - Milestones:
-  - AI context enrichment (pass session location/time to Ranger Al)
-  - Enhanced session UI (filters, metadata display) _(efficient with SQLite)_
-  - Geospatial queries (finds within radius) _(enabled by SQLite)_
-  - Session-first workflow (optional future)
-- Status: **Research complete** - See `docs/session_improvements_research.md`
-- Risks: Requires testing AI accuracy improvements; full workflow overhaul depends on cloud sync
-- Dependencies: **Benefits from Phase 4 (SQLite)** for geospatial queries
+  - [x] AI context enrichment (pass session location/time to Ranger Al).
+  - [x] Enhanced session UI (filters by walk, prominent header indicator, metadata display).
+  - [ ] Geospatial queries (finds within radius) — *Deferred to advanced data tools.*
+  - [ ] Session-first workflow (optional future).
+- Status: **Complete** (March 2026).
+- Rationale: Sessions are now first-class citizens with dedicated filtering and deep AI integration.
 
 ## Phase 7 - iOS Version (Backlog)
 

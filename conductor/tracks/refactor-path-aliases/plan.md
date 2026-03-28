@@ -20,7 +20,31 @@ The process involves systematically going through each file and updating its imp
 - [x] `app/src/shared/SessionContext.tsx`
 - [x] `app/src/ai/identifyRock.ts`
 - [x] `app/src/ai/IdentifyQueueService.ts`
-- [ ] ... and any other files in `app/src` with relative imports.
+- [x] `app/src/shared/types.ts`
+- [x] `app/src/shared/ThemeContext.tsx`
+- [x] `app/src/shared/storageService.ts`
+- [x] `app/src/shared/export/ExportService.ts`
+- [x] `app/src/shared/components/MainHeader.tsx`
+- [x] `app/src/shared/components/RawJsonInspector.tsx`
+- [x] `app/src/shared/components/SettingsModal.tsx`
+- [x] `app/src/shared/components/StatusIcon.tsx`
+- [x] `app/src/shared/components/GradientBackground.tsx`
+- [x] `app/src/shared/components/SessionControlModal.tsx`
+- [x] `app/src/shared/components/GlassView.tsx`
+- [x] `app/src/shared/components/BatchActionBar.tsx`
+- [x] `app/src/ai/rockIdPrompt.ts`
+- [x] `app/src/features/capture/LedgerTile.tsx`
+- [x] `app/src/features/capture/SessionLedger.tsx`
+- [x] `app/src/features/insights/InsightsView.tsx`
+- [x] `app/src/shared/AuthContext.tsx`
+- [x] `app/src/shared/AnalyticsService.ts`
+- [x] `app/src/shared/CategoryMapper.ts`
+- [x] `app/src/shared/LogService.ts`
+- [x] `app/src/shared/firestoreService.ts`
+- [x] `app/src/shared/integrity/IntegrityService.ts`
+- [x] `app/src/shared/store/useSelectionStore.ts`
+- [x] `app/index.ts`
+- [x] `app/tests/format.test.ts`
 
 ### Refactoring Process (for each file):
 
