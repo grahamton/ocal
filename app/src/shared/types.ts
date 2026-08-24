@@ -10,7 +10,12 @@ export type FindRecord = {
   note: string | null;
   category: string | null;
   label: string | null;
-  status: 'draft' | 'cataloged' | 'archived' | 'pending_ai_analysis' | 'ai_analysis_failed';
+  status:
+    | 'draft'
+    | 'cataloged'
+    | 'archived'
+    | 'pending_ai_analysis'
+    | 'ai_analysis_failed';
   sessionId: string | null;
   favorite: boolean;
   userGoal?: 'quick_id' | 'learning' | 'catalog_tagging' | null;

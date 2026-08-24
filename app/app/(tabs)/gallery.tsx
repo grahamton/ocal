@@ -1,31 +1,32 @@
-import React, { useCallback, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, Text, Alert } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useTheme } from '@/shared/ThemeContext';
-import { GalleryGrid } from '@/features/gallery/GalleryGrid';
-import { MainHeader } from '@/shared/components/MainHeader';
-import { StatusIcon } from '@/shared/components/StatusIcon';
-import { useSelectionStore } from '@/shared/store/useSelectionStore';
-import { BatchActionBar } from '@/shared/components/BatchActionBar';
-import { PosterModal } from '@/shared/components/PosterModal';
-import { FindDetailModal } from '@/features/detail/FindDetailModal';
-import { logger } from '@/shared/LogService';
-import { FindRecord } from '@/shared/types';
+import React, {useCallback, useState} from 'react';
+import {View, StyleSheet, RefreshControl, Text, Alert} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useRouter, useLocalSearchParams} from 'expo-router';
+import {useTheme} from '@/shared/ThemeContext';
+import {GalleryGrid} from '@/features/gallery/GalleryGrid';
+import {MainHeader} from '@/shared/components/MainHeader';
+import {StatusIcon} from '@/shared/components/StatusIcon';
+import {useSelectionStore} from '@/shared/store/useSelectionStore';
+import {BatchActionBar} from '@/shared/components/BatchActionBar';
+import {PosterModal} from '@/shared/components/PosterModal';
+import {logger} from '@/shared/LogService';
+import {FindRecord} from '@/shared/types';
 import * as firestoreService from '@/shared/firestoreService';
 
 export default function GalleryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors, mode } = useTheme();
+  const {colors, mode} = useTheme();
+  const {sessionId} = useLocalSearchParams<{sessionId?: string}>();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isPosterModalVisible, setIsPosterModalVisible] = useState(false);
   const [selectedFinds, setSelectedFinds] = useState<FindRecord[]>([]);
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const [selectedItem, setSelectedItem] = useState<FindRecord | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
+    null,
+  );
 
-  const { isSelectionMode, selectedIds, exitSelectionMode } = useSelectionStore();
+  const {isSelectionMode, selectedIds, exitSelectionMode} = useSelectionStore();
 
   const handleOpenPoster = async () => {
     if (selectedIds.size === 0) return;
@@ -52,13 +53,8 @@ export default function GalleryScreen() {
   }, [handleRefresh]);
 
   const openDetail = (item: FindRecord) => {
-    logger.add('nav', 'Opened detail view', { id: item.id });
-    setSelectedItem(item);
-  };
-
-  const handleFilterBySession = (sessionId: string) => {
-    setSelectedSessionId(sessionId);
-    setSelectedItem(null); // Close modal
+    logger.add('nav', 'Opened detail view', {id: item.id});
+    router.push(`/detail/${item.id}`);
   };
 
   const handleBatchDelete = async () => {
@@ -69,7 +65,7 @@ export default function GalleryScreen() {
       'Delete Items',
       `Delete ${count} item${count > 1 ? 's' : ''}? This cannot be undone.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        {text: 'Cancel', style: 'cancel'},
         {
           text: 'Delete',
           style: 'destructive',
@@ -94,11 +90,11 @@ export default function GalleryScreen() {
   };
 
   return (
-    <View style={[styles.safe, { paddingTop: insets.top }]}>
-      <ScrollView
-        style={styles.pageScroll}
-        contentContainerStyle={[styles.pageContent, { paddingBottom: 120 }]}
-        showsVerticalScrollIndicator={false}
+    <View style={[styles.safe, {paddingTop: insets.top}]}>
+      <GalleryGrid
+        refreshKey={refreshKey}
+        onSelect={openDetail}
+        initialSessionId={selectedSessionId || sessionId || null}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -106,45 +102,44 @@ export default function GalleryScreen() {
             tintColor={colors.accent}
           />
         }
-      >
-        <MainHeader />
-        <View style={styles.section}>
-          <View style={styles.galleryHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <StatusIcon
-                status="polished"
-                category="fossil"
-                size={24}
-                theme={mode === 'high-contrast' ? 'beach' : 'journal'}
-              />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Gallery</Text>
+        ListHeaderComponent={
+          <>
+            <MainHeader />
+            <View style={styles.galleryHeader}>
+              <View
+                style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+                <StatusIcon
+                  status="polished"
+                  category="fossil"
+                  size={24}
+                  theme={mode === 'high-contrast' ? 'beach' : 'journal'}
+                />
+                <Text style={[styles.sectionTitle, {color: colors.text}]}>
+                  Gallery
+                </Text>
+              </View>
             </View>
-          </View>
-          <GalleryGrid 
-            refreshKey={refreshKey} 
-            onSelect={openDetail} 
-            initialSessionId={selectedSessionId}
-          />
-        </View>
-      </ScrollView>
+          </>
+        }
+      />
 
       {/* Floating Batch Action Bar */}
       {isSelectionMode && (
-        <View style={[styles.floatingActionBar, { paddingBottom: insets.bottom + 10, backgroundColor: colors.card, borderTopColor: colors.border }]}>
+        <View
+          style={[
+            styles.floatingActionBar,
+            {
+              paddingBottom: insets.bottom + 10,
+              backgroundColor: colors.card,
+              borderTopColor: colors.border,
+            },
+          ]}>
           <BatchActionBar
             onPoster={handleOpenPoster}
             onDelete={handleBatchDelete}
           />
         </View>
       )}
-
-      <FindDetailModal
-        visible={!!selectedItem}
-        item={selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onSaved={handleRefresh}
-        onFilterBySession={handleFilterBySession}
-      />
 
       <PosterModal
         visible={isPosterModalVisible}
@@ -161,16 +156,6 @@ export default function GalleryScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-  },
-  pageScroll: {
-    flex: 1,
-  },
-  pageContent: {
-    padding: 16,
-    gap: 24,
-  },
-  section: {
-    gap: 16,
   },
   sectionTitle: {
     fontSize: 20,

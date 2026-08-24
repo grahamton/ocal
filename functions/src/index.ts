@@ -96,7 +96,7 @@ export const identifyRockHandler = async (req: Request, res: Response) => {
   try {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-    const generationConfig: any = {
+    const generationConfig: Record<string, unknown> = {
       temperature,
       responseMimeType: 'application/json',
     };
@@ -108,13 +108,13 @@ export const identifyRockHandler = async (req: Request, res: Response) => {
     const model = genAI.getGenerativeModel({
       model: MODEL,
       systemInstruction: systemPrompt,
-      generationConfig,
+      generationConfig: generationConfig as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     });
 
     const result = await model.generateContent({ contents: [{ role: 'user', parts }] });
     const responseText = result.response.text();
 
-    let parsed: any = null;
+    let parsed: unknown = null;
     try {
       parsed = JSON.parse(responseText);
     } catch {
@@ -142,9 +142,10 @@ export const identifyRockHandler = async (req: Request, res: Response) => {
         timestamp: new Date().toISOString(),
       },
     });
-  } catch (err: any) {
-    const message = err instanceof Error ? err.message : String(err);
-    logger.error('identify error', { message, stack: err.stack });
+  } catch (err: unknown) {
+    const errorInstance = err instanceof Error ? err : new Error(String(err));
+    const message = errorInstance.message;
+    logger.error('identify error', { message, stack: errorInstance.stack });
     res.status(500).json({ error: 'AI Identification failed', detail: message });
   }
 };

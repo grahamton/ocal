@@ -3,7 +3,14 @@ import * as Sharing from 'expo-sharing';
 
 export type LogEntry = {
   timestamp: string; // ISO string
-  category: 'nav' | 'user' | 'system' | 'error' | 'ai' | 'firestore' | 'storage';
+  category:
+    | 'nav'
+    | 'user'
+    | 'system'
+    | 'error'
+    | 'ai'
+    | 'firestore'
+    | 'storage';
   message: string;
   metadata?: Record<string, unknown>;
 };
@@ -61,9 +68,7 @@ class LogService {
   public async exportLogs(): Promise<void> {
     const fileName = `ocal_session_${new Date().getTime()}.json`;
     // Use cacheDirectory to avoid "documentDirectory" type issues if any, and it's temporary anyway
-    const dir =
-      FileSystem.cacheDirectory ||
-      FileSystem.documentDirectory;
+    const dir = FileSystem.cacheDirectory || FileSystem.documentDirectory;
     if (!dir) {
       throw new Error('No file system directory available');
     }

@@ -111,7 +111,7 @@ const identifyRockHandler = async (req, res) => {
         const model = genAI.getGenerativeModel({
             model: MODEL,
             systemInstruction: systemPrompt,
-            generationConfig,
+            generationConfig: generationConfig,
         });
         const result = await model.generateContent({ contents: [{ role: 'user', parts }] });
         const responseText = result.response.text();
@@ -145,8 +145,9 @@ const identifyRockHandler = async (req, res) => {
         });
     }
     catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        logger.error('identify error', { message, stack: err.stack });
+        const errorInstance = err instanceof Error ? err : new Error(String(err));
+        const message = errorInstance.message;
+        logger.error('identify error', { message, stack: errorInstance.stack });
         res.status(500).json({ error: 'AI Identification failed', detail: message });
     }
 };

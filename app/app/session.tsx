@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -10,18 +10,18 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useTheme } from '@/shared/ThemeContext';
-import { useSession } from '@/shared/SessionContext';
-import { formatTimestamp } from '@/shared/format';
+import {Ionicons} from '@expo/vector-icons';
+import {useRouter} from 'expo-router';
+import {useTheme} from '@/shared/ThemeContext';
+import {useSession} from '@/shared/SessionContext';
+import {formatTimestamp} from '@/shared/format';
 
 export default function SessionScreen() {
   const router = useRouter();
-  const { activeSession, renameSession, endSession } = useSession();
+  const {activeSession, renameSession, endSession} = useSession();
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
-  const { colors, mode } = useTheme();
+  const {colors, mode} = useTheme();
 
   useEffect(() => {
     if (activeSession) {
@@ -46,28 +46,24 @@ export default function SessionScreen() {
   };
 
   const handleEndSession = () => {
-    Alert.alert(
-      'End Session?',
-      'This will close the current session.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'End Session',
-          style: 'destructive',
-          onPress: async () => {
-            setSaving(true);
-            try {
-              await endSession();
-              router.back();
-            } catch {
-              Alert.alert('Error', 'Could not end session.');
-            } finally {
-              setSaving(false);
-            }
-          },
+    Alert.alert('End Session?', 'This will close the current session.', [
+      {text: 'Cancel', style: 'cancel'},
+      {
+        text: 'End Session',
+        style: 'destructive',
+        onPress: async () => {
+          setSaving(true);
+          try {
+            await endSession();
+            router.back();
+          } catch {
+            Alert.alert('Error', 'Could not end session.');
+          } finally {
+            setSaving(false);
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   if (!activeSession) return null;
@@ -75,23 +71,31 @@ export default function SessionScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.overlay}
-    >
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      style={styles.overlay}>
+      <View
+        style={[
+          styles.card,
+          {backgroundColor: colors.card, borderColor: colors.border},
+        ]}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>Session Manager</Text>
+          <Text style={[styles.title, {color: colors.text}]}>
+            Session Manager
+          </Text>
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="close" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.form}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>Session Name</Text>
+          <Text style={[styles.label, {color: colors.textSecondary}]}>
+            Session Name
+          </Text>
           <TextInput
             style={[
               styles.input,
               {
-                backgroundColor: mode === 'high-contrast' ? '#1e293b' : colors.background,
+                backgroundColor:
+                  mode === 'high-contrast' ? '#1e293b' : colors.background,
                 borderColor: colors.border,
                 color: colors.text,
               },
@@ -103,16 +107,34 @@ export default function SessionScreen() {
           />
         </View>
 
-        <View style={[styles.meta, { backgroundColor: mode === 'high-contrast' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.03)' }]}>
+        <View
+          style={[
+            styles.meta,
+            {
+              backgroundColor:
+                mode === 'high-contrast'
+                  ? 'rgba(255,255,255,0.1)'
+                  : 'rgba(0,0,0,0.03)',
+            },
+          ]}>
           <View style={styles.metaItem}>
-            <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
-            <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-              Started: {formatTimestamp(new Date(activeSession.startTime).toISOString())}
+            <Ionicons
+              name="time-outline"
+              size={16}
+              color={colors.textSecondary}
+            />
+            <Text style={[styles.metaText, {color: colors.textSecondary}]}>
+              Started:{' '}
+              {formatTimestamp(new Date(activeSession.startTime).toISOString())}
             </Text>
           </View>
           <View style={styles.metaItem}>
-            <Ionicons name="map-outline" size={16} color={colors.textSecondary} />
-            <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+            <Ionicons
+              name="map-outline"
+              size={16}
+              color={colors.textSecondary}
+            />
+            <Text style={[styles.metaText, {color: colors.textSecondary}]}>
               {activeSession.locationName || 'Unknown Location'}
             </Text>
           </View>
@@ -120,22 +142,30 @@ export default function SessionScreen() {
 
         <View style={styles.actions}>
           <TouchableOpacity
-            style={[styles.endBtn, { borderColor: colors.danger, backgroundColor: 'rgba(239, 68, 68, 0.05)' }]}
+            style={[
+              styles.endBtn,
+              {
+                borderColor: colors.danger,
+                backgroundColor: 'rgba(239, 68, 68, 0.05)',
+              },
+            ]}
             onPress={handleEndSession}
-            disabled={saving}
-          >
-            <Text style={[styles.endBtnText, { color: colors.danger }]}>End Session</Text>
+            disabled={saving}>
+            <Text style={[styles.endBtnText, {color: colors.danger}]}>
+              End Session
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.saveBtn, { backgroundColor: colors.text }]}
+            style={[styles.saveBtn, {backgroundColor: colors.text}]}
             onPress={handleSave}
-            disabled={saving}
-          >
+            disabled={saving}>
             {saving ? (
               <ActivityIndicator color={colors.background} />
             ) : (
-              <Text style={[styles.saveBtnText, { color: colors.background }]}>Save Name</Text>
+              <Text style={[styles.saveBtnText, {color: colors.background}]}>
+                Save Name
+              </Text>
             )}
           </TouchableOpacity>
         </View>

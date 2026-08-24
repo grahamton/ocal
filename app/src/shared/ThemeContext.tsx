@@ -7,7 +7,11 @@ import React, {
   useMemo,
 } from 'react';
 
-import {PALETTE_JOURNAL, PALETTE_HIGH_CONTRAST, ThemeMode} from '@/shared/theme';
+import {
+  PALETTE_JOURNAL,
+  PALETTE_HIGH_CONTRAST,
+  ThemeMode,
+} from '@/shared/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {AnalyticsService} from '@/shared/AnalyticsService';
 

@@ -47,7 +47,8 @@ export class ExportService {
       // Sanitize AI Data input images
       if (clean.aiData && clean.aiData.input?.sourceImages) {
         clean.aiData.input.sourceImages = clean.aiData.input.sourceImages.map(
-          (img: {uri: string}) => ({ // Explicitly type img
+          (img: {uri: string}) => ({
+            // Explicitly type img
             ...img,
             uri: img.uri?.startsWith('data:')
               ? '[Base64 Data Omitted]'

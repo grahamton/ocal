@@ -76,7 +76,7 @@ export function SessionControlModal({visible, onClose, session}: Props) {
   const handleCancelSession = () => {
     Alert.alert(
       'Discard this Walk?',
-      'This will delete the current walk record. Finds captured will remain in your bucket but won\'t be grouped by this walk.',
+      "This will delete the current walk record. Finds captured will remain in your bucket but won't be grouped by this walk.",
       [
         {text: 'Keep Walk', style: 'cancel'},
         {
@@ -193,11 +193,15 @@ export function SessionControlModal({visible, onClose, session}: Props) {
                   End Walk
                 </Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity
-                onPress={handleCancelSession}
-                disabled={saving}>
-                <Text style={{color: colors.textSecondary, textAlign: 'center', fontSize: 13, textDecorationLine: 'underline'}}>
+
+              <TouchableOpacity onPress={handleCancelSession} disabled={saving}>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    textAlign: 'center',
+                    fontSize: 13,
+                    textDecorationLine: 'underline',
+                  }}>
                   Discard Walk
                 </Text>
               </TouchableOpacity>

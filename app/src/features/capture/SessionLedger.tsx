@@ -20,10 +20,7 @@ type Props = {
 };
 
 // Simple ledger: pick keeps, then review.
-export function SessionLedger({
-  onRequestReview,
-  onKept,
-}: Props) {
+export function SessionLedger({onRequestReview, onKept}: Props) {
   const {activeSession} = useSession();
   const [items, setItems] = useState<FindRecord[]>([]);
 
@@ -46,12 +43,15 @@ export function SessionLedger({
     return () => unsubscribe();
   }, [activeSession]);
 
-  const toggleKeep = useCallback(async (id: string, current: boolean) => {
-    await updateFind(id, {favorite: !current});
-    if (!current && onKept) {
-      onKept();
-    }
-  }, [onKept]);
+  const toggleKeep = useCallback(
+    async (id: string, current: boolean) => {
+      await updateFind(id, {favorite: !current});
+      if (!current && onKept) {
+        onKept();
+      }
+    },
+    [onKept],
+  );
 
   if (!activeSession) return null;
 

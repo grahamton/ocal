@@ -36,10 +36,21 @@ Output Rules:
 - Catalog Tags: All values must be lowercase snake_case.
 `.trim();
 
-export function buildRockIdUserPrompt(params: any = {}) {
+export interface UserPromptParams {
+  location_hint?: string;
+  context_notes?: string;
+  user_goal?: string;
+  session_context?: {
+    name?: string;
+    locationName?: string;
+    startTime?: number;
+  };
+}
+
+export function buildRockIdUserPrompt(params: UserPromptParams = {}) {
   const { location_hint, context_notes, user_goal, session_context } = params;
 
-  let prompt = [
+  const prompt = [
     'Identify this specimen for cataloging.',
   ];
 

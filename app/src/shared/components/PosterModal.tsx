@@ -13,10 +13,12 @@ import {
 import {Ionicons} from '@expo/vector-icons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 // Use dynamic require or check for existence to prevent crash in Expo Go
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let captureRef: any;
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   captureRef = require('react-native-view-shot').captureRef;
-} catch (e) {
+} catch {
   // Module missing, handled in handleShare
 }
 import * as Sharing from 'expo-sharing';
@@ -37,7 +39,7 @@ export function PosterModal({visible, onClose, selectedItems}: Props) {
   const posterRef = useRef<View>(null);
   const [theme, setTheme] = useState<'color' | 'bw'>('color');
   const [isExporting, setIsExporting] = useState(false);
-  
+
   // Customization state
   const [showName, setShowName] = useState(true);
   const [showDate, setShowDate] = useState(true);
@@ -46,11 +48,11 @@ export function PosterModal({visible, onClose, selectedItems}: Props) {
 
   const handleShare = async () => {
     if (!posterRef.current) return;
-    
+
     if (!captureRef) {
       Alert.alert(
         'Native Module Missing',
-        'Image export requires a native rebuild. Please run "npm run android" or "npm run ios" to enable this feature.'
+        'Image export requires a native rebuild. Please run "npm run android" or "npm run ios" to enable this feature.',
       );
       return;
     }
@@ -79,19 +81,25 @@ export function PosterModal({visible, onClose, selectedItems}: Props) {
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false}>
-      <View style={[styles.container, {backgroundColor: colors.background, paddingTop: insets.top}]}>
+      <View
+        style={[
+          styles.container,
+          {backgroundColor: colors.background, paddingTop: insets.top},
+        ]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={28} color={colors.text} />
           </TouchableOpacity>
-          <Text style={[styles.title, {color: colors.text}]}>Create Poster</Text>
+          <Text style={[styles.title, {color: colors.text}]}>
+            Create Poster
+          </Text>
           <View style={{width: 28}} /> {/* Spacer */}
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View collapsable={false} ref={posterRef}>
-            <PosterPreview 
-              selectedItems={selectedItems} 
+            <PosterPreview
+              selectedItems={selectedItems}
               theme={theme}
               showName={showName}
               showDate={showDate}
@@ -102,7 +110,10 @@ export function PosterModal({visible, onClose, selectedItems}: Props) {
 
           <View style={styles.controls}>
             <View style={styles.controlGroup}>
-              <Text style={[styles.controlLabel, {color: colors.textSecondary}]}>Theme</Text>
+              <Text
+                style={[styles.controlLabel, {color: colors.textSecondary}]}>
+                Theme
+              </Text>
               <View style={styles.themeRow}>
                 <TouchableOpacity
                   style={[
@@ -111,7 +122,11 @@ export function PosterModal({visible, onClose, selectedItems}: Props) {
                     {borderColor: colors.border},
                   ]}
                   onPress={() => setTheme('color')}>
-                  <Text style={[styles.themeText, theme === 'color' && styles.themeTextActive]}>
+                  <Text
+                    style={[
+                      styles.themeText,
+                      theme === 'color' && styles.themeTextActive,
+                    ]}>
                     Full Color
                   </Text>
                 </TouchableOpacity>
@@ -122,7 +137,11 @@ export function PosterModal({visible, onClose, selectedItems}: Props) {
                     {borderColor: colors.border},
                   ]}
                   onPress={() => setTheme('bw')}>
-                  <Text style={[styles.themeText, theme === 'bw' && styles.themeTextActive]}>
+                  <Text
+                    style={[
+                      styles.themeText,
+                      theme === 'bw' && styles.themeTextActive,
+                    ]}>
                     Journal B&W
                   </Text>
                 </TouchableOpacity>
@@ -130,9 +149,12 @@ export function PosterModal({visible, onClose, selectedItems}: Props) {
             </View>
 
             <View style={styles.controlGroup}>
-              <Text style={[styles.controlLabel, {color: colors.textSecondary}]}>Layout</Text>
+              <Text
+                style={[styles.controlLabel, {color: colors.textSecondary}]}>
+                Layout
+              </Text>
               <View style={styles.themeRow}>
-                {[undefined, 2, 3, 4].map((cols) => (
+                {[undefined, 2, 3, 4].map(cols => (
                   <TouchableOpacity
                     key={cols === undefined ? 'auto' : cols}
                     style={[
@@ -141,7 +163,11 @@ export function PosterModal({visible, onClose, selectedItems}: Props) {
                       {borderColor: colors.border},
                     ]}
                     onPress={() => setNumColumns(cols)}>
-                    <Text style={[styles.themeText, numColumns === cols && styles.themeTextActive]}>
+                    <Text
+                      style={[
+                        styles.themeText,
+                        numColumns === cols && styles.themeTextActive,
+                      ]}>
                       {cols === undefined ? 'Auto' : `${cols} Col`}
                     </Text>
                   </TouchableOpacity>
@@ -150,27 +176,36 @@ export function PosterModal({visible, onClose, selectedItems}: Props) {
             </View>
 
             <View style={styles.controlGroup}>
-              <Text style={[styles.controlLabel, {color: colors.textSecondary}]}>Captions</Text>
+              <Text
+                style={[styles.controlLabel, {color: colors.textSecondary}]}>
+                Captions
+              </Text>
               <View style={[styles.optionRow, {borderColor: colors.border}]}>
-                <Text style={[styles.optionText, {color: colors.text}]}>Show Name</Text>
-                <Switch 
-                  value={showName} 
+                <Text style={[styles.optionText, {color: colors.text}]}>
+                  Show Name
+                </Text>
+                <Switch
+                  value={showName}
                   onValueChange={setShowName}
                   trackColor={{true: colors.accent, false: colors.border}}
                 />
               </View>
               <View style={[styles.optionRow, {borderColor: colors.border}]}>
-                <Text style={[styles.optionText, {color: colors.text}]}>Show Date</Text>
-                <Switch 
-                  value={showDate} 
+                <Text style={[styles.optionText, {color: colors.text}]}>
+                  Show Date
+                </Text>
+                <Switch
+                  value={showDate}
                   onValueChange={setShowDate}
                   trackColor={{true: colors.accent, false: colors.border}}
                 />
               </View>
               <View style={[styles.optionRow, {borderColor: colors.border}]}>
-                <Text style={[styles.optionText, {color: colors.text}]}>Show Location</Text>
-                <Switch 
-                  value={showLocation} 
+                <Text style={[styles.optionText, {color: colors.text}]}>
+                  Show Location
+                </Text>
+                <Switch
+                  value={showLocation}
                   onValueChange={setShowLocation}
                   trackColor={{true: colors.accent, false: colors.border}}
                 />
@@ -294,4 +329,3 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 });
-

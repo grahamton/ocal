@@ -3,21 +3,27 @@ module.exports = {
     es6: true,
     node: true,
   },
+  parser: '@typescript-eslint/parser',
+  plugins: ['@typescript-eslint'],
   parserOptions: {
-    "ecmaVersion": 2018,
+    ecmaVersion: 2018,
+    sourceType: 'module',
   },
+  ignorePatterns: [
+    'lib/**/*',
+  ],
   extends: [
-    "eslint:recommended",
-    "google",
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
   ],
   rules: {
-    "no-restricted-globals": ["error", "name", "length"],
-    "prefer-arrow-callback": "error",
-    "quotes": ["error", "double", {"allowTemplateLiterals": true}],
+    'no-restricted-globals': ['error', 'name', 'length'],
+    'prefer-arrow-callback': 'error',
+    'quotes': ['error', 'single', {allowTemplateLiterals: true}],
   },
   overrides: [
     {
-      files: ["**/*.spec.*"],
+      files: ['**/*.spec.*'],
       env: {
         mocha: true,
       },

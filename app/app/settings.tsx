@@ -1,28 +1,38 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useTheme } from '@/shared/ThemeContext';
-import { DataManager } from '@/features/settings/DataManager';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {Ionicons} from '@expo/vector-icons';
+import {useRouter} from 'expo-router';
+import {useTheme} from '@/shared/ThemeContext';
+import {DataManager} from '@/features/settings/DataManager';
 
 export default function SettingsScreen() {
-  const { colors } = useTheme();
+  const {colors} = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+    <View
+      style={[
+        styles.container,
+        {backgroundColor: colors.background, paddingTop: insets.top},
+      ]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
+        <Text style={[styles.title, {color: colors.text}]}>Settings</Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
           <Ionicons name="close" size={28} color={colors.text} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView contentContainerStyle={{paddingBottom: 40}}>
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+          <Text style={[styles.sectionTitle, {color: colors.textSecondary}]}>
             Appearance
           </Text>
           <ThemeToggle />
@@ -35,7 +45,7 @@ export default function SettingsScreen() {
 }
 
 function ThemeToggle() {
-  const { mode, toggleTheme, colors } = useTheme();
+  const {mode, toggleTheme, colors} = useTheme();
   const isHighContrast = mode === 'high-contrast';
 
   return (
@@ -53,7 +63,7 @@ function ThemeToggle() {
         size={24}
         color={isHighContrast ? '#fbbf24' : '#6366f1'}
       />
-      <View style={{ flex: 1 }}>
+      <View style={{flex: 1}}>
         <Text
           style={{
             fontWeight: '700',
@@ -65,7 +75,7 @@ function ThemeToggle() {
             : 'Journal Mode (Standard)'}
         </Text>
         <Text
-          style={{ color: isHighContrast ? '#94a3b8' : '#64748b', fontSize: 13 }}>
+          style={{color: isHighContrast ? '#94a3b8' : '#64748b', fontSize: 13}}>
           {isHighContrast
             ? 'Optimized for bright sunlight'
             : 'Softer colors for relaxation'}

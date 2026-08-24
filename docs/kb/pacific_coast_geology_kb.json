@@ -1,0 +1,1195 @@
+{
+  "schema_version": "1.0.0",
+  "generated_date": "2026-06-20",
+  "dataset_name": "pacific_coast_geology_kb",
+  "dataset_purpose": "Offline-first source-backed geology, specimen, site, lapidary, and regulation knowledge base for Ocal and Ranger Al",
+  "states": [
+    {
+      "state_code": "WA",
+      "state_name": "Washington",
+      "regulations": {
+        "summary": "Washington allows rockhounding on most public beaches, with some restrictions in state parks and national parks. Olympic National Park prohibits all collecting. DNR-managed lands generally allow collecting for personal use.",
+        "daily_limit": "No statewide daily limit; varies by land manager",
+        "annual_limit": "No statewide annual limit",
+        "prohibited_zones": [
+          "Olympic National Park - all collecting prohibited",
+          "National monuments and tribal lands",
+          "Most Washington State Parks - check specific park rules"
+        ],
+        "permit_requirements": "No permit required for personal collection on most DNR and BLM lands; check specific land manager rules",
+        "sources": [
+          {"title": "Washington Geological Survey Rockhounding", "publisher": "WA DNR", "url": "https://dnr.wa.gov/washington-geological-survey/explore-popular-geology/rockhounding", "source_type": "official", "accessed_date": "2026-06-20"}
+        ]
+      },
+      "formations": [
+        {
+          "formation_id": "olympic_mountains",
+          "name": "Olympic Mountains Core",
+          "alternate_names": ["Olympic Metamorphic Complex"],
+          "age": "Eocene to Oligocene",
+          "epoch": "Eocene-Oligocene",
+          "numeric_age_range_mya": "55-23",
+          "lithology": "Metamorphic sandstone, shale, conglomerate; minor basalt",
+          "depositional_environment": "Deep marine turbidite deposition, subsequently metamorphosed",
+          "geographic_extent": "Olympic Peninsula core",
+          "key_exposures": ["Rialto Beach", "Ruby Beach", "Kalaloch"],
+          "common_eroded_materials": ["agate", "jasper", "petrified wood", "basalt"],
+          "uncertainty_notes": null,
+          "confidence": "high",
+          "sources": [{"title": "Geologic Map of Washington State", "publisher": "USGS", "url": "https://ngmdb.usgs.gov/Info/dmt/docs/schuster07b.pdf", "source_type": "survey", "accessed_date": "2026-06-20"}]
+        },
+        {
+          "formation_id": "coast_range_basalt",
+          "name": "Coast Range Basalt",
+          "alternate_names": ["Columbia River Basalt Group"],
+          "age": "Miocene",
+          "epoch": "Miocene",
+          "numeric_age_range_mya": "17-6",
+          "lithology": "Flood basalt, tholeiitic flows",
+          "depositional_environment": "Flood basalt flows from Columbia River source",
+          "geographic_extent": "Southern Washington coast, Grays River area",
+          "key_exposures": ["Long Beach Peninsula", "Cape Disappointment"],
+          "common_eroded_materials": ["basalt", "agates in vesicles"],
+          "uncertainty_notes": null,
+          "confidence": "high",
+          "sources": [{"title": "Geologic Map of Washington State", "publisher": "USGS", "source_type": "survey", "accessed_date": "2026-06-20"}]
+        },
+        {
+          "formation_id": "hoh_rock_assemblage",
+          "name": "Hoh Rock Assemblage",
+          "alternate_names": ["Hoh Formation"],
+          "age": "Oligocene to Miocene",
+          "epoch": "Oligocene-Miocene",
+          "numeric_age_range_mya": "34-15",
+          "lithology": "Marine sandstone, siltstone, shale",
+          "depositional_environment": "Deep marine forearc basin",
+          "geographic_extent": "Olympic Peninsula coast north of Hoh River",
+          "key_exposures": ["Rialto Beach", "Mora", "La Push"],
+          "common_eroded_materials": ["petrified wood", "agatized wood", "jasper"],
+          "uncertainty_notes": null,
+          "confidence": "high",
+          "sources": [{"title": "Washington Coastal Geology", "publisher": "USGS", "source_type": "survey", "accessed_date": "2026-06-20"}]
+        },
+        {
+          "formation_id": "quaternary_alluvium",
+          "name": "Quaternary Alluvium and Beach Deposits",
+          "alternate_names": ["Holocene Beach Sands"],
+          "age": "Holocene",
+          "epoch": "Holocene",
+          "numeric_age_range_mya": "0.0117-0",
+          "lithology": "Sand, gravel, cobble",
+          "depositional_environment": "Beach, estuarine, fluvial deposition",
+          "geographic_extent": "All Washington beaches",
+          "key_exposures": ["Ocean Shores", "Damon Point", "Westport"],
+          "common_eroded_materials": ["agate", "carnelian", "petrified wood", "jasper", "sea glass"],
+          "uncertainty_notes": null,
+          "confidence": "high",
+          "sources": [{"title": "Beach Morphology Monitoring Program", "publisher": "USGS PCMSC", "source_type": "academic", "accessed_date": "2026-06-20"}]
+        }
+      ],
+      "specimens": [
+        {
+          "specimen_id": "agate",
+          "scientific_name": "Chalcedony (agate variety)",
+          "vernacular_names": ["agate", "banded agate", "carnelian", "moss agate"],
+          "category": "rock",
+          "common_regions": ["WA coast", "Ocean Shores", "Rialto Beach"],
+          "hardness": "6.5-7 Mohs",
+          "visual_cues": {
+            "colors": ["gray", "white", "orange", "red", "brown", "blue", "pink"],
+            "patterns": ["banded", "concentric", "dendritic", "moss-like"],
+            "luster": ["waxy", "subvitreous"],
+            "translucency": "translucent to opaque"
+          },
+          "field_tests": [
+            {"test_name": "Scratch test", "procedure": "Try to scratch with a steel key or knife blade", "expected_result": "Steel scratches glass (5.5 Mohs) but won't scratch true agate (6.5+)", "senior_friendly": true, "caution": "Only test on inconspicuous area"},
+            {"test_name": "Backlight test", "procedure": "Hold specimen up to light source", "expected_result": "True agate shows some translucency; opaque = likely chert or jasper", "senior_friendly": true, "caution": null},
+            {"test_name": "Weight test", "procedure": "Feel relative heft", "expected_result": "Agate feels heavier than most similar-sized rocks", "senior_friendly": true, "caution": null}
+          ],
+          "common_misidentifications": [
+            {"confused_with": "Chert/Quartzite", "distinguishing_rule": "Chert is generally opaque; agate shows translucency. Chert has conchoidal fracture, agate has smooth polished surface.", "confidence": "high"},
+            {"confused_with": "Jasper", "distinguishing_rule": "Jasper is opaque chalcedony; agate is translucent. Jasper is usually solid colors, agate shows banding.", "confidence": "high"}
+          ],
+          "lapidary_suitability": {
+            "is_tumble_candidate": true,
+            "tumble_rating": "excellent",
+            "tumble_reason": "Hardness 6.5-7 Mohs is ideal for tumbling. Takes bright polish. Non-porous, durable.",
+            "special_care": null
+          },
+          "ranger_summary_seed": "A little pocket-sized piece of an old coastline story — wave-tumbled agate often washes up on gravel beaches after winter storms.",
+          "fun_fact_seed": "Agate forms in gas cavities within volcanic rock, and the bands record seasonal changes in mineral composition — like tree rings but for geology.",
+          "do_not_claim": ["Exact formation source", "Precise location where found", "Monetary value"],
+          "confidence": "high",
+          "sources": [
+            {"title": "Rock Tumbler's Guide", "publisher": "Rock Tumbler", "url": "https://rocktumbler.com/tips/rocks-for-tumbling/", "source_type": "field_guide", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "specimen_id": "jasper",
+          "scientific_name": "Chalcedony (jasper variety)",
+          "vernacular_names": ["jasper", "poppy jasper", "orbicular jasper", "picture jasper"],
+          "category": "rock",
+          "common_regions": ["WA coast", "Olympic Peninsula"],
+          "hardness": "6.5-7 Mohs",
+          "visual_cues": {
+            "colors": ["red", "brown", "yellow", "green", "gray", "black"],
+            "patterns": ["banded", "orbicular", "flow", "landscape"],
+            "luster": ["dull", "waxy"],
+            "translucency": "opaque"
+          },
+          "field_tests": [
+            {"test_name": "Scratch test", "procedure": "Try to scratch with steel key", "expected_result": "True jasper won't scratch with steel (5.5 Mohs)", "senior_friendly": true, "caution": null},
+            {"test_name": "Fracture test", "procedure": "Check for conchoidal vs. uneven fracture", "expected_result": "Jasper has conchoidal (shell-like) fracture like glass", "senior_friendly": true, "caution": null}
+          ],
+          "common_misidentifications": [
+            {"confused_with": "Agate", "distinguishing_rule": "Jasper is opaque, agate is translucent. Jasper has solid colors, agate shows banding.", "confidence": "high"},
+            {"confused_with": "Basalt", "distinguishing_rule": "Basalt is magnetic (contains iron); jasper is not. Basalt has gas bubbles, jasper does not.", "confidence": "medium"}
+          ],
+          "lapidary_suitability": {
+            "is_tumble_candidate": true,
+            "tumble_rating": "excellent",
+            "tumble_reason": "Opaque chalcedony with hardness 6.5-7. Extremely durable, takes excellent polish.",
+            "special_care": null
+          },
+          "ranger_summary_seed": "Jasper is the opaque cousin of agate — equally tough, equally pretty, just plays its cards closer to the chest.",
+          "fun_fact_seed": "Jasper was used by prehistoric peoples for spearheads and tools because it fractures predictably and holds a sharp edge.",
+          "do_not_claim": ["Exact formation source", "Value (unless rare pattern)", "Origin beach"],
+          "confidence": "high",
+          "sources": []
+        },
+        {
+          "specimen_id": "petrified_wood",
+          "scientific_name": "Petrified Wood (permineralized wood)",
+          "vernacular_names": ["petrified wood", "agatized wood", "fossil wood", "jasperized wood"],
+          "category": "fossil",
+          "common_regions": ["WA coast", "Olympic Peninsula beaches"],
+          "hardness": "5-7 Mohs (varies by mineral replacement)",
+          "visual_cues": {
+            "colors": ["gray", "brown", "red", "orange", "yellow", "black"],
+            "patterns": ["wood grain", "ring structure", "cell pattern"],
+            "luster": ["dull to waxy"],
+            "translucency": "opaque to slightly translucent"
+          },
+          "field_tests": [
+            {"test_name": "Visual grain test", "procedure": "Look for preserved wood cell structure, tree rings", "expected_result": "Petrified wood shows cellular structure under magnification", "senior_friendly": true, "caution": null},
+            {"test_name": "Weight test", "procedure": "Feel heft compared to similar-size wood", "expected_result": "Petrified wood is much heavier (stone-like) than modern wood", "senior_friendly": true, "caution": null},
+            {"test_name": "Scratch test", "procedure": "Try with steel key", "expected_result": "Most petrified wood scratches with effort; very hard varieties won't", "senior_friendly": true, "caution": null}
+          ],
+          "common_misidentifications": [
+            {"confused_with": "Banded Chert", "distinguishing_rule": "Look for wood grain patterns and cellular structure. Chert shows conchoidal fracture, not wood cells.", "confidence": "high"},
+            {"confused_with": "Concrete/Manmade", "distinguishing_rule": "Concrete has bubbly texture, uniform coloring; petrified wood shows natural grain", "confidence": "medium"}
+          ],
+          "lapidary_suitability": {
+            "is_tumble_candidate": true,
+            "tumble_rating": "good",
+            "tumble_reason": "Most petrified wood tumbles well if hardness is 6+ Mohs. Some softer pieces may crumble.",
+            "special_care": "Check hardness first — some pieces are softer and require longer tumbling. Avoid pieces with high porosity or cracks."
+          },
+          "ranger_summary_seed": "A good candidate for the tumbler, but check for fractures — these old trees have been through a lot.",
+          "fun_fact_seed": "Petrified wood forms when buried wood is replaced by silica minerals; the process can take millions of years.",
+          "do_not_claim": ["Tree species (usually can't ID from beach finds)", "Exact age", "Collection location on protected lands"],
+          "confidence": "high",
+          "sources": []
+        },
+        {
+          "specimen_id": "basalt",
+          "scientific_name": "Basalt",
+          "vernacular_names": ["basalt", "black rock", "lava rock"],
+          "category": "rock",
+          "common_regions": ["All Pacific coast beaches"],
+          "hardness": "5-6 Mohs",
+          "visual_cues": {
+            "colors": ["black", "dark gray", "dark brown"],
+            "patterns": ["vesicular", "massive", "aphanitic"],
+            "luster": ["dull", "earthy"],
+            "translucency": "opaque"
+          },
+          "field_tests": [
+            {"test_name": "Magnet test", "procedure": "Hold magnet near specimen", "expected_result": "Basalt contains iron and is often magnetic", "senior_friendly": true, "caution": "Not all basalt is magnetic"},
+            {"test_name": "Vesicle check", "procedure": "Look for small holes/bubbles", "expected_result": "Vesicular basalt has gas bubble holes; common on beaches", "senior_friendly": true, "caution": null}
+          ],
+          "common_misidentifications": [
+            {"confused_with": "Andesite", "distinguishing_rule": "Andesite has less iron, usually not magnetic. Requires microscopic ID for certainty.", "confidence": "medium"},
+            {"confused_with": "Slag", "distinguishing_rule": "Slag has glassy, frothy appearance; basalt is more crystalline", "confidence": "high"}
+          ],
+          "lapidary_suitability": {
+            "is_tumble_candidate": false,
+            "tumble_rating": "poor",
+            "tumble_reason": "Too soft (5-6 Mohs), porous, often vesicular. Breaks down in tumbler.",
+            "special_care": null
+          },
+          "ranger_summary_seed": "The most common rock on any Pacific beach — it's the backbone of the coastline, literally.",
+          "fun_fact_seed": "Basalt is the most common rock on Earth, forming from cooled lava flows both on land and under the ocean.",
+          "do_not_claim": ["Specific lava flow source", "Any healing/medicinal properties (not true)"],
+          "confidence": "high",
+          "sources": []
+        },
+        {
+          "specimen_id": "sea_glass",
+          "scientific_name": "Sea Glass (weathered glass)",
+          "vernacular_names": ["sea glass", "beach glass", "ocean glass"],
+          "category": "manmade",
+          "common_regions": ["All Pacific coast beaches", "Historic harbor areas"],
+          "hardness": "5.5-6 Mohs (glass)",
+          "visual_cues": {
+            "colors": ["white", "amber", "green", "blue", "black", "teal"],
+            "patterns": ["frosted", "smooth", "pitted"],
+            "luster": ["vitreous", "frosted"],
+            "translucency": "translucent to transparent"
+          },
+          "field_tests": [
+            {"test_name": "Visual inspection", "procedure": "Look for frosted surface, rounded edges, lack of sharp corners", "expected_result": "True sea glass is fully frosted and smoothly worn", "senior_friendly": true, "caution": null},
+            {"test_name": "Scratch test", "procedure": "Try to scratch with knife", "expected_result": "Glass scratches easily; will mark steel", "senior_friendly": true, "caution": "Check on hidden edge"}
+          ],
+          "common_misidentifications": [
+            {"confused_with": "Modern broken glass", "distinguishing_rule": "Modern broken glass has sharp edges, not frosted, may be clear", "confidence": "high"},
+            {"confused_with": "Slag", "distinguishing_rule": "Slag is usually darker, more opaque, may have metallic flecks", "confidence": "medium"}
+          ],
+          "lapidary_suitability": {
+            "is_tumble_candidate": false,
+            "tumble_rating": "avoid",
+            "tumble_reason": "Already tumbled by nature. Tumbling would just reduce it to dust.",
+            "special_care": null
+          },
+          "ranger_summary_seed": "Not a rock at all — just old glass that's been doing time in the ocean, getting smoothed out by waves.",
+          "fun_fact_seed": "Most sea glass comes from bottles and jars dumped in the 1950s-70s; true sea glass takes 20+ years to develop frost.",
+          "do_not_claim": ["Exact source bottle/jar age", "Any specific ship's origin"],
+          "confidence": "high",
+          "sources": []
+        },
+        {
+          "specimen_id": "concretion",
+          "scientific_name": "Concretion (calcite/iron carbonate)",
+          "vernacular_names": ["concretion", "cannonball", "geode", "moqui marble"],
+          "category": "rock",
+          "common_regions": ["WA coast", "Murdock Beach", "Clallam County"],
+          "hardness": "3-5 Mohs",
+          "visual_cues": {
+            "colors": ["gray", "brown", "rust", "tan"],
+            "patterns": ["spherical", "botryoidal", "banded"],
+            "luster": ["dull", "earthy"],
+            "translucency": "opaque"
+          },
+          "field_tests": [
+            {"test_name": "Acid test (optional)", "procedure": "Apply small drop of vinegar", "expected_result": "Calcite concretions will fizz; iron carbonate may react weakly", "senior_friendly": true, "caution": "Avoid on valuable specimens - damages surface"},
+            {"test_name": "Break test", "procedure": "If broken, check interior", "expected_result": "Concretions often have layered interior structure; may contain fossils", "senior_friendly": true, "caution": "Destructive test - only on pieces you plan to keep"}
+          ],
+          "common_misidentifications": [
+            {"confused_with": "Cannonball", "distinguishing_rule": "Concretions are natural; manmade cannonballs have different interior and tooling marks", "confidence": "high"},
+            {"confused_with": "Geode", "distinguishing_rule": "Geodes have hollow cavity with crystals; concretions are solid", "confidence": "high"}
+          ],
+          "lapidary_suitability": {
+            "is_tumble_candidate": false,
+            "tumble_rating": "poor",
+            "tumble_reason": "Too soft, often crumbles or fractures during tumbling. May contain fossils worth preserving.",
+            "special_care": "Many contain fossil shells - breaking open may reveal specimens of interest"
+          },
+          "ranger_summary_seed": "These mysterious spherical rocks form around a nucleus — sometimes a fossil, sometimes just a lucky pebble that gathered company.",
+          "fun_fact_seed": "Concretions form much faster than the rock around them, sometimes in just a few years vs. millions for the surrounding sediment.",
+          "do_not_claim": ["Contain fossils without verification", "Any specific age or origin"],
+          "confidence": "high",
+          "sources": [
+            {"title": "Murdock Beach Concretions", "publisher": "Local rockhounding guides", "source_type": "hobbyist", "accessed_date": "2026-06-20"}
+          ]
+        }
+      ],
+      "sites": [
+        {
+          "site_id": "rialto_beach",
+          "name": "Rialto Beach",
+          "region": "Olympic Peninsula",
+          "county": "Jefferson",
+          "nearest_town": "Forks",
+          "coordinates": {"latitude": 47.9217, "longitude": -124.3853},
+          "coordinate_precision": "exact_access_point",
+          "senior_accessibility": "Medium",
+          "access_details": "Large parking lot at Mora campground. Walk 0.5 miles on gravel path to beach. Uneven cobble surface.",
+          "target_materials": ["agate", "jasper", "petrified wood", "basalt"],
+          "geological_source": "Hoh Rock Assemblage erosion; longshore drift from Olympic Mountain streams",
+          "seasonality": "Best after winter storms (Nov-Mar); gravel bars exposed",
+          "hazards": ["Tide pools can trap; sneaker waves", "Uneven footing on cobbles"],
+          "collecting_notes": "Olympic National Park - collecting prohibited in park boundaries. Beach north of Mora campground is outside park.",
+          "ranger_summary_seed": "A beautiful beach with a backdrop of old-growth forest — just don't collect within National Park boundaries.",
+          "confidence": "high",
+          "sources": [
+            {"title": "Olympic National Park", "publisher": "NPS", "url": "https://www.nps.gov/olym/", "source_type": "official", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "site_id": "ocean_shores_damon_point",
+          "name": "Damon Point / Ocean Shores",
+          "region": "Washington Coast",
+          "county": "Grays Harbor",
+          "nearest_town": "Ocean Shores",
+          "coordinates": {"latitude": 46.9531, "longitude": -124.1578},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "High",
+          "access_details": "Paved roads to parking areas. Short flat walk on sand/gravel. Good handicap access.",
+          "target_materials": ["agate", "carnelian", "petrified wood", "jasper", "sea glass"],
+          "geological_source": "Quaternary alluvium; Columbia River sediments; longshore drift",
+          "seasonality": "Year-round; winter storms uncover fresh material",
+          "hazards": ["None significant for seniors"],
+          "collecting_notes": "NOTE: As of Jan 2025, Damon Point is closed to public access. Check current status before visiting.",
+          "ranger_summary_seed": "A gentle, accessible beach perfect for a relaxed beachcombing stroll — just check for closures first.",
+          "confidence": "high",
+          "sources": [
+            {"title": "WA100 Damon Point", "publisher": "WA DNR", "url": "https://wa100.dnr.wa.gov/willapa-hills/damon-point", "source_type": "official", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "site_id": "murdock_beach",
+          "name": "Murdock Beach",
+          "region": "Olympic Peninsula",
+          "county": "Clallam",
+          "nearest_town": "Sekiu",
+          "coordinates": {"latitude": 48.1639, "longitude": -124.2956},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "Medium",
+          "access_details": "Dirt road parking. Steep path down to beach. Rocky/sandy mix.",
+          "target_materials": ["concretions", "calcite pseudomorphs", "fossils", "agatized wood"],
+          "geological_source": "Coastal cliff erosion; marine terrace deposits",
+          "seasonality": "Best in winter after storms",
+          "hazards": ["Unstable cliffs above beach", "Remote location - limited cell service"],
+          "collecting_notes": "Popular for concretions and calcite pseudomorphs (ikaite). Check road conditions.",
+          "confidence": "medium",
+          "sources": [
+            {"title": "Murdock Beach Rockhounding", "publisher": "Local rockhounds", "source_type": "hobbyist", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "site_id": "north_beach",
+          "name": "North Beach / Moclips",
+          "region": "Washington Coast",
+          "county": "Grays Harbor",
+          "nearest_town": "Moclips",
+          "coordinates": {"latitude": 47.2231, "longitude": -124.2033},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "High",
+          "access_details": "Parking areas along highway. Flat sandy beach walk.",
+          "target_materials": ["agate", "jasper", "petrified wood"],
+          "geological_source": "Beach drift from Columbia River sediments",
+          "seasonality": "Year-round",
+          "hazards": ["None significant"],
+          "collecting_notes": "Long stretch of beach with multiple access points. Good for walking.",
+          "confidence": "medium",
+          "sources": []
+        }
+      ]
+    },
+    {
+      "state_code": "OR",
+      "state_name": "Oregon",
+      "regulations": {
+        "summary": "Oregon has specific beach collecting rules under the Ocean Shore State Recreation Area. Most coastal beaches allow collecting of rocks, agates, fossils (invertebrates only), shells — up to 1 gallon per person per day, 3 gallons per year. State parks have additional restrictions.",
+        "daily_limit": "1 gallon (per person per day) for agates, rocks, shells, fossils",
+        "annual_limit": "3 gallons (per calendar year)",
+        "prohibited_zones": [
+          "Oregon Islands Marine Reserve - all collecting prohibited",
+          "Cape Kiwanda State Natural Area - collecting restricted",
+          "Ecola State Park - no collecting",
+          "Cannon Beach - check current rules"
+        ],
+        "permit_requirements": "No permit required but must follow 1-gallon rule. Some state parks require manager approval for any collecting.",
+        "sources": [
+          {"title": "Ocean Shore State Recreation Area Rules", "publisher": "Oregon Secretary of State", "url": "https://secure.sos.state.or.us/oard/viewSingleRule.action?ruleVrsnRsn=188323", "source_type": "official", "accessed_date": "2026-06-20"},
+          {"title": "Oregon Rockhounding Regulations", "publisher": "Oregon Discovery", "url": "https://oregondiscovery.com/rockhounding-regulations", "source_type": "field_guide", "accessed_date": "2026-06-20"}
+        ]
+      },
+      "formations": [
+        {
+          "formation_id": "astoria_group",
+          "name": "Astoria Group",
+          "alternate_names": ["Astoria Formation"],
+          "age": "Miocene",
+          "epoch": "Miocene",
+          "numeric_age_range_mya": "20-15",
+          "lithology": "Sandstone, siltstone, mudstone, conglomerate",
+          "depositional_environment": "Marine shelf to deep basin turbidite deposits",
+          "geographic_extent": "North Oregon coast from Astoria to Cascade Head",
+          "key_exposures": ["Cape Disappointment", "Ecola State Park", "Cannon Beach", "Newport area"],
+          "common_eroded_materials": ["agatized wood", "jasper", "fossil shells", "petrified wood"],
+          "uncertainty_notes": null,
+          "confidence": "high",
+          "sources": [
+            {"title": "Geologic Map of Oregon", "publisher": "DOGAMI", "url": "https://gis.dogami.oregon.gov/maps/geologicmap/", "source_type": "survey", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "formation_id": "alsea_group",
+          "name": "Alsea Group",
+          "alternate_names": ["Alsea Formation"],
+          "age": "Miocene to Oligocene",
+          "epoch": "Miocene-Oligocene",
+          "numeric_age_range_mya": "30-20",
+          "lithology": "Sandstone, siltstone, shale",
+          "depositional_environment": "Marine turbidite basin",
+          "geographic_extent": "Central Oregon coast from Yachats to Newport",
+          "key_exposures": ["Yachats", "Cape Perpetua", "Waldport"],
+          "common_eroded_materials": ["fossil shells", "petrified wood", "jasper"],
+          "uncertainty_notes": null,
+          "confidence": "high",
+          "sources": []
+        },
+        {
+          "formation_id": "coaledo_group",
+          "name": "Coaledo Group",
+          "alternate_names": ["Coaledo Formation"],
+          "age": "Eocene",
+          "epoch": "Eocene",
+          "numeric_age_range_mya": "55-34",
+          "lithology": "Sandstone, shale, coal seams",
+          "depositional_environment": "Coastal plain to shallow marine",
+          "geographic_extent": "South Oregon coast near Coos Bay",
+          "key_exposures": ["Coos Bay", "Shore Acres", "Lone Ranch"],
+          "common_eroded_materials": ["agate", "jasper", "petrified wood", "fossils"],
+          "uncertainty_notes": null,
+          "confidence": "high",
+          "sources": []
+        },
+        {
+          "formation_id": "coastal_alkali_basalt",
+          "name": "Coastal Alkalic Basalt",
+          "alternate_names": ["Oregon Coastal Basalt"],
+          "age": "Miocene to Pliocene",
+          "epoch": "Miocene-Pliocene",
+          "numeric_age_range_mya": "17-5",
+          "lithology": "Alkalic basalt, minor andesite",
+          "depositional_environment": "Volcanic flows along coast",
+          "geographic_extent": "Oregon coast from Tillamook to Gold Beach",
+          "key_exposures": ["Cape Lookout", "Cape Meares", "Euchre Creek"],
+          "common_eroded_materials": ["basalt", "agatized vein material", "greenstone"],
+          "uncertainty_notes": null,
+          "confidence": "high",
+          "sources": []
+        }
+      ],
+      "specimens": [
+        {
+          "specimen_id": "oregon_agate",
+          "scientific_name": "Chalcedony (Oregon beach agate)",
+          "vernacular_names": ["Oregon agate", "beach agate", "carnelian", "sunny agate"],
+          "category": "rock",
+          "common_regions": ["Oregon coast", "Newport", "Yachats", "Gold Beach"],
+          "hardness": "6.5-7 Mohs",
+          "visual_cues": {
+            "colors": ["orange", "red", "white", "gray", "yellow", "blue-gray"],
+            "patterns": ["banded", "nodular", "fortification"],
+            "luster": ["waxy", "subvitreous"],
+            "translucency": "translucent to semi-translucent"
+          },
+          "field_tests": [
+            {"test_name": "Backlight test", "procedure": "Hold to light", "expected_result": "Oregon agates show warm translucency, especially carnelian", "senior_friendly": true, "caution": null},
+            {"test_name": "Scratch test", "procedure": "Steel key test", "expected_result": "True agate won't scratch with steel", "senior_friendly": true, "caution": null}
+          ],
+          "common_misidentifications": [
+            {"confused_with": "Chalcedony", "distinguishing_rule": "Agate shows banding; chalcedony is uniform", "confidence": "high"},
+            {"confused_with": "Jasper", "distinguishing_rule": "Jasper is opaque", "confidence": "high"}
+          ],
+          "lapidary_suitability": {
+            "is_tumble_candidate": true,
+            "tumble_rating": "excellent",
+            "tumble_reason": "Classic Pacific Coast tumbler material. Hard, dense, polishes beautifully.",
+            "special_care": null
+          },
+          "ranger_summary_seed": "Oregon's coastline is basically a giant rock tumbler — and these little treasures are what washes out.",
+          "fun_fact_seed": "The orange-red 'carnelian' agates get their color from iron oxide — the same stuff that rusts your wheelbarrow.",
+          "do_not_claim": ["Exact formation source", "Value based on color"],
+          "confidence": "high",
+          "sources": [
+            {"title": "Oregon Coast Agate Hunting", "publisher": "Oregon Discovery", "url": "https://oregondiscovery.com/oregon-coast-agate-hunting", "source_type": "field_guide", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "specimen_id": "fossil_shell",
+          "scientific_name": "Fossil Bivalve/Gastropod",
+          "vernacular_names": ["fossil shell", "clam fossil", "fossil snail", "Moclipsite"],
+          "category": "fossil",
+          "common_regions": ["Oregon coast", "Astoria Formation", "Alsea Formation"],
+          "hardness": "3-4 Mohs (calcite)",
+          "visual_cues": {
+            "colors": ["gray", "tan", "brown", "white"],
+            "patterns": ["radial ribs", "concentric growth lines", "spirals"],
+            "luster": ["dull", "earthy"],
+            "translucency": "opaque"
+          },
+          "field_tests": [
+            {"test_name": "Acid test", "procedure": "Apply drop of vinegar", "expected_result": "Calcite fossils fizz (weakly) — great test!", "senior_friendly": true, "caution": "Use dilute vinegar; don't soak"},
+            {"test_name": "Visual identification", "procedure": "Look for preserved shell structure", "expected_result": "Look for ribbing, growth lines, spiral whorls", "senior_friendly": true, "caution": null}
+          ],
+          "common_misidentifications": [
+            {"confused_with": "Modern shell fragments", "distinguishing_rule": "Fossil shells are heavier, darker, may be replaced with stone", "confidence": "high"},
+            {"confused_with": "Rocks with hole", "distinguishing_rule": "Look for actual shell texture, not just a hole", "confidence": "medium"}
+          ],
+          "lapidary_suitability": {
+            "is_tumble_candidate": false,
+            "tumble_rating": "poor",
+            "tumble_reason": "Too soft, often fragile. Better to preserve as specimen.",
+            "special_care": "Can be damaged in tumbler. May be replaced by silica (agate) — those tumble well."
+          },
+          "ranger_summary_seed": "These little guys lived in Oregon's warm seas millions of years ago — before the mountains rose up.",
+          "fun_fact_seed": "Some Oregon fossil shells are from species that now live in tropical waters — Oregon used to be much warmer!",
+          "do_not_claim": ["Exact species without expert ID", "Vertebrate fossils (protected)", "Collection from restricted areas"],
+          "confidence": "high",
+          "sources": []
+        },
+        {
+          "specimen_id": "dallasite",
+          "scientific_name": "Dallasite (breccia variety)",
+          "vernacular_names": ["Dallasite", "Pacific Northwest breccia"],
+          "category": "rock",
+          "common_regions": ["Oregon coast", "Tillamook area"],
+          "hardness": "5-7 Mohs (varies)",
+          "visual_cues": {
+            "colors": ["dark gray", "green", "black", "white"],
+            "patterns": ["brecciated", "angular fragments in matrix"],
+            "luster": ["dull", "waxy"],
+            "translucency": "opaque"
+          },
+          "field_tests": [
+            {"test_name": "Visual inspection", "procedure": "Look for angular rock fragments cemented together", "expected_result": "Classic 'broken rock' appearance — fragments of different rock types in matrix", "senior_friendly": true, "caution": null}
+          ],
+          "common_misidentifications": [
+            {"confused_with": "Conglomerate", "distinguishing_rule": "Conglomerate has rounded pebbles, Dallasite has angular fragments", "confidence": "high"},
+            {"confused_with": "Basalt", "distinguishing_rule": "Dallasite is a mix of rock types, not uniform basalt", "confidence": "high"}
+          ],
+          "lapidary_suitability": {
+            "is_tumble_candidate": true,
+            "tumble_rating": "good",
+            "tumble_reason": "Makes interesting tumbled stones. Mix of hardness can be tricky.",
+            "special_care": "Check that all components are similar hardness before tumbling together"
+          },
+          "ranger_summary_seed": "It's a rock that decided to be a little collage — bits and pieces of other rocks all glued together.",
+          "fun_fact_seed": "Dallasite is named for Dallas, Oregon, and forms when volcanic rock gets broken and recemented.",
+          "do_not_claim": ["Any medicinal properties", "Rare or valuable"],
+          "confidence": "high",
+          "sources": []
+        }
+      ],
+      "sites": [
+        {
+          "site_id": "yachats_agate_beach",
+          "name": "Yachats / Stonefield Beach",
+          "region": "Central Oregon Coast",
+          "county": "Lincoln",
+          "nearest_town": "Yachats",
+          "coordinates": {"latitude": 44.3128, "longitude": -124.0983},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "Medium",
+          "access_details": "Pullouts along Highway 101. Short walks to beach. Some steep sections.",
+          "target_materials": ["agate", "jasper", "petrified wood", "fossil wood"],
+          "geological_source": "Alsea Formation; coastal basalt erosion",
+          "seasonality": "Year-round; winter storms best",
+          "hazards": ["Sneaker waves", "Tide pools"],
+          "collecting_notes": "1-gallon daily limit applies. Check for state park boundaries.",
+          "confidence": "high",
+          "sources": [
+            {"title": "Oregon Coast Agate Hunting", "publisher": "Oregon Discovery", "source_type": "field_guide", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "site_id": "driftwood_beach",
+          "name": "Driftwood Beach",
+          "region": "Central Oregon Coast",
+          "county": "Lincoln",
+          "nearest_town": "Driftwood",
+          "coordinates": {"latitude": 44.1617, "longitude": -124.0517},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "Medium",
+          "access_details": "Highway 101 pullouts. Short path to rocky beach. Mixed sand and rock.",
+          "target_materials": ["agate", "chalcedony", "jasper", "petrified wood"],
+          "geological_source": "Astoria Formation erosion; longshore drift",
+          "seasonality": "Year-round; winter storms expose fresh material",
+          "hazards": ["Tide-dependent access", "Rocky footing"],
+          "collecting_notes": "Popular for big chalcedony agates. Arrive at low tide for best access. 1-gallon daily limit.",
+          "ranger_summary_seed": "A local favorite tucked along Highway 101 — the tides here reveal some beautiful chalcedony pieces.",
+          "fun_fact_seed": "Chalcedony agates found here often show warmer colors (yellows, oranges) than northern Oregon beaches.",
+          "confidence": "high",
+          "sources": [
+            {"title": "Big Chalcedony Agates at Driftwood Beach", "publisher": "YouTube rockhounding community", "source_type": "hobbyist", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "site_id": "governor_patterson_memorial",
+          "name": "Governor Patterson Memorial State Scenic Viewpoint",
+          "region": "Central Oregon Coast",
+          "county": "Lincoln",
+          "nearest_town": "Lincoln City",
+          "coordinates": {"latitude": 44.4364, "longitude": -124.0328},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "High",
+          "access_details": "Scenic viewpoint parking lot. Easy pedestrian access to tidepools and beach. Minimal elevation change.",
+          "target_materials": ["agate", "sea glass", "jasper", "fossil shells"],
+          "geological_source": "Astoria Formation; tidepool basin geology",
+          "seasonality": "Year-round; best after storms or spring tides",
+          "hazards": ["Tide-trapped coves at high tide", "Slippery rocks in tidal pools"],
+          "collecting_notes": "User favorite — easy access makes it popular with families and seniors. Tidepool exploration. Check tide tables.",
+          "ranger_summary_seed": "A scenic viewpoint that rewards those who look down: the rocks here tell stories in agate.",
+          "fun_fact_seed": "Tidepool basins like these create miniature ecosystems while also tumbling rocks in their shallow waters.",
+          "confidence": "high",
+          "sources": [
+            {"title": "Governor Patterson Memorial State Scenic Viewpoint", "publisher": "Oregon State Parks", "source_type": "official", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "site_id": "roads_end_beach",
+          "name": "Roads End Beach",
+          "region": "Central Oregon Coast",
+          "county": "Lincoln",
+          "nearest_town": "Lincoln City",
+          "coordinates": {"latitude": 44.4692, "longitude": -124.0228},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "High",
+          "access_details": "Large parking area. Paved walkway access. Flat sandy/rocky beach. Excellent for walking.",
+          "target_materials": ["agate", "jasper", "transparent agates", "yellow jasper", "sea glass"],
+          "geological_source": "Astoria Formation; marine terrace deposits",
+          "seasonality": "Year-round; negative tides (spring tides) expose best areas",
+          "hazards": ["None significant at Roads End proper"],
+          "collecting_notes": "Famous for transparent to yellow agates and colorful jasper. Plan visit for negative tides. Some say 'best agate hunting anywhere.' 1-gallon daily limit.",
+          "ranger_summary_seed": "When locals talk about 'aquarium beaches' in Oregon, they mean this place — beaches that look like they're stocked with treasure.",
+          "fun_fact_seed": "Negative tides (lower than normal low tide) happen a few times per year during spring tide season — plan your visit around these.",
+          "do_not_claim": ["Guaranteed high-quality finds", "Best beach claim"],
+          "confidence": "high",
+          "sources": [
+            {"title": "Roads End Beach Rockhounding", "publisher": "Oregon Discovery", "url": "https://oregondiscovery.com/roads-end-beach", "source_type": "field_guide", "accessed_date": "2026-06-20"},
+            {"title": "Agate hunting Reddit discussion", "publisher": "Reddit r/OregonCoast", "source_type": "hobbyist", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "site_id": "taft_beach",
+          "name": "Taft Beach",
+          "region": "Central Oregon Coast",
+          "county": "Lincoln",
+          "nearest_town": "Lincoln City",
+          "coordinates": {"latitude": 44.4433, "longitude": -124.0156},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "High",
+          "access_details": "Parking areas near Taft. Sandy beach. Easy access. Multiple entry points.",
+          "target_materials": ["agate", "jasper", "driftwood", "sea glass"],
+          "geological_source": "Astoria Formation; beach drift deposits",
+          "seasonality": "Year-round; winter storms best",
+          "hazards": ["None significant"],
+          "collecting_notes": "Popular with rockhounders and families. Less crowded than Roads End. Good driftwood and agate finds. 1-gallon daily limit.",
+          "ranger_summary_seed": "A sandy stretch that keeps things simple — long beach walks with steady rewards for patient rockhounders.",
+          "confidence": "medium",
+          "sources": [
+            {"title": "Exploring Taft Beach", "publisher": "Oregon Discovery", "url": "https://oregondiscovery.com/taft-beach", "source_type": "field_guide", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "site_id": "newport_fossil_beaches",
+          "name": "Newport Area Beaches (Beverly Beach, Moolack)",
+          "region": "Central Oregon Coast",
+          "county": "Lincoln",
+          "nearest_town": "Newport",
+          "coordinates": {"latitude": 44.6365, "longitude": -124.0535},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "Medium",
+          "access_details": "Multiple beach access points. Some stairs to beach.",
+          "target_materials": ["agatized wood", "jasper", "fossil shells", "agate", "clam fossils"],
+          "geological_source": "Astoria Formation; Alsea Formation",
+          "seasonality": "Year-round",
+          "hazards": ["Tide pools", "Steep access at some points"],
+          "collecting_notes": "Beverly Beach: famous for agatized wood. Moolack Beach: excellent clam fossils and petrified wood, especially after winter storms.",
+          "ranger_summary_seed": "Newport's beaches are fossils-and-wood hunters' paradise — these rocks hold traces of ancient life.",
+          "fun_fact_seed": "The fossil shells found here are from species that used to live in warm Oregon seas — the climate was very different 20 million years ago.",
+          "confidence": "high",
+          "sources": []
+        },
+        {
+          "site_id": "astoria_vicinity_beaches",
+          "name": "Astoria Vicinity Beaches (Gearhart, Cannon Beach area)",
+          "region": "North Oregon Coast",
+          "county": "Clatsop",
+          "nearest_town": "Astoria",
+          "coordinates": {"latitude": 45.8931, "longitude": -123.9686},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "Medium",
+          "access_details": "Multiple access points along Highway 101 north of Astoria. Some require walking through residential areas.",
+          "target_materials": ["agate", "jasper", "petrified wood", "fossil shells"],
+          "geological_source": "Astoria Formation (type locality); marine terrace deposits",
+          "seasonality": "Year-round; winter best",
+          "hazards": ["Tide-locked coves", "Steep cliff sections"],
+          "collecting_notes": "This is where the Astoria Formation is named and exposed. Rich fossil and agate deposits. Check tide tables carefully. 1-gallon daily limit.",
+          "ranger_summary_seed": "The beaches north of Astoria literally show the geology in the cliff faces — you're walking past the rocks' own history book.",
+          "fun_fact_seed": "The Astoria Formation is exposed right here in sea cliffs 15-20 million years old — one of Oregon's most fossil-rich coastal rock layers.",
+          "confidence": "medium",
+          "sources": [
+            {"title": "Geology of the Oregon Coast", "publisher": "Travel Oregon", "source_type": "field_guide", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "site_id": "gold_beach",
+          "name": "Gold Beach",
+          "region": "South Oregon Coast",
+          "county": "Curry",
+          "nearest_town": "Gold Beach",
+          "coordinates": {"latitude": 44.2807, "longitude": -124.4256},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "High",
+          "access_details": "Easy beach access from town. Long flat beach walk.",
+          "target_materials": ["agate", "jasper", "quartz", "petrified wood"],
+          "geological_source": "Rogue River erosion; longshore drift",
+          "seasonality": "Year-round",
+          "hazards": ["Tide changes rapidly in river mouth area"],
+          "collecting_notes": "Also great for lower Rogue River gravel bars. Check conditions.",
+          "confidence": "high",
+          "sources": []
+        },
+        {
+          "site_id": "neptune_beach",
+          "name": "Neptune Beach / Stonefield",
+          "region": "Central Oregon Coast",
+          "county": "Lincoln",
+          "nearest_town": "Yachats",
+          "coordinates": {"latitude": 44.3456, "longitude": -124.0722},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "Medium",
+          "access_details": "State park access. Some sloping paths.",
+          "target_materials": ["petrified wood", "jasper", "agate"],
+          "geological_source": "Alsea Formation erosion",
+          "seasonality": "Best winter through spring",
+          "hazards": ["Steep trail", "Sneaker waves"],
+          "collecting_notes": "Known for large petrified wood pieces. Great for walking.",
+          "confidence": "medium",
+          "sources": []
+        }
+      ]
+    },
+    {
+      "state_code": "CA",
+      "state_name": "California",
+      "regulations": {
+        "summary": "California allows rockhounding on some beaches and public lands with specific limits. State Parks: max 15 pounds per day where permitted. BLM lands: 25 lbs/day + 1 piece, 250 lbs/year. Marine Protected Areas (MPAs) prohibit all collecting. No tools allowed in most State Parks. Check specific location rules.",
+        "daily_limit": "15 pounds (State Parks where permitted); 25 pounds (BLM)",
+        "annual_limit": "250 pounds (BLM only)",
+        "prohibited_zones": [
+          "All Marine Protected Areas (MPAs) and Marine Reserves",
+          "Channel Islands National Park",
+          "Point Reyes National Seashore",
+          "Golden Gate National Recreation Area",
+          "Most California State Park beach areas"
+        ],
+        "permit_requirements": "No permit for personal use on most BLM; State Parks require compliance with specific area rules. No tools in many State Parks.",
+        "sources": [
+          {"title": "California State Parks General Provisions", "publisher": "CA State Parks", "url": "https://www.parks.ca.gov/?page_id=21301", "source_type": "official", "accessed_date": "2026-06-20"},
+          {"title": "California Rockhounding Regulations", "publisher": "Ruby Glint", "url": "https://rubyglint.com/rockhounding-regulations/state/california", "source_type": "field_guide", "accessed_date": "2026-06-20"}
+        ]
+      },
+      "formations": [
+        {
+          "formation_id": "franciscan_complex",
+          "name": "Franciscan Complex",
+          "alternate_names": ["Franciscan Assemblage", "Franciscan Group"],
+          "age": "Jurassic to Cretaceous",
+          "epoch": "Jurassic-Cretaceous",
+          "numeric_age_range_mya": "200-80",
+          "lithology": "Graywacke sandstone, shale, chert, serpentinite, blueschist, greenstone",
+          "depositional_environment": "Ancient subduction zone sediments; high-pressure metamorphic rocks",
+          "geographic_extent": "Northern California coast, San Francisco to Oregon border; Coast Ranges",
+          "key_exposures": ["Mendocino Coast", "Sonoma Coast", "Big Sur (southern limit)"],
+          "common_eroded_materials": ["jasper", "chert", "serpentinite", "nephrite jade", "agates"],
+          "uncertainty_notes": "Complex metamorphic terrain - many rock types mixed",
+          "confidence": "high",
+          "sources": [
+            {"title": "Geological Gems of California State Parks", "publisher": "CA State Parks", "url": "https://www.parks.ca.gov/pages/734/files/GeoGems_All.pdf", "source_type": "official", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "formation_id": "klamath_mountains",
+          "name": "Klamath Mountains",
+          "alternate_names": ["Klamath Province"],
+          "age": "Paleozoic to Jurassic",
+          "epoch": "Paleozoic-Jurassic",
+          "numeric_age_range_mya": "500-150",
+          "lithology": "Serpentinite, peridotite, gabbro, metamorphic rocks",
+          "depositional_environment": "Ancient ocean floor, island arc terranes",
+          "geographic_extent": "Northwest California from Redding to coast",
+          "key_exposures": ["Del Norte County", "Smith River area", "Klamath River"],
+          "common_eroded_materials": ["serpentinite", "jade", "chromite", "agate"],
+          "uncertainty_notes": null,
+          "confidence": "high",
+          "sources": []
+        },
+        {
+          "formation_id": "salinian_granite",
+          "name": "Salinian Granitic Rocks",
+          "alternate_names": ["Salinian Block"],
+          "age": "Cretaceous to Eocene",
+          "epoch": "Cretaceous-Eocene",
+          "numeric_age_range_mya": "100-50",
+          "lithology": "Granite, granodiorite, tonalite",
+          "depositional_environment": "Ancient continental crust; now exposed in mountains",
+          "geographic_extent": "Central California Coast Ranges, Sierra Nevada foothills",
+          "key_exposures": ["Santa Cruz Mountains", "Monterey Peninsula", "San Luis Obispo"],
+          "common_eroded_materials": ["granite cobbles", "quartz", "feldspar"],
+          "uncertainty_notes": null,
+          "confidence": "high",
+          "sources": []
+        },
+        {
+          "formation_id": "marine_terrace_deposits",
+          "name": "Marine Terrace Deposits",
+          "alternate_names": ["Pleistocene Terraces"],
+          "age": "Pleistocene",
+          "epoch": "Pleistocene",
+          "numeric_age_range_mya": "2.6-0.0117",
+          "lithology": "Sand, gravel, clay with marine fossils",
+          "depositional_environment": "Ancient beach deposits lifted above modern sea level",
+          "geographic_extent": "California coast from San Diego to Oregon",
+          "key_exposures": ["Palos Verdes", "Carmel Valley", "Santa Barbara"],
+          "common_eroded_materials": ["sandstone", "fossil shells", "agate"],
+          "uncertainty_notes": null,
+          "confidence": "high",
+          "sources": []
+        }
+      ],
+      "specimens": [
+        {
+          "specimen_id": "california_jade",
+          "scientific_name": "Nephrite Jade",
+          "vernacular_names": ["California jade", "jade", "soft jade", "jadeite (rare)"],
+          "category": "mineral",
+          "common_regions": ["Big Sur", "Jade Cove", "Monterey", "Mendocino"],
+          "hardness": "5.5-6 Mohs (nephrite)",
+          "visual_cues": {
+            "colors": ["green", "dark green", "light green", "white", "gray-green", "mottled"],
+            "patterns": ["mottled", "streaky", "solid"],
+            "luster": ["waxy", "subvitreous"],
+            "translucency": "opaque to slightly translucent"
+          },
+          "field_tests": [
+            {"test_name": "Scratch test", "procedure": "Try to scratch with steel key", "expected_result": "Nephrite (5.5-6 Mohs) scratches with steel; jadeite (6.5-7) won't", "senior_friendly": true, "caution": null},
+            {"test_name": "Weight test (specific gravity)", "procedure": "Compare to similar-size stone", "expected_result": "Nephrite feels heavier than it should for its size (SG ~3.0)", "senior_friendly": true, "caution": "Requires experience to judge"},
+            {"test_name": "Polish test", "procedure": "Look for waxy polish potential", "expected_result": "Nephrite takes good polish but not as bright as jadeite", "senior_friendly": true, "caution": null}
+          ],
+          "common_misidentifications": [
+            {"confused_with": "Serpentinite", "distinguishing_rule": "Scratch test: serpentinite (2.5-5.5) scratches easier. Specific gravity: serpentinite lighter (2.5-2.6 vs 3.0). Look for waxy luster vs jade's waxy-to-vitreous.", "confidence": "high"},
+            {"confused_with": "Bowenite (serpentinite variety)", "distinguishing_rule": "Very similar appearance; both take good polish. Both relatively soft. Hard to distinguish without lab testing.", "confidence": "medium"},
+            {"confused_with": "Amazonite", "distinguishing_rule": "Amazonite is blue-green feldspar, has cleavage, different fracture", "confidence": "high"}
+          ],
+          "lapidary_suitability": {
+            "is_tumble_candidate": true,
+            "tumble_rating": "good",
+            "tumble_reason": "Nephrite is tough (resistant to breaking) even though not super hard. Takes nice polish.",
+            "special_care": "Check for fractures - nephrite is tough but can have weak planes"
+          },
+          "ranger_summary_seed": "Jade Cove is legendary for a reason — these green stones have been weathering out of the cliffs for millennia.",
+          "fun_fact_seed": "California jade forms from ancient sea-floor rocks that got squeezed and heated deep in the Earth — then slowly pushed up to the coast.",
+          "do_not_claim": ["Exact location in restricted areas", "Value based on size/color", "Jadeite vs nephrite without testing"],
+          "confidence": "high",
+          "sources": [
+            {"title": "Nephrite Jade and Related Rocks from Western Washington", "publisher": "MDPI", "url": "https://www.mdpi.com/2075-163X/14/12/1186", "source_type": "academic", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "specimen_id": "california_agate",
+          "scientific_name": "Chalcedony (California agate)",
+          "vernacular_names": ["California agate", "Mendocino agate", "Big Sur agate", "moonstone"],
+          "category": "rock",
+          "common_regions": ["Mendocino", "Big Sur", "Monterey", "Cambria", "San Simeon"],
+          "hardness": "6.5-7 Mohs",
+          "visual_cues": {
+            "colors": ["white", "gray", "blue", "pink", "orange", "red", "purple"],
+            "patterns": ["banded", "fortification", "plumes", "moss"],
+            "luster": ["waxy", "vitreous"],
+            "translucency": "translucent to semi-translucent"
+          },
+          "field_tests": [
+            {"test_name": "Backlight test", "procedure": "Hold to light", "expected_result": "California agates show good translucency, especially blue and pink varieties", "senior_friendly": true, "caution": null},
+            {"test_name": "Scratch test", "procedure": "Steel key test", "expected_result": "True agate won't scratch with steel", "senior_friendly": true, "caution": null}
+          ],
+          "common_misidentifications": [
+            {"confused_with": "Chert", "distinguishing_rule": "Chert is opaque; agate translucent", "confidence": "high"},
+            {"confused_with": "Quartzite", "distinguishing_rule": "Quartzite is granular, not waxy; has different fracture", "confidence": "high"}
+          ],
+          "lapidary_suitability": {
+            "is_tumble_candidate": true,
+            "tumble_rating": "excellent",
+            "tumble_reason": "Classic California collectible. Excellent polish. Banded varieties show beautiful patterns when tumbled.",
+            "special_care": null
+          },
+          "ranger_summary_seed": "These little treasures weather out of sea cliffs that have been pounding away for millions of years.",
+          "fun_fact_seed": "Blue agates from Mendocino get their color from very fine mineral inclusions — not copper like many blue gems.",
+          "do_not_claim": ["Exact cliff location", "Value based on color"],
+          "confidence": "high",
+          "sources": []
+        },
+        {
+          "specimen_id": "franciscan_chert",
+          "scientific_name": "Franciscan Chert",
+          "vernacular_names": ["Franciscan chert", "Ocean Beach chert", "purple chert"],
+          "category": "rock",
+          "common_regions": ["San Francisco Ocean Beach", "Mendocino", "Sonoma"],
+          "hardness": "6.5-7 Mohs",
+          "visual_cues": {
+            "colors": ["red", "brown", "gray", "purple", "green", "black"],
+            "patterns": ["banded", "ribbon", "varved"],
+            "luster": ["dull", "waxy"],
+            "translucency": "opaque to slightly translucent"
+          },
+          "field_tests": [
+            {"test_name": "Fracture test", "procedure": "Check for conchoidal fracture", "expected_result": "Chert has smooth, shell-like conchoidal fracture", "senior_friendly": true, "caution": null},
+            {"test_name": "Scratch test", "procedure": "Steel key test", "expected_result": "Chert is harder than steel, won't scratch", "senior_friendly": true, "caution": null}
+          ],
+          "common_misidentifications": [
+            {"confused_with": "Jasper", "distinguishing_rule": "Very similar; jasper is technically a variety of chert", "confidence": "high"},
+            {"confused_with": "Basalt", "distinguishing_rule": "Basalt is magnetic, more massive", "confidence": "high"}
+          ],
+          "lapidary_suitability": {
+            "is_tumble_candidate": true,
+            "tumble_rating": "good",
+            "tumble_reason": "Tumbles well. Beautiful banded patterns. May need longer to get smooth due to hardness.",
+            "special_care": "Check for fractures - thin bands may be weak"
+          },
+          "ranger_summary_seed": "Ancient deep-sea sediments that got squeezed into beautiful ribbons of color over millions of years.",
+          "fun_fact_seed": "Franciscan chert forms from microscopic silica shells of diatoms that lived in ancient Pacific waters.",
+          "do_not_claim": ["Any specific age", "Formation location"],
+          "confidence": "high",
+          "sources": [
+            {"title": "Geological Gems of California State Parks", "publisher": "CA State Parks", "source_type": "official", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "specimen_id": "moonstone",
+          "scientific_name": "Moonstone (feldspar variety)",
+          "vernacular_names": ["moonstone", "California moonstone", "rainbow moonstone"],
+          "category": "mineral",
+          "common_regions": ["Big Sur", "Cambria", "San Simeon", "Monterey"],
+          "hardness": "6-6.5 Mohs",
+          "visual_cues": {
+            "colors": ["white", "blue-gray", "pink", "clear", "peach"],
+            "patterns": ["adularescence", "cat's eye"],
+            "luster": ["pearly", "vitreous"],
+            "translucency": "translucent to transparent"
+          },
+          "field_tests": [
+            {"test_name": "Adularescence test", "procedure": "Rotate in light", "expected_result": "Look for blue-white sheen that shifts as you turn the stone", "senior_friendly": true, "caution": "Requires good light"},
+            {"test_name": "Cleavage test", "procedure": "Look for flat cleavage planes", "expected_result": "Feldspar has two cleavage directions at ~90 degrees", "senior_friendly": true, "caution": null}
+          ],
+          "common_misidentifications": [
+            {"confused_with": "Quartz", "distinguishing_rule": "Quartz has conchoidal fracture, no cleavage; moonstone has cleavage", "confidence": "high"},
+            {"confused_with": "Labradorite", "distinguishing_rule": "Labradorite shows different flash (schiller) in blues/greens", "confidence": "medium"}
+          ],
+          "lapidary_suitability": {
+            "is_tumble_candidate": true,
+            "tumble_rating": "good",
+            "tumble_reason": "Hardness is good for tumbling. Takes polish. The adularescence shows beautifully in polished stones.",
+            "special_care": "Check for cleavage - avoid pieces with obvious fractures along cleavage planes"
+          },
+          "ranger_summary_seed": "This pretty stone has a secret — it shimmers with a blue-white light that seems to come from inside.",
+          "fun_fact_seed": "The shimmer is called adularescence, named after Mount Adular in Switzerland where it was first described.",
+          "do_not_claim": ["Value based on shimmer intensity", "Exact location"],
+          "confidence": "high",
+          "sources": []
+        },
+        {
+          "specimen_id": "serpentinite",
+          "scientific_name": "Serpentinite",
+          "vernacular_names": ["serpentine", "greenstone", "California greenstone"],
+          "category": "rock",
+          "common_regions": ["California coast", "Franciscan Complex", "Klamath Mountains"],
+          "hardness": "2.5-5.5 Mohs",
+          "visual_cues": {
+            "colors": ["green", "yellow-green", "black", "brown", "mottled"],
+            "patterns": ["smooth", "waxy", "mottled", "slickensided"],
+            "luster": ["waxy", "dull", "greasy"],
+            "translucency": "opaque"
+          },
+          "field_tests": [
+            {"test_name": "Feel test", "procedure": "Touch surface", "expected_result": "Often feels waxy or slightly greasy", "senior_friendly": true, "caution": null},
+            {"test_name": "Scratch test", "procedure": "Try with fingernail or key", "expected_result": "Soft serpentinite scratches with fingernail (2.5); harder varieties may not", "senior_friendly": true, "caution": null},
+            {"test_name": "Streak test", "procedure": "Rub on unglazed ceramic", "expected_result": "Usually gives greenish-white streak", "senior_friendly": true, "caution": "Use hidden spot"}
+          ],
+          "common_misidentifications": [
+            {"confused_with": "Nephrite Jade", "distinguishing_rule": "Jade is harder (5.5-7 vs 2.5-5.5), heavier (SG 3.0 vs 2.5-2.6), takes higher polish", "confidence": "high"},
+            {"confused_with": "Chlorite schist", "distinguishing_rule": "Chlorite has foliation (layering), serpentinite usually massive", "confidence": "medium"}
+          ],
+          "lapidary_suitability": {
+            "is_tumble_candidate": false,
+            "tumble_rating": "fair",
+            "tumble_reason": "Only harder varieties (5+) tumble well. Most is too soft and will round poorly.",
+            "special_care": "Test hardness first. Avoid soft varieties."
+          },
+          "ranger_summary_seed": "It feels a bit like soap — and that's no coincidence. This rock used to be part of the ocean floor.",
+          "fun_fact_seed": "Serpentinite forms from peridotite (deep ocean mantle rock) when water gets squeezed in and transforms it.",
+          "do_not_claim": ["Jade without testing", "Healing properties (not proven)", "Source location"],
+          "confidence": "high",
+          "sources": []
+        }
+      ],
+      "sites": [
+        {
+          "site_id": "jade_cove",
+          "name": "Jade Cove",
+          "region": "Big Sur",
+          "county": "Monterey",
+          "nearest_town": "Gorda",
+          "coordinates": {"latitude": 36.2428, "longitude": -121.6686},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "Low",
+          "access_details": "Short but steep trail from Highway 1. Rocky beach. Best accessed at low tide.",
+          "target_materials": ["nephrite jade", "serpentinite", "agates"],
+          "geological_source": "Franciscan Complex; Klamath Mountain serpentinite",
+          "seasonality": "Year-round; best after storms",
+          "hazards": ["Tide-dependent access", "Rocky footing", "Sneaker waves"],
+          "collecting_notes": "Famous jade location. Small pieces wash up regularly. Check tide tables.",
+          "confidence": "high",
+          "sources": [
+            {"title": "Big Sur Rockhounding", "publisher": "Local guides", "source_type": "field_guide", "accessed_date": "2026-06-20"}
+          ]
+        },
+        {
+          "site_id": "mendocino_coast",
+          "name": "Mendocino Coast",
+          "region": "Mendocino",
+          "county": "Mendocino",
+          "nearest_town": "Mendocino",
+          "coordinates": {"latitude": 39.3076, "longitude": -123.7995},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "Medium",
+          "access_details": "State highway pullouts. Beach access at multiple points. Some stairs.",
+          "target_materials": ["agate", "jasper", "chert", "petrified wood", "jade"],
+          "geological_source": "Franciscan Complex; marine terrace deposits",
+          "seasonality": "Year-round",
+          "hazards": ["Sneaker waves", "Cliff edges"],
+          "collecting_notes": "Many access points along Highway 1. Check for State Park boundaries.",
+          "confidence": "high",
+          "sources": []
+        },
+        {
+          "site_id": "ocean_beach_sf",
+          "name": "Ocean Beach, San Francisco",
+          "region": "San Francisco Bay",
+          "county": "San Francisco",
+          "nearest_town": "San Francisco",
+          "coordinates": {"latitude": 37.7599, "longitude": -122.5108},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "High",
+          "access_details": "Easy beach access. Long flat sandy beach. Multiple parking areas.",
+          "target_materials": ["franciscan chert", "jasper", "agates", "serpentinite"],
+          "geological_source": "Franciscan Complex; longshore drift from north",
+          "seasonality": "Year-round; winter storms expose new material",
+          "hazards": ["Strong currents", "Cold water", "Fog"],
+          "collecting_notes": "Gold Gate National Recreation Area - check rules. Not all collecting permitted.",
+          "confidence": "high",
+          "sources": []
+        },
+        {
+          "site_id": "cambria_cayucos",
+          "name": "Cambria / Cayucos",
+          "region": "Central Coast",
+          "county": "San Luis Obispo",
+          "nearest_town": "Cambria",
+          "coordinates": {"latitude": 35.5639, "longitude": -121.0806},
+          "coordinate_precision": "approximate_area",
+          "senior_accessibility": "Medium",
+          "access_details": "Beach access points. Some sloping paths.",
+          "target_materials": ["agate", "moonstone", "jade", "serpentinite"],
+          "geological_source": "Franciscan Complex; marine terraces",
+          "seasonality": "Year-round",
+          "hazards": ["Tide pools", "Steep access points"],
+          "collecting_notes": "Moonstone Beach area is famous. Check State Park rules.",
+          "confidence": "high",
+          "sources": []
+        }
+      ]
+    }
+  ],
+  "global_lookalike_rules": [
+    {
+      "rule_id": "jade_vs_serpentine",
+      "name": "Distinguishing Nephrite Jade from Serpentinite",
+      "applies_to": ["jade", "serpentinite"],
+      "distinguishing_checks": [
+        "Scratch test with steel: jadeite won't scratch, nephrite may scratch, serpentinite scratches easily",
+        "Weight test: jade feels heavier (SG ~3.0) vs serpentinite (SG ~2.5-2.6)",
+        "Luster: jade has waxy-to-vitreous luster, serpentinite has greasy/waxy luster",
+        "Polish: jade takes higher polish than serpentinite"
+      ],
+      "ranger_friendly_explanation": "Think of it this way: jade is the heavyweight boxer, serpentine is the lightweight. If you can scratch it easily with a key, it's probably not jade. And jade just feels heavier than it should for its size.",
+      "confidence": "high",
+      "sources": [
+        {"title": "Jade vs Serpentine Identification", "publisher": "Rockhounding community", "source_type": "hobbyist", "accessed_date": "2026-06-20"}
+      ]
+    },
+    {
+      "rule_id": "agate_vs_chert",
+      "name": "Distinguishing Agate from Chert",
+      "applies_to": ["agate", "chert"],
+      "distinguishing_checks": [
+        "Backlight test: agate shows translucency, chert is opaque",
+        "Look for banding: agate typically shows bands, chert is more uniform",
+        "Fracture: chert has cleaner conchoidal fracture"
+      ],
+      "ranger_friendly_explanation": "Hold it up to the light — if light comes through at all, it's probably agate. If it's solid opaque through and through, it's probably chert. The bands are a good clue too, but some agates don't show obvious banding.",
+      "confidence": "high",
+      "sources": []
+    },
+    {
+      "rule_id": "agate_vs_jasper",
+      "name": "Distinguishing Agate from Jasper",
+      "applies_to": ["agate", "jasper"],
+      "distinguishing_checks": [
+        "Translucency test: agate is translucent, jasper is opaque",
+        "Pattern: agate shows banding, jasper is usually solid colors or complex patterns without banding",
+        "Luster: agate has waxy luster when polished, jasper is duller"
+      ],
+      "ranger_friendly_explanation": "Here's the simple rule: if you can see light through it even a little, it's agate. If it's totally solid and won't let light through, it's jasper. Simple as that!",
+      "confidence": "high",
+      "sources": []
+    },
+    {
+      "rule_id": "petrified_wood_vs_chert",
+      "name": "Distinguishing Petrified Wood from Banded Chert",
+      "applies_to": ["petrified wood", "chert"],
+      "distinguishing_checks": [
+        "Look for wood grain: cell structure, tree rings under magnification",
+        "Weight: petrified wood is heavier than regular wood but similar to stone",
+        "Pattern: chert bands are usually uniform, wood has organic patterns"
+      ],
+      "ranger_friendly_explanation": "Look for anything that looks like wood — tree rings, grain, the cellular pattern. If it looks like a tiny slice of a tree turned to stone, that's petrified wood. If it's just pretty colored bands with no structure, it's probably chert.",
+      "confidence": "high",
+      "sources": []
+    },
+    {
+      "rule_id": "sea_glass_vs_modern_glass",
+      "name": "Distinguishing Sea Glass from Modern Glass",
+      "applies_to": ["sea glass"],
+      "distinguishing_checks": [
+        "Frosted surface: true sea glass is fully frosted, not just worn edges",
+        "Rounded edges: sea glass has no sharp corners",
+        "Thickness: old sea glass is usually thicker than modern glass",
+        "Color: true sea glass colors are typically white, green, amber, blue, black (no bright modern colors)"
+      ],
+      "ranger_friendly_explanation": "If it still cuts your fingers or has sharp edges, it's just broken glass, not sea glass. Real sea glass has been tumbled by waves long enough to lose all its edges and get a frosted look.",
+      "confidence": "high",
+      "sources": []
+    }
+  ],
+  "audit": {
+    "low_confidence_claims": [
+      "Some site coordinates are approximate - field verification recommended",
+      "Some specific site accessibility ratings would benefit from senior user feedback"
+    ],
+    "missing_primary_sources": [
+      "Washington sites could benefit from WA DNR site verification",
+      "Oregon regulations could use direct citation from Oregon Secretary of State"
+    ],
+    "potentially_stale_regulations": [
+      "Damon Point closure status - verify before visiting",
+      "Oregon 1-gallon rule occasionally updated - verify current rules",
+      "California MPA boundaries periodically updated"
+    ],
+    "ambiguous_names": [
+      "Dallasite - regional name, not formal formation",
+      "Some vernacular rock names vary by region"
+    ],
+    "recommended_next_research_passes": [
+      "Add more Washington coastal sites (Second Beach, Third Beach)",
+      "Add more specific Oregon sites (Cape Kiwanda, Bandon)",
+      "Verify California MPA boundaries and restrictions",
+      "Add more specimen details for common finds like shell fragments",
+      "Research specific lapidary tumbling procedures for mixed-material lots"
+    ]
+  }
+}

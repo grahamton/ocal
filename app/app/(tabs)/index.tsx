@@ -1,14 +1,14 @@
-import React, { useCallback, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/shared/ThemeContext';
-import { CameraCapture } from '@/features/capture/CameraCapture';
-import { MainHeader } from '@/shared/components/MainHeader';
-import { logger } from '@/shared/LogService';
+import React, {useCallback, useState} from 'react';
+import {View, StyleSheet, ScrollView, RefreshControl} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useTheme} from '@/shared/ThemeContext';
+import {CameraCapture} from '@/features/capture/CameraCapture';
+import {MainHeader} from '@/shared/components/MainHeader';
+import {logger} from '@/shared/LogService';
 
 export default function CaptureScreen() {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const {colors} = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
   const handleManualRefresh = useCallback(async () => {
@@ -18,10 +18,10 @@ export default function CaptureScreen() {
   }, []);
 
   return (
-    <View style={[styles.safe, { paddingTop: insets.top }]}>
+    <View style={[styles.safe, {paddingTop: insets.top}]}>
       <ScrollView
         style={styles.pageScroll}
-        contentContainerStyle={[styles.pageContent, { paddingBottom: 120 }]}
+        contentContainerStyle={[styles.pageContent, {paddingBottom: 120}]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -29,8 +29,7 @@ export default function CaptureScreen() {
             onRefresh={handleManualRefresh}
             tintColor={colors.accent}
           />
-        }
-      >
+        }>
         <MainHeader />
         <View style={styles.section}>
           <CameraCapture

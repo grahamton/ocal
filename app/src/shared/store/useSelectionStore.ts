@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import {create} from 'zustand';
 
 interface SelectionState {
   isSelectionMode: boolean;
@@ -10,7 +10,7 @@ interface SelectionState {
   selectAll: (ids: string[]) => void;
 }
 
-export const useSelectionStore = create<SelectionState>((set) => ({
+export const useSelectionStore = create<SelectionState>(set => ({
   isSelectionMode: false,
   selectedIds: new Set<string>(),
 
@@ -27,14 +27,14 @@ export const useSelectionStore = create<SelectionState>((set) => ({
     })),
 
   toggleSelection: (id: string) =>
-    set((state) => {
+    set(state => {
       const next = new Set(state.selectedIds);
       if (next.has(id)) {
         next.delete(id);
       } else {
         next.add(id);
       }
-      return { selectedIds: next };
+      return {selectedIds: next};
     }),
 
   clearSelection: () =>

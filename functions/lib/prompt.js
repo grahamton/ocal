@@ -41,7 +41,7 @@ Output Rules:
 `.trim();
 function buildRockIdUserPrompt(params = {}) {
     const { location_hint, context_notes, user_goal, session_context } = params;
-    let prompt = [
+    const prompt = [
         'Identify this specimen for cataloging.',
     ];
     if (session_context) {

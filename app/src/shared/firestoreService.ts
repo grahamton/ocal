@@ -1,4 +1,6 @@
-import firestore, {FirebaseFirestoreTypes} from '@react-native-firebase/firestore';
+import firestore, {
+  FirebaseFirestoreTypes,
+} from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import {FindRecord, Session} from '@/shared/types';
 import {logger} from '@/shared/LogService';
@@ -13,11 +15,13 @@ const getCurrentUserId = (): string | null => {
 };
 
 // Helper to sanitize objects for Firestore (removes undefined values)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sanitizeObject = (obj: any): any => {
   if (obj === null || typeof obj !== 'object') return obj;
   if (obj instanceof Date) return obj;
   if (Array.isArray(obj)) return obj.map(sanitizeObject);
-  
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result: any = {};
   for (const key in obj) {
     if (obj[key] !== undefined) {
@@ -44,17 +48,22 @@ export const addFind = async (find: FindRecord): Promise<FindRecord> => {
   try {
     const findRef = findRecordCollection(userId).doc(find.id);
     const sanitized = sanitizeObject(find);
-    
-    // Await the write for reliability, Firestore handles offline queuing internally
-    await findRef.set({
+
+    findRef.set({
       ...sanitized,
       timestamp: firestore.Timestamp.fromDate(new Date(find.timestamp)),
+    }).then(() => {
+      logger.add('firestore', `Find added: ${find.id}`);
+    }).catch(error => {
+      logger.error('FirestoreService: Failed to add find', {
+        findId: find.id,
+        error,
+      });
     });
-    
-    logger.add('firestore', `Find added: ${find.id}`);
+
     return find;
   } catch (error) {
-    logger.error('FirestoreService: Failed to add find', {
+    logger.error('FirestoreService: Failed to queue find', {
       findId: find.id,
       error,
     });
@@ -75,16 +84,22 @@ export const updateFind = async (
     const findRef = findRecordCollection(userId).doc(findId);
     const sanitized = sanitizeObject(updates);
 
-    await findRef.update({
+    findRef.update({
       ...sanitized,
       ...(updates.timestamp && {
         timestamp: firestore.Timestamp.fromDate(new Date(updates.timestamp)),
       }),
+    }).then(() => {
+      logger.add('firestore', `Find updated: ${findId}`);
+    }).catch(error => {
+      logger.error('FirestoreService: Failed to update find', {
+        findId,
+        updates,
+        error,
+      });
     });
-    
-    logger.add('firestore', `Find updated: ${findId}`);
   } catch (error) {
-    logger.error('FirestoreService: Failed to update find', {
+    logger.error('FirestoreService: Failed to queue update find', {
       findId,
       updates,
       error,
@@ -100,10 +115,13 @@ export const deleteFind = async (findId: string): Promise<void> => {
     throw new Error('No authenticated user for Firestore operation.');
   }
   try {
-    await findRecordCollection(userId).doc(findId).delete();
-    logger.add('firestore', `Find deleted: ${findId}`);
+    findRecordCollection(userId).doc(findId).delete().then(() => {
+      logger.add('firestore', `Find deleted: ${findId}`);
+    }).catch(error => {
+      logger.error('FirestoreService: Failed to delete find', {findId, error});
+    });
   } catch (error) {
-    logger.error('FirestoreService: Failed to delete find', {findId, error});
+    logger.error('FirestoreService: Failed to queue delete find', {findId, error});
     throw error;
   }
 };
@@ -124,14 +142,16 @@ export const getAllFinds = async (): Promise<FindRecord[]> => {
       finds.push({
         ...(data as Omit<FindRecord, 'timestamp' | 'aiData'>),
         id: doc.id,
-        timestamp: (data.timestamp as firestore.Timestamp).toDate().toISOString(),
+        timestamp: (data.timestamp as FirebaseFirestoreTypes.Timestamp)
+          .toDate()
+          .toISOString(),
         aiData: data.aiData ? data.aiData : null,
       });
     });
     logger.add('firestore', `Fetched all finds for user: ${userId}`);
     return finds;
   } catch (error) {
-    logger.error('FirestoreService: Error getting all finds', { error });
+    logger.error('FirestoreService: Error getting all finds', {error});
     throw error;
   }
 };
@@ -150,17 +170,64 @@ export const getFind = async (findId: string): Promise<FindRecord | null> => {
       return {
         ...(data as Omit<FindRecord, 'timestamp' | 'aiData'>),
         id: doc.id,
-        timestamp: (data.timestamp as firestore.Timestamp).toDate().toISOString(),
+        timestamp: (data.timestamp as FirebaseFirestoreTypes.Timestamp)
+          .toDate()
+          .toISOString(),
         aiData: data.aiData ? data.aiData : null,
       };
     }
     return null;
   } catch (error) {
-    logger.error('FirestoreService: Failed to get find', { findId, error });
+    logger.error('FirestoreService: Failed to get find', {findId, error});
     throw error;
   }
 };
 
+// Listener for real-time updates for a single Find
+export const subscribeToFind = (
+  findId: string,
+  callback: (find: FindRecord | null) => void,
+  onError: (error: Error) => void,
+) => {
+  const userId = getCurrentUserId();
+  if (!userId) {
+    onError(new Error('No authenticated user for Firestore subscription.'));
+    return () => {}; // Return a no-op unsubscribe function
+  }
+
+  const unsubscribe = findRecordCollection(userId)
+    .doc(findId)
+    .onSnapshot(
+      docSnapshot => {
+        if (!docSnapshot.exists) {
+          callback(null);
+          return;
+        }
+        const data = docSnapshot.data();
+        if (!data) {
+          callback(null);
+          return;
+        }
+        callback({
+          ...(data as Omit<FindRecord, 'timestamp' | 'aiData'>),
+          id: docSnapshot.id,
+          timestamp: (data.timestamp as FirebaseFirestoreTypes.Timestamp)
+            .toDate()
+            .toISOString(),
+          aiData: data.aiData ? data.aiData : null,
+        });
+      },
+      error => {
+        logger.error(
+          `FirestoreService: Error subscribing to find ${findId}`,
+          error,
+        );
+        onError(error);
+      },
+    );
+  logger.add('firestore', `Subscribed to find ${findId} for user: ${userId}`);
+  return unsubscribe;
+};
 
 // Listener for real-time updates (for GalleryGrid)
 export const subscribeToFinds = (
@@ -183,7 +250,7 @@ export const subscribeToFinds = (
           finds.push({
             ...(data as Omit<FindRecord, 'timestamp' | 'aiData'>),
             id: doc.id,
-            timestamp: (data.timestamp as firestore.Timestamp)
+            timestamp: (data.timestamp as FirebaseFirestoreTypes.Timestamp)
               .toDate()
               .toISOString(), // Convert Timestamp to string
             aiData: data.aiData ? data.aiData : null, // Assuming aiData is already plain JSON
@@ -218,18 +285,24 @@ export const addSession = async (session: Session): Promise<Session> => {
     const sessionRef = sessionCollection(userId).doc(session.id);
     const sanitized = sanitizeObject(session);
 
-    await sessionRef.set({
+    sessionRef.set({
       ...sanitized,
       startTime: firestore.Timestamp.fromMillis(session.startTime),
       ...(session.endTime && {
         endTime: firestore.Timestamp.fromMillis(session.endTime),
       }),
+    }).then(() => {
+      logger.add('firestore', `Session added: ${session.id}`);
+    }).catch(error => {
+      logger.error('FirestoreService: Failed to add session', {
+        sessionId: session.id,
+        error,
+      });
     });
-    
-    logger.add('firestore', `Session added: ${session.id}`);
+
     return session;
   } catch (error) {
-    logger.error('FirestoreService: Failed to add session', {
+    logger.error('FirestoreService: Failed to queue add session', {
       sessionId: session.id,
       error,
     });
@@ -250,7 +323,7 @@ export const updateSession = async (
     const sessionRef = sessionCollection(userId).doc(sessionId);
     const sanitized = sanitizeObject(updates);
 
-    await sessionRef.update({
+    sessionRef.update({
       ...sanitized,
       ...(updates.startTime && {
         startTime: firestore.Timestamp.fromMillis(updates.startTime),
@@ -258,11 +331,17 @@ export const updateSession = async (
       ...(updates.endTime && {
         endTime: firestore.Timestamp.fromMillis(updates.endTime),
       }),
+    }).then(() => {
+      logger.add('firestore', `Session updated: ${sessionId}`);
+    }).catch(error => {
+      logger.error('FirestoreService: Failed to update session', {
+        sessionId,
+        updates,
+        error,
+      });
     });
-    
-    logger.add('firestore', `Session updated: ${sessionId}`);
   } catch (error) {
-    logger.error('FirestoreService: Failed to update session', {
+    logger.error('FirestoreService: Failed to queue update session', {
       sessionId,
       updates,
       error,
@@ -282,13 +361,19 @@ export const addFindToSession = async (
   }
   try {
     const sessionRef = sessionCollection(userId).doc(sessionId);
-    await sessionRef.update({
+    sessionRef.update({
       finds: firestore.FieldValue.arrayUnion(findId),
+    }).then(() => {
+      logger.add('firestore', `Added find ${findId} to session ${sessionId}`);
+    }).catch(error => {
+      logger.error('FirestoreService: Failed to add find to session', {
+        sessionId,
+        findId,
+        error,
+      });
     });
-    
-    logger.add('firestore', `Added find ${findId} to session ${sessionId}`);
   } catch (error) {
-    logger.error('FirestoreService: Failed to add find to session', {
+    logger.error('FirestoreService: Failed to queue add find to session', {
       sessionId,
       findId,
       error,
@@ -304,10 +389,19 @@ export const deleteSession = async (sessionId: string): Promise<void> => {
     throw new Error('No authenticated user for Firestore operation.');
   }
   try {
-    await sessionCollection(userId).doc(sessionId).delete();
-    logger.add('firestore', `Session deleted: ${sessionId}`);
+    sessionCollection(userId).doc(sessionId).delete().then(() => {
+      logger.add('firestore', `Session deleted: ${sessionId}`);
+    }).catch(error => {
+      logger.error('FirestoreService: Failed to delete session', {
+        sessionId,
+        error,
+      });
+    });
   } catch (error) {
-    logger.error('FirestoreService: Failed to delete session', {sessionId, error});
+    logger.error('FirestoreService: Failed to queue delete session', {
+      sessionId,
+      error,
+    });
     throw error;
   }
 };
@@ -332,9 +426,11 @@ export const subscribeToSessions = (
           sessions.push({
             ...(data as Omit<Session, 'startTime' | 'endTime'>),
             id: doc.id,
-            startTime: (data.startTime as firestore.Timestamp).toMillis(),
+            startTime: (
+              data.startTime as FirebaseFirestoreTypes.Timestamp
+            ).toMillis(),
             endTime: data.endTime
-              ? (data.endTime as firestore.Timestamp).toMillis()
+              ? (data.endTime as FirebaseFirestoreTypes.Timestamp).toMillis()
               : undefined,
           });
         });
@@ -365,16 +461,18 @@ export const getAllSessions = async (): Promise<Session[]> => {
       sessions.push({
         ...(data as Omit<Session, 'startTime' | 'endTime'>),
         id: doc.id,
-        startTime: (data.startTime as firestore.Timestamp).toMillis(),
+        startTime: (
+          data.startTime as FirebaseFirestoreTypes.Timestamp
+        ).toMillis(),
         endTime: data.endTime
-          ? (data.endTime as firestore.Timestamp).toMillis()
+          ? (data.endTime as FirebaseFirestoreTypes.Timestamp).toMillis()
           : undefined,
       });
     });
     logger.add('firestore', `Fetched all sessions for user: ${userId}`);
     return sessions;
   } catch (error) {
-    logger.error('FirestoreService: Error getting all sessions', { error });
+    logger.error('FirestoreService: Error getting all sessions', {error});
     throw error;
   }
 };
@@ -394,9 +492,11 @@ export const getSession = async (
       return {
         ...(data as Omit<Session, 'startTime' | 'endTime'>),
         id: doc.id,
-        startTime: (data?.startTime as firestore.Timestamp).toMillis(),
+        startTime: (
+          data?.startTime as FirebaseFirestoreTypes.Timestamp
+        ).toMillis(),
         endTime: data?.endTime
-          ? (data.endTime as firestore.Timestamp).toMillis()
+          ? (data.endTime as FirebaseFirestoreTypes.Timestamp).toMillis()
           : undefined,
       };
     }

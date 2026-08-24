@@ -25,7 +25,8 @@ Offline-first rock identification app for senior beachcombers.
 6. **File Limits:** Keep files < 200 lines. Propose refactor if exceeded.
 
 ## 🔗 Detailed Documentation
-For deeper context on personas, AI logic, and visual language, see:
+For deeper context on onboarding, personas, AI logic, and roadmap:
+- [Agent Handoff Onboarding Guide](./AGENT_HANDOFF.md)
 - [Core Agent Guidance](./docs/agent_guidance.md)
 - [Product Definition](./conductor/product.md)
 - [Tech Stack Deep Dive](./conductor/tech-stack.md)

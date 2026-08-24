@@ -16,7 +16,6 @@ import {createId} from '@/shared/id';
 import {FindRecord} from '@/shared/types';
 import {useSession} from '@/shared/SessionContext';
 import {logger} from '@/shared/LogService';
-import {useIdentifyQueue} from '@/ai/IdentifyQueueService';
 import {AnalyticsService} from '@/shared/AnalyticsService';
 
 type Props = {
@@ -32,7 +31,6 @@ export function CameraCapture({onSaved}: Props) {
     'info',
   );
   const {activeSession, startSession, addFindToActiveSession} = useSession();
-  const {addToQueue} = useIdentifyQueue();
 
   // Animations
   const flashOpacity = useRef(new Animated.Value(0)).current;
@@ -47,22 +45,54 @@ export function CameraCapture({onSaved}: Props) {
     }
   }, [permission?.granted, requestPermission]);
 
+  useEffect(() => {
+    // Proactively request location permission on mount to avoid blocking the capture flow
+    (async () => {
+      try {
+        const {status} = await Location.getForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          logger.add('system', 'Requesting location permissions on mount...');
+          await Location.requestForegroundPermissionsAsync();
+        }
+      } catch (err) {
+        logger.error('Failed to request location permission on mount', err);
+      }
+    })();
+  }, []);
+
   const classes = useMemo(() => createStyles(), []);
 
   const getLocation = async () => {
+    logger.add('capture', 'getLocation: checking permissions...');
     try {
-      const {status} = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return null;
-    } catch {
+      const {status} = await Location.getForegroundPermissionsAsync();
+      logger.add('capture', `getLocation: permissions status = ${status}`);
+      if (status !== 'granted') {
+        logger.add('capture', 'getLocation: permission not granted, skipping location');
+        return null;
+      }
+    } catch (err) {
+      logger.error('getLocation: permissions check failed', err);
       return null;
     }
-    const last = await Location.getLastKnownPositionAsync();
-    if (last) return last;
+    logger.add('capture', 'getLocation: getting last known position...');
     try {
-      return await Location.getCurrentPositionAsync({
+      const last = await Location.getLastKnownPositionAsync();
+      logger.add('capture', `getLocation: last known position = ${last ? 'found' : 'not found'}`);
+      if (last) return last;
+    } catch (err) {
+      logger.error('getLocation: last known position check failed', err);
+    }
+    logger.add('capture', 'getLocation: getting current position with timeout 3s...');
+    try {
+      const current = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
+        timeout: 3000,
       });
-    } catch {
+      logger.add('capture', 'getLocation: current position retrieved');
+      return current;
+    } catch (err) {
+      logger.error('getLocation: getCurrentPositionAsync failed or timed out', err);
       return null;
     }
   };
@@ -132,17 +162,21 @@ export function CameraCapture({onSaved}: Props) {
       const downloadURL = await storageService.uploadImage(photo.uri);
 
       setStatusMessage('Saving Find...');
-      logger.add('capture', 'Saving to Firestore...');
-      
+      logger.add('capture', 'Saving to Firestore: starting session check...');
+
       let session;
       try {
         session = activeSession ?? (await startSession());
+        logger.add('capture', `Saving to Firestore: session ID = ${session.id}`);
       } catch (sessErr) {
         logger.error('Failed to get/start session', sessErr);
         throw new Error('Session error. Please try starting a walk manually.');
       }
 
+      logger.add('capture', 'Saving to Firestore: requesting location...');
       const location = await getLocation();
+      logger.add('capture', `Saving to Firestore: location retrieved = ${location ? 'yes' : 'no'}`);
+
       const id = createId();
       const record: FindRecord = {
         id,
@@ -158,15 +192,20 @@ export function CameraCapture({onSaved}: Props) {
         favorite: false,
       };
 
+      logger.add('capture', 'Saving to Firestore: calling addFind...');
       await firestoreService.addFind(record);
+      logger.add('capture', 'Saving to Firestore: addFind completed');
+
+      logger.add('capture', 'Saving to Firestore: calling addFindToActiveSession...');
       await addFindToActiveSession(record.id, session.id);
+      logger.add('capture', 'Saving to Firestore: addFindToActiveSession completed');
 
       setStatusKind('success');
       setStatusMessage('Saved!');
       // Second confirmation vibration
       Vibration.vibrate(50);
       AnalyticsService.logEvent('find_captured');
-      
+
       // Small delay before clearing status to let user see 'Saved!'
       setTimeout(() => {
         onSaved();
@@ -179,7 +218,10 @@ export function CameraCapture({onSaved}: Props) {
     } finally {
       setSaving(false);
       // Keep error messages visible longer
-      setTimeout(() => setStatusMessage(null), statusKind === 'error' ? 5000 : 2000);
+      setTimeout(
+        () => setStatusMessage(null),
+        statusKind === 'error' ? 5000 : 2000,
+      );
     }
   };
 

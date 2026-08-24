@@ -37,8 +37,10 @@ export function PosterPreview({
 
   return (
     <View style={[styles.container, isBw && styles.containerBw]}>
-      <Text style={[styles.header, isBw && styles.textBw]}>Field Journal Finds</Text>
-      
+      <Text style={[styles.header, isBw && styles.textBw]}>
+        Field Journal Finds
+      </Text>
+
       <View style={styles.grid}>
         {selectedItems.map(item => (
           <View key={item.id} style={[styles.item, {width: itemWidth}]}>
@@ -53,13 +55,15 @@ export function PosterPreview({
               />
               {isBw && <View style={styles.bwOverlay} />}
             </View>
-            
+
             {showName && (
-              <Text style={[styles.itemTitle, isBw && styles.textBw]} numberOfLines={1}>
+              <Text
+                style={[styles.itemTitle, isBw && styles.textBw]}
+                numberOfLines={1}>
                 {item.label || 'Unknown Find'}
               </Text>
             )}
-            
+
             <View style={styles.metaRow}>
               {showDate && (
                 <Text style={[styles.itemMeta, isBw && styles.textBw]}>
@@ -67,8 +71,11 @@ export function PosterPreview({
                 </Text>
               )}
               {showLocation && (
-                <Text style={[styles.itemMeta, isBw && styles.textBw]} numberOfLines={1}>
-                  {item.location_text || formatLocationSync(item.lat, item.long)}
+                <Text
+                  style={[styles.itemMeta, isBw && styles.textBw]}
+                  numberOfLines={1}>
+                  {item.location_text ||
+                    formatLocationSync(item.lat, item.long)}
                 </Text>
               )}
             </View>
@@ -77,7 +84,9 @@ export function PosterPreview({
       </View>
 
       <View style={styles.footer}>
-        <Text style={[styles.footerText, isBw && styles.textBw]}>Ocal - Silent Partner in Discovery</Text>
+        <Text style={[styles.footerText, isBw && styles.textBw]}>
+          Ocal - Silent Partner in Discovery
+        </Text>
       </View>
     </View>
   );
@@ -164,4 +173,3 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 });
-

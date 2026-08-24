@@ -20,7 +20,9 @@ export function InsightsView() {
         setError(null);
       },
       err => {
-        setError('Failed to load insights. You might be offline or an error occurred.');
+        setError(
+          'Failed to load insights. You might be offline or an error occurred.',
+        );
         setLoading(false);
         console.error(err);
       },
@@ -366,5 +368,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  }
+  },
 });

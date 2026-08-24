@@ -2,8 +2,8 @@ import {getAllFinds, updateFind} from '@/shared/firestoreService';
 
 export interface IntegrityReport {
   totalFinds: number;
-  pendingAi: number;      // Finds without aiData, not yet failed
-  failedAi: number;       // Finds with status 'ai_analysis_failed'
+  pendingAi: number; // Finds without aiData, not yet failed
+  failedAi: number; // Finds with status 'ai_analysis_failed'
   missingPhotos: string[]; // Find IDs where photoUri is empty/null
   scannedAt: string;
 }
@@ -20,7 +20,9 @@ export class IntegrityService {
     const pendingAi = finds.filter(
       f => !f.aiData && f.status !== 'ai_analysis_failed',
     ).length;
-    const failedAi = finds.filter(f => f.status === 'ai_analysis_failed').length;
+    const failedAi = finds.filter(
+      f => f.status === 'ai_analysis_failed',
+    ).length;
     const missingPhotos = finds
       .filter(f => !f.photoUri || f.photoUri.trim() === '')
       .map(f => f.id);
