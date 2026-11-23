@@ -1,18 +1,17 @@
 import React, {useState} from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useTheme } from '@/shared/ThemeContext';
-import { useSession } from '@/shared/SessionContext';
-import { StatusIcon } from '@/shared/components/StatusIcon';
-import { GlassView } from '@/shared/components/GlassView';
-import { THEME } from '@/shared/theme';
-import { SessionControlModal } from './SessionControlModal';
+import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
+import {Ionicons} from '@expo/vector-icons';
+import {useRouter} from 'expo-router';
+import {useTheme} from '@/shared/ThemeContext';
+import {useSession} from '@/shared/SessionContext';
+import {StatusIcon} from '@/shared/components/StatusIcon';
+import {GlassView} from '@/shared/components/GlassView';
+import {SessionControlModal} from './SessionControlModal';
 
 export function MainHeader() {
   const router = useRouter();
-  const { colors, mode } = useTheme();
-  const { activeSession, startSession } = useSession();
+  const {colors, mode} = useTheme();
+  const {activeSession, startSession} = useSession();
   const [modalVisible, setModalVisible] = useState(false);
 
   const handleSessionPress = async () => {
@@ -41,73 +40,63 @@ export function MainHeader() {
         />
 
         {/* Center: Session Pill (Expanded) */}
-        <View style={{ flex: 1, paddingHorizontal: 12 }}>
+        <View style={{flex: 1, paddingHorizontal: 12}}>
           <TouchableOpacity
             onPress={handleSessionPress}
-            style={{ width: '100%' }}
+            style={{width: '100%'}}
             activeOpacity={0.8}>
             <GlassView
               style={[
                 styles.sessionPillContainer,
-                activeSession ? {
-                  backgroundColor: mode === 'high-contrast' ? colors.success + '40' : colors.success + '15',
-                  borderColor: colors.success + '40',
-                  borderWidth: 1,
-                } : { 
-                  justifyContent: 'center', 
-                  opacity: 0.8,
-                  borderColor: colors.border,
-                  borderWidth: 1,
-                },
+                activeSession
+                  ? {
+                      backgroundColor: colors.card,
+                      borderColor: colors.accent,
+                      borderWidth: 2,
+                    }
+                  : {
+                      justifyContent: 'center',
+                      backgroundColor: colors.card,
+                      borderColor: colors.border,
+                      borderWidth: 2,
+                    },
               ]}
-              intensity={activeSession ? 20 : 10}>
+              intensity={0}>
               {activeSession && (
-                <View style={[styles.pulseDot, { backgroundColor: colors.success }]} />
+                <View
+                  style={[styles.pulseDot, {backgroundColor: colors.success}]}
+                />
               )}
               <Text
                 style={[
                   styles.sessionPillText,
                   {
-                    color: activeSession ? (mode === 'high-contrast' ? colors.text : colors.success) : colors.textSecondary,
+                    color: colors.text,
                     textAlign: activeSession ? 'left' : 'center',
                     fontWeight: activeSession ? '800' : '600',
                   },
-                  !activeSession && { fontSize: 13 },
                 ]}
                 numberOfLines={1}
                 ellipsizeMode="tail">
                 {activeSession ? activeSession.name : 'Start Walk'}
               </Text>
               <Ionicons
-                name={activeSession ? "options-outline" : "add-circle-outline"}
-                size={activeSession ? 16 : 18}
-                color={activeSession ? (mode === 'high-contrast' ? colors.text : colors.success) : colors.textSecondary}
-                style={{ marginLeft: 4, flexShrink: 0 }}
+                name={activeSession ? 'options-outline' : 'add-circle-outline'}
+                size={24}
+                color={colors.text}
+                style={{marginLeft: 4, flexShrink: 0}}
               />
             </GlassView>
           </TouchableOpacity>
         </View>
 
         {/* Right: Actions */}
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity
-            onPress={() => router.push('/insights')}
-            style={{ padding: 8 }}>
-            <Ionicons
-              name="analytics-outline"
-              size={24}
-              color={colors.text}
-            />
-          </TouchableOpacity>
-
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
           <TouchableOpacity
             onPress={() => router.push('/settings')}
-            style={{ padding: 8 }}>
-            <Ionicons
-              name="settings-outline"
-              size={24}
-              color={colors.text}
-            />
+            style={{padding: 12}}
+            accessibilityLabel="Settings">
+            <Ionicons name="settings-outline" size={28} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -131,21 +120,22 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sessionPillContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    minHeight: 52,
+    borderRadius: 26,
     flexDirection: 'row',
     alignItems: 'center',
     maxWidth: '100%',
   },
   sessionPillText: {
-    ...THEME.typography.label,
+    fontSize: 18,
+    fontFamily: 'Outfit_700Bold',
     flexShrink: 1,
   },
   pulseDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
   },
 });

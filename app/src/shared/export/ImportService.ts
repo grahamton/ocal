@@ -1,5 +1,5 @@
 import * as FileSystem from 'expo-file-system';
-import {addFind, addSession} from '@/shared/firestoreService';
+import {addFind, addSession} from '@/shared/localDb';
 
 export class ImportService {
   /**

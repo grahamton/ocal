@@ -11,10 +11,6 @@ import {
 import {useTheme} from '@/shared/ThemeContext';
 import {exportService} from '@/shared/export/ExportService';
 import {importService} from '@/shared/export/ImportService';
-import {
-  integrityService,
-  IntegrityReport,
-} from '@/shared/integrity/IntegrityService';
 import {Ionicons} from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import {GlassView} from '@/shared/components/GlassView';
@@ -23,82 +19,10 @@ import {StatusIcon} from '@/shared/components/StatusIcon';
 export function DataManager() {
   const {colors, mode} = useTheme();
   const [loading, setLoading] = useState(false);
-  const [report, setReport] = useState<IntegrityReport | null>(null);
-
-  const handleScan = async () => {
-    try {
-      setLoading(true);
-      const r = await integrityService.checkIntegrity();
-      setReport(r);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      Alert.alert('Scan Failed', msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResetFailedAi = async () => {
-    if (!report || report.failedAi === 0) return;
-
-    Alert.alert(
-      'Reset Failed Analyses',
-      `Re-queue ${report.failedAi} failed AI item(s) for retry?`,
-      [
-        {text: 'Cancel', style: 'cancel'},
-        {
-          text: 'Reset',
-          onPress: async () => {
-            setLoading(true);
-            const count = await integrityService.resetFailedAi();
-            Alert.alert('Done', `Reset ${count} items for retry.`);
-            handleScan();
-          },
-        },
-      ],
-    );
-  };
-
-  const handleArchiveMissing = async () => {
-    if (!report || report.missingPhotos.length === 0) return;
-
-    Alert.alert(
-      'Archive Missing',
-      `Mark ${report.missingPhotos.length} items as 'archived'?`,
-      [
-        {text: 'Cancel', style: 'cancel'},
-        {
-          text: 'Archive',
-          onPress: async () => {
-            setLoading(true);
-            const archived = await integrityService.archiveMissingPhotos(
-              report.missingPhotos,
-            );
-            Alert.alert('Archive Complete', `Archived ${archived} items.`);
-            handleScan();
-          },
-        },
-      ],
-    );
-  };
-
   const handleExportJson = async () => {
     try {
       setLoading(true);
       const path = await exportService.exportBackupJson();
-      await exportService.shareFile(path);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      Alert.alert('Export Failed', msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleExportAnalysis = async () => {
-    try {
-      setLoading(true);
-      const path = await exportService.exportAnalysisJson();
       await exportService.shareFile(path);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -177,26 +101,6 @@ export function DataManager() {
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity onPress={handleExportAnalysis} disabled={loading}>
-          <GlassView style={styles.card} intensity={20}>
-            <View
-              style={[
-                styles.iconBox,
-                {backgroundColor: 'rgba(139, 92, 246, 0.1)'},
-              ]}>
-              <Ionicons name="bug-outline" size={24} color="#8b5cf6" />
-            </View>
-            <View style={{flex: 1}}>
-              <Text style={[styles.actionTitle, {color: colors.text}]}>
-                Export for Analysis
-              </Text>
-              <Text style={[styles.actionDesc, {color: colors.textSecondary}]}>
-                Sanitized JSON for AI feedback (No heavy images).
-              </Text>
-            </View>
-          </GlassView>
-        </TouchableOpacity>
-
         <TouchableOpacity onPress={handleExportJson} disabled={loading}>
           <GlassView style={styles.card} intensity={20}>
             <View
@@ -258,118 +162,6 @@ export function DataManager() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.divider} />
-
-      <Text style={[styles.sectionTitle, {color: colors.text}]}>
-        Data Health
-      </Text>
-
-      {!report ? (
-        <TouchableOpacity onPress={handleScan} disabled={loading}>
-          <GlassView style={styles.card} intensity={20}>
-            <View
-              style={[
-                styles.iconBox,
-                {backgroundColor: 'rgba(236, 72, 153, 0.1)'},
-              ]}>
-              <Ionicons name="pulse-outline" size={24} color="#ec4899" />
-            </View>
-            <View style={{flex: 1}}>
-              <Text style={[styles.actionTitle, {color: colors.text}]}>
-                Run Health Check
-              </Text>
-              <Text style={[styles.actionDesc, {color: colors.textSecondary}]}>
-                Scan for missing photos and orphan files.
-              </Text>
-            </View>
-          </GlassView>
-        </TouchableOpacity>
-      ) : (
-        <View style={{gap: 12}}>
-          <GlassView
-            style={[
-              styles.card,
-              {flexDirection: 'column', alignItems: 'flex-start'},
-            ]}
-            intensity={10}>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                width: '100%',
-              }}>
-              <Text style={[styles.actionTitle, {color: colors.text}]}>
-                Scan Results
-              </Text>
-              <TouchableOpacity onPress={handleScan}>
-                <Ionicons name="refresh" size={20} color={colors.accent} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.statRow}>
-              <Text style={{color: colors.textSecondary}}>Total Finds:</Text>
-              <Text style={{color: colors.text, fontWeight: 'bold'}}>
-                {report.totalFinds}
-              </Text>
-            </View>
-            <View style={styles.statRow}>
-              <Text style={{color: colors.textSecondary}}>Pending AI:</Text>
-              <Text style={{color: colors.text, fontWeight: 'bold'}}>
-                {report.pendingAi}
-              </Text>
-            </View>
-
-            {/* Failed AI */}
-            <View
-              style={[
-                styles.issueBox,
-                report.failedAi > 0
-                  ? {borderColor: '#f59e0b'}
-                  : {borderColor: 'transparent'},
-              ]}>
-              <Text
-                style={{
-                  color: report.failedAi > 0 ? '#f59e0b' : colors.textSecondary,
-                }}>
-                Failed AI: {report.failedAi}
-              </Text>
-              {report.failedAi > 0 && (
-                <TouchableOpacity
-                  onPress={handleResetFailedAi}
-                  style={styles.smallBtn}>
-                  <Text style={styles.smallBtnText}>Retry</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {/* Missing Photos */}
-            <View
-              style={[
-                styles.issueBox,
-                report.missingPhotos.length > 0
-                  ? {borderColor: '#ef4444'}
-                  : {borderColor: 'transparent'},
-              ]}>
-              <Text
-                style={{
-                  color:
-                    report.missingPhotos.length > 0
-                      ? '#ef4444'
-                      : colors.textSecondary,
-                }}>
-                Missing Photos: {report.missingPhotos.length}
-              </Text>
-              {report.missingPhotos.length > 0 && (
-                <TouchableOpacity
-                  onPress={handleArchiveMissing}
-                  style={styles.smallBtn}>
-                  <Text style={styles.smallBtnText}>Archive Items</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </GlassView>
-        </View>
-      )}
 
       {loading && (
         <View style={styles.loadingOverlay}>

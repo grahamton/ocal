@@ -1,1181 +1,193 @@
-import {useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
-  Modal,
+  Alert,
+  Image,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  ScrollView,
-  Image,
-  TextInput,
-  ActivityIndicator,
-  Alert,
 } from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
-import * as firestoreService from '@/shared/firestoreService';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import * as localDb from '@/shared/localDb';
 import {FindRecord, Session} from '@/shared/types';
 import useIdentifyQueue from '@/ai/IdentifyQueueService';
-import {formatLocationSync} from '@/shared/format';
-import {useTheme, ThemeColors} from '@/shared/ThemeContext';
-import {StatusIcon} from '@/shared/components/StatusIcon';
-import {getCategoryFromTags} from '@/shared/CategoryMapper';
-import {RawJsonInspector} from '@/shared/components/RawJsonInspector';
-import {THEME} from '@/shared/theme';
+import {useTheme} from '@/shared/ThemeContext';
+
+import {DetailHeader} from './components/DetailHeader';
+import {RockCardView} from './components/RockCardView';
+import {AskAlChat} from './components/AskAlChat';
+import {FieldNotesSection} from './components/FieldNotesSection';
+import {PhotoViewer} from './components/PhotoViewer';
 
 type Props = {
-  visible: boolean;
   item: FindRecord | null;
   onClose: () => void;
-  onSaved: () => void;
-  onFilterBySession?: (sessionId: string) => void;
+  onSaved?: () => void;
 };
 
-function ContextItem({
-  label,
-  value,
-  colors,
-}: {
-  label: string;
-  value: string;
-  colors: ThemeColors;
-}) {
-  if (!value) return null;
-  return (
-    <View style={styles.factGrid}>
-      <View style={{width: '30%'}}>
-        <Text style={[styles.factLabel, {color: colors.textSecondary}]}>
-          {label}
-        </Text>
-      </View>
-      <View style={{flex: 1}}>
-        <Text style={[styles.factValue, {color: colors.text}]}>{value}</Text>
-      </View>
-    </View>
-  );
-}
-
-export function FindDetailModal({visible, item, onClose, onSaved, onFilterBySession}: Props) {
-  const {colors, mode} = useTheme();
+/**
+ * One find, top to bottom: photo (tap to zoom), name, Ranger Al's card,
+ * chat, your notes, then share/delete. Everything saves as you go; there
+ * is no Save button to forget.
+ */
+export function FindDetailModal({item, onClose}: Props) {
+  const {colors} = useTheme();
+  const insets = useSafeAreaInsets();
   const [note, setNote] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [label, setLabel] = useState('');
-  const [favorite, setFavorite] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
-  const [localItem, setLocalItem] = useState<FindRecord | null>(item);
-  const aiResult = localItem?.aiData?.result || null;
   const [session, setSession] = useState<Session | null>(null);
-  const [showContext, setShowContext] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const {addToQueue} = useIdentifyQueue();
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const {retry} = useIdentifyQueue();
 
   useEffect(() => {
-    if (item && visible) {
-      setLabel(item.label ?? '');
-      setNote(item.note ?? '');
-      setFavorite(item.favorite);
-      setAiError(null);
-      setLocalItem(item);
-      setAiLoading(false);
-      setSession(null);
-
-      if (item.sessionId) {
-        firestoreService.getSession(item.sessionId).then(s => {
-          if (s) setSession(s);
-        });
-      }
+    if (!item) return;
+    setNote(item.note ?? '');
+    setSession(null);
+    if (item.sessionId) {
+      localDb.getSession(item.sessionId).then(s => s && setSession(s));
     }
-  }, [item, visible]);
+    // Only reset local note text when switching to a different find.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item?.id]);
 
-  const handleSave = async () => {
-    if (!item || saving) return;
-    setSaving(true);
-    try {
-      await firestoreService.updateFind(item.id, {
-        label: label.trim() || null,
-        note: note.trim() || null,
-        status: 'cataloged',
-        favorite,
-      });
-      onSaved();
-      onClose();
-    } finally {
-      setSaving(false);
-    }
+  if (!item) return null;
+
+  const toggleFavorite = () => localDb.updateFind(item.id, {favorite: !item.favorite});
+  const saveNote = () => {
+    const trimmed = note.trim() || null;
+    if (trimmed !== (item.note ?? null)) localDb.updateFind(item.id, {note: trimmed});
   };
 
   const handleDelete = () => {
-    Alert.alert('Delete this find?', 'This cannot be undone.', [
-      {text: 'Cancel', style: 'cancel'},
+    Alert.alert('Delete this rock?', 'The photo and what Ranger Al said will be gone for good.', [
+      {text: 'Keep it', style: 'cancel'},
       {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          try {
-            // Safe access
-            if (item?.id) {
-              await firestoreService.deleteFind(item.id);
-              onClose?.();
-            }
-          } catch {
-            Alert.alert('Error', 'Could not delete');
-          }
+          await localDb.deleteFind(item.id);
+          onClose();
         },
       },
     ]);
   };
 
   const handleShare = async () => {
-    if (!item) return;
     try {
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(item.photoUri);
-      } else {
-        Alert.alert(
-          'Sharing not available',
-          'Sharing is not supported on this device/simulator.',
-        );
-      }
-    } catch (error) {
-      console.error('Share failed', error);
-      Alert.alert('Error', 'Could not share image.');
-    }
-  };
-
-  const runIdentify = async () => {
-    if (!item || aiLoading) return;
-    setAiLoading(true);
-    setAiError(null);
-    try {
-      await addToQueue(item.id);
+      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(item.photoUri);
+      else Alert.alert('Sharing is not available on this phone.');
     } catch {
-      setAiError('Could not start analysis.');
-      setAiLoading(false);
+      Alert.alert('Could not share the photo.');
     }
   };
-
-  const formatDate = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-  };
-
-  if (!localItem) return null;
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}>
-      <View style={[styles.container, {backgroundColor: colors.background}]}>
-        {/* Close Button (Absolute) */}
+    <View style={[s.container, {backgroundColor: colors.background}]}>
+      <View style={[s.topBar, {borderBottomColor: colors.border, backgroundColor: colors.background}]}>
         <TouchableOpacity
-          style={[styles.closeBtn, {zIndex: 50}]}
-          onPress={onClose}>
-          <Ionicons name="close" size={28} color="#fff" />
+          style={[s.back, {borderColor: colors.text}]}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Back to my rocks">
+          <Ionicons name="chevron-back" size={28} color={colors.text} />
+          <Text style={[s.backText, {color: colors.text}]}>My Rocks</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={{paddingBottom: insets.bottom + 32}}
+        keyboardShouldPersistTaps="handled">
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => setViewerOpen(true)}
+          accessibilityRole="imagebutton"
+          accessibilityLabel="Photo of your rock. Tap to look closer.">
+          <Image source={{uri: item.photoUri}} style={s.photo} resizeMode="cover" />
+          <View style={s.zoomHint}>
+            <Ionicons name="search" size={22} color="#fff" />
+            <Text style={s.zoomHintText}>Tap to look closer</Text>
+          </View>
         </TouchableOpacity>
 
-        {/* Hero Image */}
-        <View style={styles.heroContainer}>
-          <Image
-            source={{uri: localItem.photoUri}}
-            style={styles.heroImage}
-            resizeMode="cover"
-          />
-          <View
-            style={[
-              StyleSheet.absoluteFillObject,
-              {backgroundColor: 'rgba(0,0,0,0.1)'},
-            ]}
-            pointerEvents="none"
+        <View style={s.body}>
+          <DetailHeader
+            localItem={item}
+            label={item.label ?? ''}
+            favorite={item.favorite}
+            onToggleFavorite={toggleFavorite}
+            session={session}
+            colors={colors}
           />
         </View>
 
-        {/* Content Scroll */}
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}>
-          {/* State A: Unanalyzed */}
-          {!aiResult && !aiLoading && (
-            <TouchableOpacity
-              style={[styles.analyzeButton, {backgroundColor: colors.accent}]}
-              onPress={runIdentify}>
-              <Ionicons name="sparkles" size={24} color="#fff" />
-              <Text style={styles.analyzeButtonText}>Ask Ranger Al</Text>
-            </TouchableOpacity>
-          )}
+        <RockCardView find={item} onRetry={() => retry(item.id)} colors={colors} />
+        <AskAlChat find={item} colors={colors} />
 
-          {/* Loading State */}
-          {aiLoading && (
-            <View style={[styles.loadingCard, {backgroundColor: colors.card}]}>
-              <ActivityIndicator size="large" color={colors.accent} />
-              <Text style={[styles.loadingText, {color: colors.text}]}>
-                Analyzing your find...
-              </Text>
-            </View>
-          )}
+        <View style={s.body}>
+          <FieldNotesSection note={note} setNote={setNote} onBlur={saveNote} colors={colors} />
 
-          {/* Error State */}
-          {aiError && (
-            <View
-              style={[
-                styles.errorCard,
-                {backgroundColor: '#fef2f2', borderColor: '#ef4444'},
-              ]}>
-              <Ionicons name="alert-circle" size={24} color="#ef4444" />
-              <Text style={styles.errorText}>{aiError}</Text>
-              <TouchableOpacity onPress={runIdentify}>
-                <Text style={[styles.retryText, {color: colors.accent}]}>
-                  Retry
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* State B: Analyzed - Info Dock */}
-          {aiResult && (
-            <>
-              <View style={[styles.infoDock, {backgroundColor: colors.card}]}>
-                {/* Title Row */}
-                <View style={styles.titleRow}>
-                  <Text
-                    style={[styles.title, {color: colors.text}]}
-                    accessibilityRole="header">
-                    {label || aiResult.best_guess?.label || 'Unknown Rock'}
-                  </Text>
-                  <TouchableOpacity onPress={() => setFavorite(p => !p)}>
-                    <Ionicons
-                      name={favorite ? 'star' : 'star-outline'}
-                      size={32}
-                      color={favorite ? '#fbbf24' : colors.textSecondary}
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Metadata Row */}
-                <Text style={[styles.metadata, {color: colors.textSecondary}]}>
-                  {localItem.location_text ||
-                    formatLocationSync(localItem.lat, localItem.long)}
-                  {' • '}{formatDate(localItem.timestamp)}
-                  {/* Traceability Badge */}
-                  {localItem?.aiData?.meta && (
-                    <Text style={{fontSize: 10, color: colors.accent}}>
-                      {' '}
-                      • v
-                      {localItem.aiData.meta.schemaVersion}
-                    </Text>
-                  )}
-                </Text>
-
-                {/* Session Context Bar */}
-                {session && (
-                  <View style={[styles.sessionBar, {backgroundColor: mode === 'high-contrast' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.03)'}]}>
-                    <View style={{flex: 1}}>
-                      <Text style={[styles.sessionLabel, {color: colors.textSecondary}]}>FOUND DURING</Text>
-                      <Text style={[styles.sessionName, {color: colors.text}]} numberOfLines={1}>{session.name}</Text>
-                      {session.locationName && (
-                        <Text style={[styles.sessionLocation, {color: colors.textSecondary}]} numberOfLines={1}>
-                          <Ionicons name="map-outline" size={12} /> {session.locationName}
-                        </Text>
-                      )}
-                    </View>
-                    <TouchableOpacity 
-                      style={[styles.viewSessionBtn, {backgroundColor: colors.accent}]}
-                      onPress={() => onFilterBySession?.(session.id)}
-                    >
-                      <Text style={styles.viewSessionBtnText}>View Walk</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-
-              {/* Dynamic Content Renderer */}
-              <View
-                style={[
-                  styles.labCard,
-                  {backgroundColor: colors.card, borderColor: colors.border},
-                ]}>
-                {/* Dynamic Header (Polished/Rough) */}
-                <View style={styles.labHeader}>
-                  <StatusIcon
-                    status={
-                      aiResult ? 'polished' : aiLoading ? 'polishing' : 'rough'
-                    }
-                    category={getCategoryFromTags(
-                      [aiResult?.best_guess?.category || ''],
-                      aiResult?.best_guess?.label,
-                    )}
-                    confidence={aiResult?.best_guess?.confidence || 0}
-                    size={40}
-                    theme={mode === 'high-contrast' ? 'beach' : 'journal'}
-                  />
-                  <View style={{justifyContent: 'center', flex: 1}}>
-                    <Text style={[styles.labTitle, {color: colors.text}]}>
-                      {aiResult
-                        ? 'ANALYSIS COMPLETE'
-                        : aiLoading
-                          ? 'ANALYZING...'
-                          : 'READY TO SCAN'}
-                    </Text>
-                    {/* Confidence Bar Removed as per user request */}
-                  </View>
-                </View>
-
-                {aiResult && (
-                  <>
-                    {/* Ranger Summary */}
-                    {aiResult.ranger_summary && (
-                      <View style={styles.summaryBox}>
-                        <Ionicons
-                          name="chatbox-ellipses-outline"
-                          size={20}
-                          color={colors.accent}
-                          style={{marginTop: 2}}
-                        />
-                        <Text
-                          style={[styles.summaryText, {color: colors.text}]}>
-                          {aiResult.ranger_summary}
-                        </Text>
-                      </View>
-                    )}
-
-                    {/* Category Specific Analysis (New for Gemini 2.0) */}
-                    {aiResult.category_details && (
-                      <View style={[styles.labSection, {marginBottom: 8}]}>
-                        {/* Mineral */}
-                        {aiResult.category_details.mineral && (
-                          <>
-                            <Text
-                              style={[
-                                styles.sectionHeader,
-                                {color: colors.text, marginBottom: 8},
-                              ]}>
-                              MINERAL ANALYSIS
-                            </Text>
-                            <ContextItem
-                              label="Crystal System"
-                              value={
-                                aiResult.category_details.mineral
-                                  .crystal_system || ''
-                              }
-                              colors={colors}
-                            />
-                            <ContextItem
-                              label="Formula"
-                              value={
-                                aiResult.category_details.mineral
-                                  .chemical_formula || ''
-                              }
-                              colors={colors}
-                            />
-                            <ContextItem
-                              label="Hardness"
-                              value={
-                                aiResult.category_details.mineral
-                                  .hardness_scale || ''
-                              }
-                              colors={colors}
-                            />
-                            <ContextItem
-                              label="Optical"
-                              value={
-                                aiResult.category_details.mineral
-                                  .optical_properties || ''
-                              }
-                              colors={colors}
-                            />
-                          </>
-                        )}
-                        {/* Rock */}
-                        {aiResult.category_details.rock && (
-                          <>
-                            <Text
-                              style={[
-                                styles.sectionHeader,
-                                {color: colors.text, marginBottom: 8},
-                              ]}>
-                              PETROLOGY
-                            </Text>
-                            <ContextItem
-                              label="Texture"
-                              value={
-                                aiResult.category_details.rock.texture_type ||
-                                ''
-                              }
-                              colors={colors}
-                            />
-                            <ContextItem
-                              label="Composition"
-                              value={
-                                aiResult.category_details.rock
-                                  .mineral_composition || ''
-                              }
-                              colors={colors}
-                            />
-                            <ContextItem
-                              label="Environment"
-                              value={
-                                aiResult.category_details.rock
-                                  .depositional_environment || ''
-                              }
-                              colors={colors}
-                            />
-                          </>
-                        )}
-                        {/* Fossil */}
-                        {aiResult.category_details.fossil && (
-                          <>
-                            <Text
-                              style={[
-                                styles.sectionHeader,
-                                {color: colors.text, marginBottom: 8},
-                              ]}>
-                              PALEONTOLOGY
-                            </Text>
-                            <ContextItem
-                              label="Taxonomy"
-                              value={
-                                aiResult.category_details.fossil.taxonomy || ''
-                              }
-                              colors={colors}
-                            />
-                            <ContextItem
-                              label="Living Relative"
-                              value={
-                                aiResult.category_details.fossil
-                                  .living_relative || ''
-                              }
-                              colors={colors}
-                            />
-                            <ContextItem
-                              label="Preservation"
-                              value={
-                                aiResult.category_details.fossil
-                                  .preservation_mode || ''
-                              }
-                              colors={colors}
-                            />
-                          </>
-                        )}
-                        {/* Artifact */}
-                        {aiResult.category_details.artifact && (
-                          <>
-                            <Text
-                              style={[
-                                styles.sectionHeader,
-                                {color: colors.text, marginBottom: 8},
-                              ]}>
-                              ARTIFACT DETAILS
-                            </Text>
-                            <ContextItem
-                              label="Likely Origin"
-                              value={
-                                aiResult.category_details.artifact
-                                  .likely_origin || ''
-                              }
-                              colors={colors}
-                            />
-                            <ContextItem
-                              label="Est. Age"
-                              value={
-                                aiResult.category_details.artifact
-                                  .estimated_age_range || ''
-                              }
-                              colors={colors}
-                            />
-                          </>
-                        )}
-                      </View>
-                    )}
-
-                    {/* Alerts (Red Flags / Caution) */}
-                    {((aiResult.red_flags && aiResult.red_flags.length > 0) ||
-                      (aiResult.caution && aiResult.caution.length > 0)) && (
-                      <View
-                        style={[
-                          styles.alertBox,
-                          {backgroundColor: '#fef2f2', borderColor: '#ef4444'},
-                        ]}>
-                        <Ionicons name="warning" size={20} color="#ef4444" />
-                        <View style={{flex: 1}}>
-                          {[
-                            ...(aiResult.red_flags || []),
-                            ...(aiResult.caution || []),
-                          ].map((flag: string, i: number) => (
-                            <Text
-                              key={i}
-                              style={[styles.alertText, {color: '#b91c1c'}]}>
-                              • {flag}
-                            </Text>
-                          ))}
-                        </View>
-                      </View>
-                    )}
-
-                    {/* Lapidary / Tumble Info */}
-                    {aiResult.lapidary_guidance && (
-                      <View style={styles.labSection}>
-                        <View style={styles.rowCenter}>
-                          <Ionicons
-                            name={
-                              aiResult.lapidary_guidance.is_tumble_candidate
-                                ? 'checkmark-circle'
-                                : 'close-circle'
-                            }
-                            size={18}
-                            color={
-                              aiResult.lapidary_guidance.is_tumble_candidate
-                                ? '#22c55e'
-                                : '#ef4444'
-                            }
-                          />
-                          <Text
-                            style={[
-                              styles.sectionHeader,
-                              {color: colors.text},
-                            ]}>
-                            {aiResult.lapidary_guidance.is_tumble_candidate
-                              ? 'Good for Tumbling'
-                              : 'Not Recommended for Tumbling'}
-                          </Text>
-                        </View>
-                        <Text
-                          style={[
-                            styles.bodyText,
-                            {color: colors.textSecondary, marginLeft: 26},
-                          ]}>
-                          {aiResult.lapidary_guidance.tumble_reason}
-                        </Text>
-                      </View>
-                    )}
-
-                    {/* Region Fit (Conditional) */}
-                    {aiResult.region_fit &&
-                      (aiResult.region_fit.fit === 'medium' ||
-                        aiResult.region_fit.fit === 'low') && (
-                        <View style={styles.labSection}>
-                          <View style={styles.rowCenter}>
-                            <Ionicons
-                              name="location-outline"
-                              size={18}
-                              color={colors.textSecondary}
-                            />
-                            <Text
-                              style={[
-                                styles.sectionHeader,
-                                {color: colors.text},
-                              ]}>
-                              Location Check:{' '}
-                              {aiResult.region_fit.fit.toUpperCase()}
-                            </Text>
-                          </View>
-                          <Text
-                            style={[
-                              styles.bodyText,
-                              {color: colors.textSecondary, marginLeft: 26},
-                            ]}>
-                            {aiResult.region_fit.note}
-                          </Text>
-                        </View>
-                      )}
-
-                    {/* Followup Output (Conditional) */}
-                    {((aiResult.best_guess?.confidence || 0) < 0.9 ||
-                      aiResult.best_guess?.category === 'unknown') &&
-                      aiResult.followup_photos &&
-                      aiResult.followup_photos.length > 0 && (
-                        <View style={styles.labSection}>
-                          <Text
-                            style={[
-                              styles.label,
-                              {color: colors.textSecondary},
-                            ]}>
-                            Ranger Tip: Try these photos for better ID
-                          </Text>
-                          <View
-                            style={{
-                              flexDirection: 'row',
-                              flexWrap: 'wrap',
-                              gap: 8,
-                              marginTop: 4,
-                            }}>
-                            {aiResult.followup_photos
-                              .slice(0, 2)
-                              .map((req: string, i: number) => (
-                                <View
-                                  key={i}
-                                  style={[
-                                    styles.chip,
-                                    {borderColor: colors.border},
-                                  ]}>
-                                  <Text
-                                    style={[
-                                      styles.chipText,
-                                      {color: colors.textSecondary},
-                                    ]}>
-                                    {req}
-                                  </Text>
-                                </View>
-                              ))}
-                          </View>
-                        </View>
-                      )}
-
-                    {/* Context Toggle (Learn More) */}
-                    <TouchableOpacity
-                      style={[
-                        styles.toggleRow,
-                        {borderTopColor: colors.border},
-                      ]}
-                      onPress={() => setShowContext(!showContext)}>
-                      <Text style={[styles.toggleText, {color: colors.text}]}>
-                        Geologic Context
-                      </Text>
-                      <Ionicons
-                        name={showContext ? 'chevron-up' : 'chevron-down'}
-                        size={20}
-                        color={colors.textSecondary}
-                      />
-                    </TouchableOpacity>
-
-                    {showContext && aiResult.specimen_context && (
-                      <View style={styles.toggleContent}>
-                        <ContextItem
-                          label="Age"
-                          value={aiResult.specimen_context.age}
-                          colors={colors}
-                        />
-                        <ContextItem
-                          label="Geologic Hypothesis"
-                          value={
-                            aiResult.specimen_context.geology_hypothesis?.name
-                              ? `${aiResult.specimen_context.geology_hypothesis.name} (${aiResult.specimen_context.geology_hypothesis.confidence})`
-                              : 'Formation unknown'
-                          }
-                          colors={colors}
-                        />
-                        <ContextItem
-                          label="Historical Fact"
-                          value={aiResult.specimen_context.historical_fact}
-                          colors={colors}
-                        />
-                      </View>
-                    )}
-
-                    {/* Technical (Advanced) Toggle */}
-                    <TouchableOpacity
-                      style={[
-                        styles.toggleRow,
-                        {borderTopColor: colors.border},
-                      ]}
-                      onPress={() => setShowAdvanced(!showAdvanced)}>
-                      <Text style={[styles.toggleText, {color: colors.text}]}>
-                        Technical Details
-                      </Text>
-                      <Ionicons
-                        name={showAdvanced ? 'chevron-up' : 'chevron-down'}
-                        size={20}
-                        color={colors.textSecondary}
-                      />
-                    </TouchableOpacity>
-
-                    {showAdvanced && (
-                      <View style={styles.toggleContent}>
-                        {/* Alternatives */}
-                        {aiResult.alternatives &&
-                          aiResult.alternatives.length > 0 && (
-                            <View style={{marginBottom: 12}}>
-                              <Text
-                                style={[
-                                  styles.label,
-                                  {
-                                    color: colors.textSecondary,
-                                    marginBottom: 4,
-                                  },
-                                ]}>
-                                Alternatives
-                              </Text>
-                              {aiResult.alternatives.map(
-                                (
-                                  alt: {label: string; confidence: number},
-                                  i: number,
-                                ) => (
-                                  <View key={i} style={styles.altRow}>
-                                    <Text style={{color: colors.text}}>
-                                      {alt.label}
-                                    </Text>
-                                    <Text style={{color: colors.textSecondary}}>
-                                      {Math.round(alt.confidence * 100)}%
-                                    </Text>
-                                  </View>
-                                ),
-                              )}
-                            </View>
-                          )}
-
-                        {/* Catalog Tags */}
-                        {aiResult.catalog_tags && (
-                          <View>
-                            <Text
-                              style={[
-                                styles.label,
-                                {color: colors.textSecondary, marginBottom: 4},
-                              ]}>
-                              Tags
-                            </Text>
-                            <Text style={{color: colors.text, lineHeight: 20}}>
-                              {Object.entries(aiResult.catalog_tags)
-                                .map(([_k, v]) =>
-                                  Array.isArray(v) ? v.join(', ') : v,
-                                )
-                                .join(' • ')}
-                            </Text>
-                          </View>
-                        )}
-
-                        <RawJsonInspector data={aiResult} />
-                      </View>
-                    )}
-                  </>
-                )}
-
-                {/* Placeholder if no result but showing manual entry or loading */}
-                {!aiResult && <View style={{height: 20}} />}
-
-                {/* Notes Section */}
-                <View
-                  style={{
-                    marginTop: 16,
-                    borderTopWidth: 1,
-                    borderTopColor: 'rgba(0,0,0,0.05)',
-                    paddingTop: 16,
-                    gap: 8,
-                  }}>
-                  <Text style={[styles.label, {color: colors.textSecondary}]}>
-                    YOUR FIELD NOTES
-                  </Text>
-                  <TextInput
-                    value={note}
-                    onChangeText={setNote}
-                    style={{
-                      borderWidth: 1,
-                      borderRadius: 12,
-                      padding: 12,
-                      fontSize: 15,
-                      minHeight: 80,
-                      backgroundColor: colors.background,
-                      borderColor: colors.border,
-                      color: colors.text,
-                    }}
-                    placeholder="Add your story about this find..."
-                    placeholderTextColor={colors.textSecondary}
-                    multiline
-                    textAlignVertical="top"
-                  />
-                </View>
-              </View>
-            </>
-          )}
-          {/* Bottom padding for sticky footer */}
-          <View style={{height: 80}} />
-        </ScrollView>
-
-        {/* Sticky Action Footer */}
-        <View
-          style={[
-            styles.actionFooter,
-            {
-              backgroundColor: colors.background,
-              borderTopColor: colors.border,
-            },
-          ]}>
           <TouchableOpacity
-            style={[styles.iconButton, {borderColor: colors.border}]}
-            onPress={handleShare}>
-            <Ionicons name="share-outline" size={24} color={colors.text} />
+            style={[s.action, {borderColor: colors.border, backgroundColor: colors.card}]}
+            onPress={handleShare}
+            accessibilityRole="button">
+            <Ionicons name="share-outline" size={26} color={colors.text} />
+            <Text style={[s.actionText, {color: colors.text}]}>Share photo</Text>
           </TouchableOpacity>
-
           <TouchableOpacity
-            style={[styles.iconButton, {borderColor: '#ef4444'}]}
-            onPress={handleDelete}>
-            <Ionicons name="trash-outline" size={24} color="#ef4444" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.saveButton, {backgroundColor: colors.accent}]}
-            onPress={handleSave}
-            disabled={saving}>
-            {saving ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <>
-                <Ionicons name="checkmark-circle" size={20} color="#fff" />
-                <Text style={styles.saveText}>Save</Text>
-              </>
-            )}
+            style={[s.action, {borderColor: colors.danger}]}
+            onPress={handleDelete}
+            accessibilityRole="button">
+            <Ionicons name="trash-outline" size={26} color={colors.danger} />
+            <Text style={[s.actionText, {color: colors.danger}]}>Delete this rock</Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </Modal>
+      </ScrollView>
+
+      <PhotoViewer uri={item.photoUri} visible={viewerOpen} onClose={() => setViewerOpen(false)} />
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  heroContainer: {
-    height: '42%',
-    position: 'relative',
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  closeBtn: {
+const s = StyleSheet.create({
+  container: {flex: 1},
+  photo: {width: '100%', aspectRatio: 1},
+  zoomHint: {
     position: 'absolute',
-    top: 50,
     right: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    gap: 20,
-  },
-  analyzeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    paddingVertical: 16,
-    borderRadius: 16,
-  },
-  analyzeButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '800',
-    fontFamily: 'Outfit_800ExtraBold',
-  },
-  loadingCard: {
-    padding: 24,
-    borderRadius: 16,
-    alignItems: 'center',
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  errorCard: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 8,
-    alignItems: 'center',
-  },
-  errorText: {
-    color: '#ef4444',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  retryText: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  infoDock: {
-    padding: 20,
-    borderRadius: 16,
-    gap: 12,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    fontFamily: 'Outfit_800ExtraBold',
-    flex: 1,
-  },
-  metadata: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  sessionBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    marginTop: 4,
-    gap: 12,
-  },
-  sessionLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-    marginBottom: 2,
-  },
-  sessionName: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  sessionLocation: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  viewSessionBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  viewSessionBtnText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-
-  // Scientist View Styles
-  labCard: {
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 16,
-  },
-  labHeader: {
+    bottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0,0,0,0.65)',
   },
-  labTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  meterContainer: {
-    gap: 6,
-  },
-  meterRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  meterLabel: {fontSize: 13, fontWeight: '600'},
-  meterValue: {fontSize: 13, fontWeight: '700'},
-  meterTrack: {height: 6, borderRadius: 3, overflow: 'hidden'},
-  meterFill: {height: '100%', borderRadius: 3},
-
-  labSection: {
-    gap: 8,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
-    paddingTop: 12,
-  },
-  labSectionTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  evidenceItem: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'flex-start',
-  },
-  evidenceText: {
-    fontSize: 14,
-    lineHeight: 20,
-    flex: 1,
-  },
-  altRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  altName: {fontSize: 14, fontWeight: '500'},
-  altProb: {fontSize: 14},
-
-  monoText: {
-    fontFamily: 'monospace',
-    fontSize: 11,
-  },
-
-  notesSection: {
-    gap: 8,
-  },
-  notesInput: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 15,
-    minHeight: 80,
-    backgroundColor: THEME.colors.background,
-    borderColor: THEME.colors.border,
-    color: THEME.colors.text,
-  },
-  actionFooter: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    padding: 16,
-    gap: 12,
-    borderTopWidth: 1,
-  },
-  iconButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveButton: {
-    flex: 1,
+  zoomHintText: {color: '#fff', fontSize: 18, fontWeight: '700'},
+  body: {paddingHorizontal: 16, paddingTop: 16, gap: 16},
+  topBar: {paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1},
+  back: {
+    alignSelf: 'flex-start',
+    minHeight: 52,
+    paddingLeft: 8,
+    paddingRight: 18,
+    borderRadius: 26,
+    borderWidth: 2,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
-  saveText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  deleteButton: {
-    // Legacy mapping if needed, but handled by iconButton now
-  },
-  factGrid: {
-    flexDirection: 'row',
-    gap: 8,
-    marginVertical: 12,
-  },
-  factChip: {
-    width: '100%',
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.03)',
     gap: 4,
   },
-  factLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  factValue: {
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'left',
-  },
-  didYouKnowBox: {
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 8,
-    gap: 6,
-  },
-  didYouKnowTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  didYouKnowText: {
-    fontSize: 15,
-    lineHeight: 22,
-    fontWeight: '500',
-  },
-  summaryBox: {
-    flexDirection: 'row',
-    gap: 12,
-    padding: 12,
-    backgroundColor: 'rgba(0,0,0,0.03)',
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  summaryText: {
-    flex: 1,
-    fontSize: 15,
-    lineHeight: 22,
-    fontWeight: '500',
-    fontStyle: 'italic',
-  },
-  alertBox: {
-    flexDirection: 'row',
-    gap: 12,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 8,
-  },
-  alertText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  rowCenter: {
+  backText: {fontSize: 20, fontWeight: '700'},
+  action: {
+    minHeight: 60,
+    borderWidth: 2,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
+    justifyContent: 'center',
+    gap: 10,
   },
-  sectionHeader: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  bodyText: {
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  chipText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    marginTop: 4,
-  },
-  toggleText: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  toggleContent: {
-    paddingBottom: 12,
-    paddingTop: 4,
-    gap: 12,
-  },
+  actionText: {fontSize: 20, fontWeight: '700'},
 });
-

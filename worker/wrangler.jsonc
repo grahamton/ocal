@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ocal-ranger",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "CLAUDE_MODEL": "claude-sonnet-5-5"
+  },
+  // Per-caller throttle so a leaked access code can't run up the Claude bill.
+  "ratelimits": [
+    {
+      "name": "RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": {"limit": 20, "period": 60}
+    }
+  ],
+  "observability": {"enabled": true}
+  // Secrets (never commit): `wrangler secret put ANTHROPIC_API_KEY`
+  //                         `wrangler secret put APP_ACCESS_CODE`
+  // Local dev: put both in worker/.dev.vars (see .dev.vars.example).
+}

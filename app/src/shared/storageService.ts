@@ -1,31 +1,32 @@
-import storage from '@react-native-firebase/storage';
-import auth from '@react-native-firebase/auth';
+import * as FileSystem from 'expo-file-system';
 import {createId} from '@/shared/id';
 import {logger} from '@/shared/LogService';
 
-const getCurrentUserId = (): string | null => {
-  return auth().currentUser?.uid || null;
+// Local, offline-only replacement for the old Firebase Storage-backed
+// upload. Photos are copied into the app's persistent document directory
+// and referenced by their local file:// URI - nothing leaves the device.
+
+const IMAGES_DIR = `${FileSystem.documentDirectory}images/`;
+
+const ensureImagesDir = async (): Promise<void> => {
+  const dirInfo = await FileSystem.getInfoAsync(IMAGES_DIR);
+  if (!dirInfo.exists) {
+    await FileSystem.makeDirectoryAsync(IMAGES_DIR, {intermediates: true});
+  }
 };
 
 export const uploadImage = async (localFileUri: string): Promise<string> => {
-  const userId = getCurrentUserId();
-  if (!userId) {
-    logger.error('StorageService: Cannot upload image - no user ID');
-    throw new Error('No authenticated user for storage operation.');
-  }
-
-  const filename = `${createId()}.jpg`;
-  const storagePath = `users/${userId}/images/${filename}`;
-  const reference = storage().ref(storagePath);
-
   try {
-    logger.add('storage', `Uploading image to: ${storagePath}`);
-    await reference.putFile(localFileUri);
-    const downloadURL = await reference.getDownloadURL();
-    logger.add('storage', `Image uploaded successfully: ${downloadURL}`);
-    return downloadURL;
+    await ensureImagesDir();
+    const filename = `${createId()}.jpg`;
+    const destPath = `${IMAGES_DIR}${filename}`;
+
+    logger.add('storage', `Copying image to local storage: ${destPath}`);
+    await FileSystem.copyAsync({from: localFileUri, to: destPath});
+    logger.add('storage', `Image saved successfully: ${destPath}`);
+    return destPath;
   } catch (error) {
-    logger.error('StorageService: Image upload failed', {storagePath, error});
+    logger.error('StorageService: Image save failed', {localFileUri, error});
     throw error;
   }
 };
