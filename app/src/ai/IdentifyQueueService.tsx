@@ -52,7 +52,13 @@ export const IdentifyQueueProvider = ({children}: {children: ReactNode}) => {
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       const offline = error instanceof RangerOfflineError;
-      logger.error(`IdentifyQueue: ${offline ? 'deferred' : 'failed'} ${findId}`, {msg});
+      // Offline is expected on the beach: log quietly (console.error would
+      // pop a red error box in dev builds). Real failures stay errors.
+      if (offline) {
+        logger.add('ai', 'No signal; will retry identification later', {findId, msg});
+      } else {
+        logger.error(`IdentifyQueue: failed ${findId}`, {msg});
+      }
       await localDb
         .updateFind(findId, {
           status: offline ? 'draft' : 'ai_analysis_failed',

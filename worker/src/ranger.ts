@@ -49,6 +49,16 @@ const describeContext = (ctx: FindContext): string => {
   return lines.join('\n');
 };
 
+// One line per call in `wrangler dev` / Workers logs: watch cache_read climb
+// after the first request (the KB is billed at ~0.1x when read from cache).
+const logUsage = (route: string, msg: Anthropic.Beta.BetaMessage) => {
+  const u = msg.usage;
+  console.log(
+    `[${route}] ${msg.model} in=${u.input_tokens} cache_write=${u.cache_creation_input_tokens ?? 0} ` +
+      `cache_read=${u.cache_read_input_tokens ?? 0} out=${u.output_tokens} stop=${msg.stop_reason}`,
+  );
+};
+
 const firstText = (msg: Anthropic.Beta.BetaMessage): string => {
   if (msg.stop_reason === 'refusal') {
     throw new RangerError('Ranger Al would rather not answer that one.', 422);
@@ -82,6 +92,7 @@ export async function identify(
       },
     ],
   });
+  logUsage('identify', msg);
   const text = firstText(msg);
   const parsed = RockCardSchema.safeParse(JSON.parse(text));
   if (!parsed.success) throw new RangerError('Ranger Al mumbled. Try again.', 502);
@@ -114,5 +125,6 @@ export async function chat(
     system: SYSTEM,
     messages: [opening, ...body.messages],
   });
+  logUsage('chat', msg);
   return firstText(msg);
 }
