@@ -1,8 +1,7 @@
 import {useEffect, useMemo, useState} from 'react';
-import {subscribeToFinds} from '@/shared/firestoreService';
+import {subscribeToFinds} from '@/shared/localDb';
 import {FindRecord} from '@/shared/types';
 import {useSession} from '@/shared/SessionContext';
-import {useSelectionStore} from '@/shared/store/useSelectionStore';
 
 type FilterMode = 'all' | 'favorites' | 'session';
 type ViewMode = 'grid' | 'list';
@@ -29,9 +28,6 @@ export function useGalleryGrid({
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
     initialSessionId || null,
   );
-
-  const {isSelectionMode, selectedIds, toggleSelection, enterSelectionMode} =
-    useSelectionStore();
 
   useEffect(() => {
     if (activeSession && !selectedSessionId && !initialSessionId) {
@@ -80,11 +76,7 @@ export function useGalleryGrid({
   }, [sessions]);
 
   const handleItemPress = (item: FindRecord) => {
-    if (isSelectionMode) {
-      toggleSelection(item.id);
-    } else {
-      onSelect?.(item);
-    }
+    onSelect?.(item);
   };
 
   return {
@@ -99,10 +91,6 @@ export function useGalleryGrid({
     activeSession,
     sessions,
     recentSessions,
-    isSelectionMode,
-    selectedIds,
-    toggleSelection,
-    enterSelectionMode,
     filteredItems,
     handleItemPress,
   };

@@ -9,7 +9,8 @@ export type LogEntry = {
     | 'system'
     | 'error'
     | 'ai'
-    | 'firestore'
+    | 'capture'
+    | 'localDb'
     | 'storage';
   message: string;
   metadata?: Record<string, unknown>;

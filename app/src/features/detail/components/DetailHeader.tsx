@@ -37,7 +37,6 @@ export function DetailHeader({
     });
   };
 
-  const aiResult = localItem.aiData?.result || null;
 
   return (
     <View style={[styles.infoDock, {backgroundColor: colors.card}]}>
@@ -45,9 +44,12 @@ export function DetailHeader({
         <Text
           style={[styles.title, {color: colors.text}]}
           accessibilityRole="header">
-          {label || aiResult?.best_guess?.label || 'Unknown Rock'}
+          {label || localItem.card?.name || 'Unknown Rock'}
         </Text>
-        <TouchableOpacity onPress={() => setFavorite(p => !p)}>
+        <TouchableOpacity
+          onPress={() => setFavorite(p => !p)}
+          hitSlop={12}
+          accessibilityLabel="Favorite">
           <Ionicons
             name={favorite ? 'star' : 'star-outline'}
             size={32}
@@ -61,12 +63,6 @@ export function DetailHeader({
           formatLocationSync(localItem.lat, localItem.long)}
         {' • '}
         {formatDate(localItem.timestamp)}
-        {localItem?.aiData?.meta && (
-          <Text style={{fontSize: 10, color: colors.accent}}>
-            {' '}
-            • v{localItem.aiData.meta.schemaVersion}
-          </Text>
-        )}
       </Text>
 
       {session && (

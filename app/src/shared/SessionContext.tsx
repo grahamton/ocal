@@ -7,10 +7,9 @@ import {
   useState,
   useCallback,
 } from 'react';
-import * as firestoreService from '@/shared/firestoreService';
+import * as localDb from '@/shared/localDb';
 import {createId} from '@/shared/id';
 import {Session} from '@/shared/types';
-import {useAuth} from '@/shared/AuthContext';
 
 type SessionContextValue = {
   sessions: Session[];
@@ -34,10 +33,9 @@ const SessionContext = createContext<SessionContextValue | undefined>(
 export function SessionProvider({children}: {children: ReactNode}) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSession, setActiveSession] = useState<Session | null>(null);
-  const {user} = useAuth();
 
   useEffect(() => {
-    const unsubscribe = firestoreService.subscribeToSessions(
+    const unsubscribe = localDb.subscribeToSessions(
       newSessions => {
         setSessions(newSessions);
         const active =
@@ -50,7 +48,7 @@ export function SessionProvider({children}: {children: ReactNode}) {
     );
 
     return () => unsubscribe();
-  }, [user]);
+  }, []);
 
   const startSession = useCallback(
     async (name?: string, locationName?: string) => {
@@ -79,7 +77,7 @@ export function SessionProvider({children}: {children: ReactNode}) {
         finds: [],
       };
 
-      await firestoreService.addSession(newSession);
+      await localDb.addSession(newSession);
       // No need to manually set state, the listener will do it.
       return newSession;
     },
@@ -96,7 +94,7 @@ export function SessionProvider({children}: {children: ReactNode}) {
       if (name) {
         updates.name = name;
       }
-      await firestoreService.updateSession(activeSession.id, updates);
+      await localDb.updateSession(activeSession.id, updates);
       // No need to manually set state, the listener will do it.
     },
     [activeSession],
@@ -104,7 +102,7 @@ export function SessionProvider({children}: {children: ReactNode}) {
 
   const renameSession = useCallback(
     async (sessionId: string, newName: string) => {
-      await firestoreService.updateSession(sessionId, {name: newName});
+      await localDb.updateSession(sessionId, {name: newName});
       // No need to manually set state, the listener will do it.
     },
     [],
@@ -119,7 +117,7 @@ export function SessionProvider({children}: {children: ReactNode}) {
       if (name) {
         updates.name = name;
       }
-      await firestoreService.updateSession(sessionId, updates);
+      await localDb.updateSession(sessionId, updates);
       // No need to manually set state, the listener will do it.
     },
     [],
@@ -128,19 +126,19 @@ export function SessionProvider({children}: {children: ReactNode}) {
   const deleteSession = useCallback(async (sessionId: string) => {
     // Note: This only deletes the session record, finds remain but become orphaned from this session.
     // In a full cleanup, we might want to delete finds too or null their sessionId.
-    await firestoreService.deleteSession(sessionId);
+    await localDb.deleteSession(sessionId);
   }, []);
 
   const cancelActiveSession = useCallback(async () => {
     if (!activeSession) return;
-    await firestoreService.deleteSession(activeSession.id);
+    await localDb.deleteSession(activeSession.id);
   }, [activeSession]);
 
   const addFindToActiveSession = useCallback(
     async (findId: string, sessionIdOverride?: string) => {
       const sessionId = sessionIdOverride ?? activeSession?.id;
       if (!sessionId) return;
-      await firestoreService.addFindToSession(sessionId, findId);
+      await localDb.addFindToSession(sessionId, findId);
       // No need to manually set state, the listener will do it.
     },
     [activeSession],

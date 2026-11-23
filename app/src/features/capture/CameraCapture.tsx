@@ -10,13 +10,12 @@ import {
 } from 'react-native';
 import {CameraView, useCameraPermissions} from 'expo-camera';
 import * as Location from 'expo-location';
-import * as firestoreService from '@/shared/firestoreService';
+import * as localDb from '@/shared/localDb';
 import * as storageService from '@/shared/storageService';
 import {createId} from '@/shared/id';
 import {FindRecord} from '@/shared/types';
 import {useSession} from '@/shared/SessionContext';
 import {logger} from '@/shared/LogService';
-import {AnalyticsService} from '@/shared/AnalyticsService';
 
 type Props = {
   onSaved: () => void;
@@ -85,10 +84,12 @@ export function CameraCapture({onSaved}: Props) {
     }
     logger.add('capture', 'getLocation: getting current position with timeout 3s...');
     try {
-      const current = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-        timeout: 3000,
-      });
+      // expo-location has no timeout option; race it so a slow GPS fix
+      // can't hold up saving the photo.
+      const current = await Promise.race([
+        Location.getCurrentPositionAsync({accuracy: Location.Accuracy.Balanced}),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), 3000)),
+      ]);
       logger.add('capture', 'getLocation: current position retrieved');
       return current;
     } catch (err) {
@@ -158,24 +159,24 @@ export function CameraCapture({onSaved}: Props) {
       animateFlyAway();
 
       setStatusMessage('Uploading...');
-      logger.add('capture', 'Uploading to cloud storage...');
+      logger.add('capture', 'Saving photo...');
       const downloadURL = await storageService.uploadImage(photo.uri);
 
       setStatusMessage('Saving Find...');
-      logger.add('capture', 'Saving to Firestore: starting session check...');
+      logger.add('capture', 'Saving find: starting session check...');
 
       let session;
       try {
         session = activeSession ?? (await startSession());
-        logger.add('capture', `Saving to Firestore: session ID = ${session.id}`);
+        logger.add('capture', `Saving find: session ID = ${session.id}`);
       } catch (sessErr) {
         logger.error('Failed to get/start session', sessErr);
         throw new Error('Session error. Please try starting a walk manually.');
       }
 
-      logger.add('capture', 'Saving to Firestore: requesting location...');
+      logger.add('capture', 'Saving find: requesting location...');
       const location = await getLocation();
-      logger.add('capture', `Saving to Firestore: location retrieved = ${location ? 'yes' : 'no'}`);
+      logger.add('capture', `Saving find: location retrieved = ${location ? 'yes' : 'no'}`);
 
       const id = createId();
       const record: FindRecord = {
@@ -192,19 +193,18 @@ export function CameraCapture({onSaved}: Props) {
         favorite: false,
       };
 
-      logger.add('capture', 'Saving to Firestore: calling addFind...');
-      await firestoreService.addFind(record);
-      logger.add('capture', 'Saving to Firestore: addFind completed');
+      logger.add('capture', 'Saving find: calling addFind...');
+      await localDb.addFind(record);
+      logger.add('capture', 'Saving find: addFind completed');
 
-      logger.add('capture', 'Saving to Firestore: calling addFindToActiveSession...');
+      logger.add('capture', 'Saving find: calling addFindToActiveSession...');
       await addFindToActiveSession(record.id, session.id);
-      logger.add('capture', 'Saving to Firestore: addFindToActiveSession completed');
+      logger.add('capture', 'Saving find: addFindToActiveSession completed');
 
       setStatusKind('success');
       setStatusMessage('Saved!');
       // Second confirmation vibration
       Vibration.vibrate(50);
-      AnalyticsService.logEvent('find_captured');
 
       // Small delay before clearing status to let user see 'Saved!'
       setTimeout(() => {

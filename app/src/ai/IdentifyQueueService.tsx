@@ -6,177 +6,111 @@ import React, {
   useRef,
   ReactNode,
 } from 'react';
-import {DeviceEventEmitter} from 'react-native';
-import {identifyRock} from '@/ai/identifyRock';
-import * as firestoreService from '@/shared/firestoreService';
+import {AppState} from 'react-native';
+import * as Network from 'expo-network';
+import {identifyFind, RangerOfflineError} from '@/ai/ranger';
+import * as localDb from '@/shared/localDb';
 import {logger} from '@/shared/LogService';
-import {AnalyticsService} from '@/shared/AnalyticsService';
-import {useAuth} from '@/shared/AuthContext';
-import {useSession} from '@/shared/SessionContext';
-import {Session, FindRecord} from '@/shared/types';
 
-interface IdentifyQueueContextType {
-  addToQueue: (findId: string) => Promise<void>;
-}
+/**
+ * Self-healing identification queue.
+ *
+ * - New finds land as `draft` and are picked up automatically.
+ * - No signal / Worker hiccup: the find goes back to `draft` with an aiError
+ *   note, and is retried when the app comes to the foreground, the network
+ *   comes back, or every few minutes while open.
+ * - A real error (bad photo, rejected request) marks `ai_analysis_failed`;
+ *   `retry(id)` puts it back in line.
+ */
 
-const IdentifyQueueContext = createContext<
-  IdentifyQueueContextType | undefined
->(undefined);
+const RETRY_EVERY_MS = 3 * 60 * 1000;
+
+type QueueApi = {retry: (findId: string) => Promise<void>};
+
+const IdentifyQueueContext = createContext<QueueApi | undefined>(undefined);
 
 export const IdentifyQueueProvider = ({children}: {children: ReactNode}) => {
-  const {user} = useAuth();
-  const {activeSession} = useSession();
-  const processedIds = useRef(new Set<string>());
+  const inFlight = useRef(new Set<string>());
 
-  const addToQueue = useCallback(
+  const process = useCallback(async (findId: string) => {
+    if (inFlight.current.has(findId)) return;
+    inFlight.current.add(findId);
+    try {
+      const find = await localDb.getFind(findId);
+      if (!find || find.card) return;
+      await localDb.updateFind(findId, {status: 'pending_ai_analysis'});
+      const {card, model} = await identifyFind(find);
+      await localDb.updateFind(findId, {
+        card,
+        cardModel: model,
+        label: find.label || card.name,
+        category: card.kind,
+        aiError: null,
+        status: 'cataloged',
+      });
+      logger.add('ai', 'Ranger Al identified a find', {findId, name: card.name});
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      const offline = error instanceof RangerOfflineError;
+      logger.error(`IdentifyQueue: ${offline ? 'deferred' : 'failed'} ${findId}`, {msg});
+      await localDb
+        .updateFind(findId, {
+          status: offline ? 'draft' : 'ai_analysis_failed',
+          aiError: msg,
+        })
+        .catch(() => undefined);
+    } finally {
+      inFlight.current.delete(findId);
+    }
+  }, []);
+
+  // Retry everything that still needs Al: deferred drafts and anything left
+  // "pending" because the app was closed mid-request.
+  const sweep = useCallback(async () => {
+    const finds = await localDb.getAllFinds().catch(() => []);
+    finds
+      .filter(f => !f.card && (f.status === 'draft' || f.status === 'pending_ai_analysis'))
+      .forEach(f => process(f.id));
+  }, [process]);
+
+  const retry = useCallback(
     async (findId: string) => {
-      if (!user) {
-        logger.error('IdentifyQueue: No authenticated user to process queue.');
-        return;
-      }
-
-      if (processedIds.current.has(findId)) return;
-      processedIds.current.add(findId);
-
-      let findObj: FindRecord | null = null;
-
-      try {
-        // 1. Mark Find as Processing in Firestore (Awaited for reliability)
-        await firestoreService.updateFind(findId, {
-          status: 'pending_ai_analysis',
-        });
-
-        // 2. Get Find Data from Firestore (fresh state)
-        const find = await firestoreService.getFind(findId);
-        if (!find) {
-          logger.error('IdentifyQueue: Find not found in Firestore', {findId});
-          return;
-        }
-        findObj = find;
-
-        // 3. Fetch image data from Cloud Storage URL
-        const response = await fetch(find.photoUri);
-        const blob = await response.blob();
-        const reader = new FileReader();
-
-        let dataUrl: string | null = null;
-        await new Promise<void>((resolve, reject) => {
-          reader.onloadend = () => {
-            dataUrl = reader.result as string;
-            resolve();
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-
-        if (!dataUrl) {
-          throw new Error(
-            'Could not convert image to data URL for AI processing.',
-          );
-        }
-
-        // 4. Prepare Payload for AI
-        const sessionContextForAI: Session | null = activeSession
-          ? {
-              id: activeSession.id,
-              name: activeSession.name,
-              startTime: activeSession.startTime,
-              locationName: activeSession.locationName,
-              finds: [],
-              status: activeSession.status,
-              endTime: activeSession.endTime,
-            }
-          : null;
-
-        const analysisEvent = await identifyRock({
-          provider: 'gemini',
-          imageDataUrls: [dataUrl],
-          locationHint:
-            find.lat && find.long ? `${find.lat}, ${find.long}` : null,
-          contextNotes: find.note || find.label || 'Field find',
-          userGoal: find.userGoal || 'quick_id',
-          sessionContext: sessionContextForAI,
-          temperature: 0.7,
-        });
-
-        // 5. Save Result (Store full AnalysisEvent for traceability)
-        await firestoreService.updateFind(findId, {
-          aiData: analysisEvent,
-          status: 'cataloged',
-        });
-
-        logger.add('ai', 'Find processed successfully by AI', {
-          findId,
-          aiResult: analysisEvent.result?.best_guess?.label,
-        });
-        AnalyticsService.logEvent('ai_identify_success', {
-          confidence: analysisEvent.result?.best_guess?.confidence,
-          category: analysisEvent.result?.best_guess?.category,
-        });
-
-        // Notify UI
-        DeviceEventEmitter.emit('AI_IDENTIFY_SUCCESS', {findId: findObj.id});
-      } catch (error) {
-        const actualFindId = findObj?.id || findId;
-        const msg = (error as Error).message || String(error);
-        logger.error(
-          `IdentifyQueue: Failed to process find ${actualFindId}`,
-          error,
-        );
-
-        AnalyticsService.logEvent('ai_identify_failed', {
-          error: msg,
-          findId: actualFindId,
-        });
-
-        // Update Find status to indicate failure
-        const failedEvent = {
-          meta: { schemaVersion: '1.0.0', aiModel: 'gemini-3.1-flash', aiModelVersion: '3.1.0', promptHash: 'na', pipelineVersion: '1.0.0', runId: `failed-${actualFindId}`, timestamp: new Date().toISOString(), error: msg },
-          input: { sourceImages: [], locationUsed: !!findObj?.location_text, userGoal: findObj?.userGoal || 'quick_id' }
-        };
-        await firestoreService.updateFind(actualFindId, {
-          status: 'ai_analysis_failed',
-          aiData: failedEvent,
-        });
-
-        DeviceEventEmitter.emit('AI_IDENTIFY_FAILED', {
-          findId: actualFindId,
-          error: msg,
-        });
-      }
+      await localDb.updateFind(findId, {status: 'draft', aiError: null});
     },
-    [user, activeSession],
+    [],
   );
 
-  // --- Automated "Auto-Polish" Listener ---
   useEffect(() => {
-    if (!user) return;
+    sweep();
 
-    // Listen for new finds in 'draft' status and pick them up
-    const unsubscribe = firestoreService.subscribeToFinds(
-      finds => {
-        const drafts = finds.filter(f => f.status === 'draft');
-        if (drafts.length > 0) {
-          logger.add(
-            'ai',
-            `Auto-Polish: Found ${drafts.length} drafts. Picking up...`,
-          );
-          drafts.forEach(f => {
-            // Process sequentially or trigger individual tasks
-            addToQueue(f.id);
-          });
-        }
-      },
-      error => {
-        logger.error('Auto-Polish: Subscription failed', error);
-      },
+    // Fresh drafts (no aiError yet) start right away. Deferred ones wait for
+    // a sweep, so an offline failure can't loop on its own write.
+    const unsubscribe = localDb.subscribeToFinds(
+      finds =>
+        finds
+          .filter(f => f.status === 'draft' && !f.card && !f.aiError)
+          .forEach(f => process(f.id)),
+      error => logger.error('IdentifyQueue: subscription failed', {error}),
     );
 
-    return unsubscribe;
-  }, [user, addToQueue]);
+    const appState = AppState.addEventListener('change', s => {
+      if (s === 'active') sweep();
+    });
+    const network = Network.addNetworkStateListener(({isInternetReachable}) => {
+      if (isInternetReachable) sweep();
+    });
+    const timer = setInterval(sweep, RETRY_EVERY_MS);
+
+    return () => {
+      unsubscribe();
+      appState.remove();
+      network.remove();
+      clearInterval(timer);
+    };
+  }, [process, sweep]);
 
   return (
-    <IdentifyQueueContext.Provider value={{addToQueue}}>
+    <IdentifyQueueContext.Provider value={{retry}}>
       {children}
     </IdentifyQueueContext.Provider>
   );
@@ -185,9 +119,7 @@ export const IdentifyQueueProvider = ({children}: {children: ReactNode}) => {
 export const useIdentifyQueue = () => {
   const context = useContext(IdentifyQueueContext);
   if (!context) {
-    throw new Error(
-      'useIdentifyQueue must be used within an IdentifyQueueProvider',
-    );
+    throw new Error('useIdentifyQueue must be used within an IdentifyQueueProvider');
   }
   return context;
 };

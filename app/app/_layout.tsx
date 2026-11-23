@@ -1,5 +1,4 @@
 import {Stack} from 'expo-router';
-import {AuthProvider} from '@/shared/AuthContext';
 import {ThemeProvider} from '@/shared/ThemeContext';
 import {SessionProvider} from '@/shared/SessionContext';
 import {IdentifyQueueProvider} from '@/ai/IdentifyQueueService';
@@ -11,8 +10,6 @@ import {
   Outfit_700Bold,
   Outfit_800ExtraBold,
 } from '@expo-google-fonts/outfit';
-import {useEffect} from 'react';
-import {AnalyticsService} from '@/shared/AnalyticsService';
 import {View, Text, StatusBar} from 'react-native';
 
 export default function RootLayout() {
@@ -21,10 +18,6 @@ export default function RootLayout() {
     Outfit_700Bold,
     Outfit_800ExtraBold,
   });
-
-  useEffect(() => {
-    AnalyticsService.logEvent('app_opened');
-  }, []);
 
   if (!fontsLoaded) {
     return (
@@ -44,36 +37,26 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <SessionProvider>
-          <IdentifyQueueProvider>
-            <SafeAreaProvider>
-              <GradientBackground>
-                <Stack screenOptions={{headerShown: false}}>
-                  <Stack.Screen name="(tabs)" />
-                  <Stack.Screen
-                    name="insights"
-                    options={{presentation: 'modal'}}
-                  />
-                  <Stack.Screen
-                    name="settings"
-                    options={{presentation: 'modal'}}
-                  />
-                  <Stack.Screen
-                    name="session"
-                    options={{presentation: 'modal'}}
-                  />
-                  <Stack.Screen
-                    name="detail/[id]"
-                    options={{presentation: 'modal'}}
-                  />
-                </Stack>
-              </GradientBackground>
-            </SafeAreaProvider>
-          </IdentifyQueueProvider>
-        </SessionProvider>
-      </ThemeProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <SessionProvider>
+        <IdentifyQueueProvider>
+          <SafeAreaProvider>
+            <GradientBackground>
+              <Stack screenOptions={{headerShown: false}}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen
+                  name="settings"
+                  options={{presentation: 'modal'}}
+                />
+                <Stack.Screen
+                  name="detail/[id]"
+                  options={{presentation: 'modal'}}
+                />
+              </Stack>
+            </GradientBackground>
+          </SafeAreaProvider>
+        </IdentifyQueueProvider>
+      </SessionProvider>
+    </ThemeProvider>
   );
 }

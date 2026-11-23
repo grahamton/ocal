@@ -13,7 +13,6 @@ import {
   ThemeMode,
 } from '@/shared/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {AnalyticsService} from '@/shared/AnalyticsService';
 
 export type ThemeColors = typeof PALETTE_JOURNAL;
 
@@ -42,7 +41,6 @@ export function ThemeProvider({children}: {children: ReactNode}) {
   const setTheme = (newMode: ThemeMode) => {
     setModeState(newMode);
     AsyncStorage.setItem('ocal_theme_mode', newMode).catch(() => {});
-    AnalyticsService.logEvent('mode_toggled', {mode: newMode});
   };
 
   const toggleTheme = () => {

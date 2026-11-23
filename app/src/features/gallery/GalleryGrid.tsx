@@ -41,8 +41,6 @@ export function GalleryGrid({
     activeSession,
     sessions,
     recentSessions,
-    selectedIds,
-    enterSelectionMode,
     filteredItems,
     handleItemPress,
   } = useGalleryGrid({refreshKey, initialSessionId, onSelect});
@@ -52,25 +50,20 @@ export function GalleryGrid({
   const columns = viewMode === 'grid' ? numColumns : 1;
 
   const renderItem = ({item}: {item: FindRecord}) => {
-    const isSelected = selectedIds.has(item.id);
     return viewMode === 'grid' ? (
       <GridItem
         item={item}
-        isSelected={isSelected}
         cardWidth={cardWidth}
         colors={colors}
         mode={mode}
         onPress={() => handleItemPress(item)}
-        onLongPress={() => enterSelectionMode(item.id)}
       />
     ) : (
       <ListItem
         item={item}
-        isSelected={isSelected}
         colors={colors}
         mode={mode}
         onPress={() => handleItemPress(item)}
-        onLongPress={() => enterSelectionMode(item.id)}
       />
     );
   };

@@ -1,7 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import * as firestoreService from '@/shared/firestoreService';
-import {logger} from '@/shared/LogService';
+import * as localDb from '@/shared/localDb';
 
 export class ExportService {
   /**
@@ -9,8 +8,8 @@ export class ExportService {
    * Can be used for restore or manual debugging.
    */
   async exportBackupJson(): Promise<string> {
-    const finds = await firestoreService.getAllFinds(); // Updated call
-    const sessions = await firestoreService.getAllSessions(); // Updated call
+    const finds = await localDb.getAllFinds(); // Updated call
+    const sessions = await localDb.getAllSessions(); // Updated call
 
     const backupData = {
       meta: {
@@ -33,60 +32,11 @@ export class ExportService {
   }
 
   /**
-   * Generates a lightweight JSON for AI analysis/debugging.
-   * Strips out large Base64 images to keep the file size manageable.
-   */
-  async exportAnalysisJson(): Promise<string> {
-    const finds = await firestoreService.getAllFinds(); // Updated call
-    const sessions = await firestoreService.getAllSessions(); // Updated call
-
-    // Deep clone and sanitize
-    const cleanFinds = finds.map(f => {
-      const clean = JSON.parse(JSON.stringify(f));
-
-      // Sanitize AI Data input images
-      if (clean.aiData && clean.aiData.input?.sourceImages) {
-        clean.aiData.input.sourceImages = clean.aiData.input.sourceImages.map(
-          (img: {uri: string}) => ({
-            // Explicitly type img
-            ...img,
-            uri: img.uri?.startsWith('data:')
-              ? '[Base64 Data Omitted]'
-              : img.uri,
-          }),
-        );
-      }
-      return clean;
-    });
-
-    const exportData = {
-      meta: {
-        exportedAt: new Date().toISOString(),
-        version: 1,
-        appVersion: '0.0.1',
-        type: 'analysis_export',
-      },
-      finds: cleanFinds,
-      sessions,
-      logs: logger.getLogs(),
-    };
-
-    const fileName = `ocal_analysis_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-    const filePath = `${FileSystem.documentDirectory}${fileName}`;
-
-    await FileSystem.writeAsStringAsync(
-      filePath,
-      JSON.stringify(exportData, null, 2),
-    );
-    return filePath;
-  }
-
-  /**
    * Generates a CSV for spreadsheet use.
    * Focuses on Finds only.
    */
   async exportFindsCsv(): Promise<string> {
-    const finds = await firestoreService.getAllFinds(); // Updated call
+    const finds = await localDb.getAllFinds(); // Updated call
 
     // Header
     const header = 'Date,ID,Label,Category,Location,Favorite,Note';
@@ -96,7 +46,7 @@ export class ExportService {
       // CSV escaping
       const escape = (str: string | null | undefined) => {
         if (!str) return '';
-        const safe = str.replace(/'"'/g, '""'); // Escape quotes
+        const safe = str.replace(/"/g, '""'); // Escape quotes
         return `"${safe}"`;
       };
 
@@ -104,16 +54,7 @@ export class ExportService {
         new Date(f.timestamp).toLocaleDateString() +
         ' ' +
         new Date(f.timestamp).toLocaleTimeString();
-      let aiLabel = 'Unknown';
-      let aiCategory = '';
-
-      if (f.aiData) {
-        const res = f.aiData.result;
-        aiLabel = res?.best_guess?.label || 'Unknown';
-        aiCategory = res?.best_guess?.category || '';
-      }
-
-      const label = f.label || aiLabel;
+      const label = f.label || f.card?.name || 'Unknown';
 
       // Use locationSync text or lat/long
       const locText =
@@ -125,7 +66,7 @@ export class ExportService {
         escape(dateStr),
         escape(f.id),
         escape(label),
-        escape(f.category || aiCategory),
+        escape(f.category || f.card?.kind),
         escape(locText),
         f.favorite ? 'Yes' : 'No',
         escape(f.note),

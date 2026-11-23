@@ -1,4 +1,4 @@
-import {AnalysisEvent} from '@/ai/rockIdSchema';
+import {ChatTurn, RockCard} from '@/ai/rockCard';
 
 export type FindRecord = {
   id: string;
@@ -18,8 +18,11 @@ export type FindRecord = {
     | 'ai_analysis_failed';
   sessionId: string | null;
   favorite: boolean;
-  userGoal?: 'quick_id' | 'learning' | 'catalog_tagging' | null;
-  aiData?: AnalysisEvent | null;
+  card?: RockCard | null;
+  cardModel?: string | null;
+  /** Why the last identification attempt didn't finish (offline, error). */
+  aiError?: string | null;
+  chat?: ChatTurn[];
 };
 
 export type Session = {

@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {ScrollView, View, TouchableOpacity, Image, Alert, StyleSheet} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
-import * as firestoreService from '@/shared/firestoreService';
+import * as localDb from '@/shared/localDb';
 import {FindRecord, Session} from '@/shared/types';
 import useIdentifyQueue from '@/ai/IdentifyQueueService';
 import {useTheme} from '@/shared/ThemeContext';
@@ -10,7 +10,8 @@ import {styles} from './FindDetailModal.styles';
 
 // Subcomponents
 import {DetailHeader} from './components/DetailHeader';
-import {RangerLabCard} from './components/RangerLabCard';
+import {RockCardView} from './components/RockCardView';
+import {AskAlChat} from './components/AskAlChat';
 import {FieldNotesSection} from './components/FieldNotesSection';
 import {DetailActionFooter} from './components/DetailActionFooter';
 
@@ -21,36 +22,26 @@ type Props = {
   onFilterBySession?: (sessionId: string) => void;
 };
 
-export function FindDetailModal({
-  item,
-  onClose,
-  onSaved,
-  onFilterBySession,
-}: Props) {
+export function FindDetailModal({item, onClose, onSaved, onFilterBySession}: Props) {
   const {colors, mode} = useTheme();
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [label, setLabel] = useState('');
   const [favorite, setFavorite] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
   const [localItem, setLocalItem] = useState<FindRecord | null>(item);
-  const aiResult = localItem?.aiData?.result || null;
   const [session, setSession] = useState<Session | null>(null);
-  const {addToQueue} = useIdentifyQueue();
+  const {retry} = useIdentifyQueue();
 
   useEffect(() => {
     if (item) {
       setLabel(item.label ?? '');
       setNote(item.note ?? '');
       setFavorite(item.favorite);
-      setAiError(null);
       setLocalItem(item);
-      setAiLoading(item.status === 'pending_ai_analysis');
       setSession(null);
 
       if (item.sessionId) {
-        firestoreService.getSession(item.sessionId).then(s => {
+        localDb.getSession(item.sessionId).then(s => {
           if (s) setSession(s);
         });
       }
@@ -61,10 +52,10 @@ export function FindDetailModal({
     if (!item || saving) return;
     setSaving(true);
     try {
-      await firestoreService.updateFind(item.id, {
+      // Status is owned by the identify queue; saving only touches user fields.
+      await localDb.updateFind(item.id, {
         label: label.trim() || null,
         note: note.trim() || null,
-        status: 'cataloged',
         favorite,
       });
       onSaved();
@@ -82,7 +73,7 @@ export function FindDetailModal({
         onPress: async () => {
           try {
             if (item?.id) {
-              await firestoreService.deleteFind(item.id);
+              await localDb.deleteFind(item.id);
               onClose?.();
             }
           } catch {
@@ -99,10 +90,7 @@ export function FindDetailModal({
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(item.photoUri);
       } else {
-        Alert.alert(
-          'Sharing not available',
-          'Sharing is not supported on this device/simulator.',
-        );
+        Alert.alert('Sharing not available', 'Sharing is not supported on this device.');
       }
     } catch (error) {
       console.error('Share failed', error);
@@ -110,39 +98,18 @@ export function FindDetailModal({
     }
   };
 
-  const runIdentify = async () => {
-    if (!item || aiLoading) return;
-    setAiLoading(true);
-    setAiError(null);
-    try {
-      await addToQueue(item.id);
-    } catch {
-      setAiError('Could not start analysis.');
-      setAiLoading(false);
-    }
-  };
-
   if (!localItem) return null;
 
   return (
     <View style={[styles.container, {backgroundColor: colors.background}]}>
-      <TouchableOpacity
-        style={[styles.closeBtn, {zIndex: 50}]}
-        onPress={onClose}>
+      <TouchableOpacity style={[styles.closeBtn, {zIndex: 50}]} onPress={onClose}>
         <Ionicons name="close" size={28} color="#fff" />
       </TouchableOpacity>
 
       <View style={styles.heroContainer}>
-        <Image
-          source={{uri: localItem.photoUri}}
-          style={styles.heroImage}
-          resizeMode="cover"
-        />
+        <Image source={{uri: localItem.photoUri}} style={styles.heroImage} resizeMode="cover" />
         <View
-          style={[
-            StyleSheet.absoluteFillObject,
-            {backgroundColor: 'rgba(0,0,0,0.1)'},
-          ]}
+          style={[StyleSheet.absoluteFillObject, {backgroundColor: 'rgba(0,0,0,0.1)'}]}
           pointerEvents="none"
         />
       </View>
@@ -150,6 +117,7 @@ export function FindDetailModal({
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         <DetailHeader
           localItem={localItem}
@@ -162,22 +130,11 @@ export function FindDetailModal({
           mode={mode}
         />
 
-        <RangerLabCard
-          aiResult={aiResult}
-          aiLoading={aiLoading}
-          aiError={aiError}
-          runIdentify={runIdentify}
-          colors={colors}
-          mode={mode}
-        />
+        <RockCardView find={localItem} onRetry={() => retry(localItem.id)} colors={colors} />
 
-        {aiResult && (
-          <FieldNotesSection
-            note={note}
-            setNote={setNote}
-            colors={colors}
-          />
-        )}
+        <AskAlChat find={localItem} colors={colors} />
+
+        <FieldNotesSection note={note} setNote={setNote} colors={colors} />
         <View style={{height: 80}} />
       </ScrollView>
 

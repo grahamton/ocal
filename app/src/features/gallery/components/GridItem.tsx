@@ -9,25 +9,25 @@ import {ThemeColors} from '@/shared/ThemeContext';
 
 interface Props {
   item: FindRecord;
-  isSelected: boolean;
+  isSelected?: boolean;
   cardWidth: number;
   colors: ThemeColors;
   mode: string;
   onPress: () => void;
-  onLongPress: () => void;
+  onLongPress?: () => void;
 }
 
 export function GridItem({
   item,
-  isSelected,
+  isSelected = false,
   cardWidth,
   colors,
   mode,
   onPress,
   onLongPress,
 }: Props) {
-  const aiResult = item.aiData?.result || null;
-  const displayLabel = item.label || aiResult?.best_guess?.label || 'Unknown';
+  const aiResult = item.card ?? null;
+  const displayLabel = item.label || aiResult?.name || (item.aiError ? 'Waiting for signal' : 'Al is looking...');
 
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp);

@@ -108,15 +108,10 @@ export function MainHeader() {
         {/* Right: Actions */}
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
           <TouchableOpacity
-            onPress={() => router.push('/insights')}
-            style={{padding: 8}}>
-            <Ionicons name="analytics-outline" size={24} color={colors.text} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
             onPress={() => router.push('/settings')}
-            style={{padding: 8}}>
-            <Ionicons name="settings-outline" size={24} color={colors.text} />
+            style={{padding: 12}}
+            accessibilityLabel="Settings">
+            <Ionicons name="settings-outline" size={28} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>

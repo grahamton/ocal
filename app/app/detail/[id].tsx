@@ -3,7 +3,7 @@ import {View, ActivityIndicator, StyleSheet} from 'react-native';
 import {useLocalSearchParams, useRouter} from 'expo-router';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTheme} from '@/shared/ThemeContext';
-import * as firestoreService from '@/shared/firestoreService';
+import * as localDb from '@/shared/localDb';
 import {FindRecord} from '@/shared/types';
 import {FindDetailModal} from '@/features/detail/FindDetailModal';
 
@@ -17,7 +17,7 @@ export default function DetailScreen() {
 
   useEffect(() => {
     if (id) {
-      const unsubscribe = firestoreService.subscribeToFind(
+      const unsubscribe = localDb.subscribeToFind(
         id as string,
         f => {
           setItem(f);

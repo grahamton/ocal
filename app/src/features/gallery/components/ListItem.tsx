@@ -9,23 +9,23 @@ import {ThemeColors} from '@/shared/ThemeContext';
 
 interface Props {
   item: FindRecord;
-  isSelected: boolean;
+  isSelected?: boolean;
   colors: ThemeColors;
   mode: string;
   onPress: () => void;
-  onLongPress: () => void;
+  onLongPress?: () => void;
 }
 
 export function ListItem({
   item,
-  isSelected,
+  isSelected = false,
   colors,
   mode,
   onPress,
   onLongPress,
 }: Props) {
-  const aiResult = item.aiData?.result || null;
-  const displayLabel = item.label || aiResult?.best_guess?.label || 'Unknown';
+  const aiResult = item.card ?? null;
+  const displayLabel = item.label || aiResult?.name || (item.aiError ? 'Waiting for signal' : 'Al is looking...');
 
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -73,8 +73,8 @@ export function ListItem({
               status="polished"
               size={24}
               category={getCategoryFromTags(
-                [aiResult.best_guess?.category || ''],
-                aiResult.best_guess?.label,
+                [aiResult.kind],
+                aiResult.name,
               )}
               theme={mode === 'high-contrast' ? 'beach' : 'journal'}
               style={{marginLeft: 8}}
