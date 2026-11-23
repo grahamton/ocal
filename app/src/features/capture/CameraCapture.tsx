@@ -1,6 +1,6 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {
-  StyleSheet,
+  LayoutChangeEvent,
   Text,
   TouchableOpacity,
   View,
@@ -16,6 +16,8 @@ import {createId} from '@/shared/id';
 import {FindRecord} from '@/shared/types';
 import {useSession} from '@/shared/SessionContext';
 import {logger} from '@/shared/LogService';
+import {useTheme} from '@/shared/ThemeContext';
+import {classes} from './CameraCapture.styles';
 
 type Props = {
   onSaved: () => void;
@@ -59,7 +61,14 @@ export function CameraCapture({onSaved}: Props) {
     })();
   }, []);
 
-  const classes = useMemo(() => createStyles(), []);
+  const {colors} = useTheme();
+  // Largest 3:4 (portrait) box that fits the space, matching the saved photo.
+  const [box, setBox] = useState<{width: number; height: number} | null>(null);
+  const onPreviewLayout = (e: LayoutChangeEvent) => {
+    const {width, height} = e.nativeEvent.layout;
+    const w = Math.min(width, (height * 3) / 4);
+    setBox({width: w, height: (w * 4) / 3});
+  };
 
   const getLocation = async () => {
     logger.add('capture', 'getLocation: checking permissions...');
@@ -233,11 +242,14 @@ export function CameraCapture({onSaved}: Props) {
   if (!permission?.granted) {
     return (
       <View style={classes.permissionContainer}>
-        <Text style={classes.title}>Camera Access Needed</Text>
+        <Text style={[classes.title, {color: colors.text}]}>
+          Ocal needs your camera to photograph rocks
+        </Text>
         <TouchableOpacity
-          style={classes.primaryButton}
-          onPress={requestPermission}>
-          <Text style={classes.primaryButtonText}>Enable Camera</Text>
+          style={[classes.primaryButton, {backgroundColor: colors.accent}]}
+          onPress={requestPermission}
+          accessibilityRole="button">
+          <Text style={classes.primaryButtonText}>Turn on camera</Text>
         </TouchableOpacity>
       </View>
     );
@@ -245,188 +257,62 @@ export function CameraCapture({onSaved}: Props) {
 
   return (
     <View style={classes.wrapper}>
-      {/* Flash Overlay */}
-      <View style={classes.cameraContainer}>
-        <CameraView ref={cameraRef} style={classes.camera} facing="back" />
-        <Animated.View
-          style={[classes.flashOverlay, {opacity: flashOpacity}]}
-          pointerEvents="none"
-        />
-
-        {/* Fly-away Thumbnail */}
-        {capturedUri && (
-          <Animated.Image
-            source={{uri: capturedUri}}
-            style={[
-              classes.flyAwayThumbnail,
-              {
-                transform: [
-                  {translateX: thumbnailTranslateX},
-                  {translateY: thumbnailTranslateY},
-                  {scale: thumbnailScale},
-                ],
-              },
-            ]}
-          />
+      <View style={classes.previewArea} onLayout={onPreviewLayout}>
+        {box && (
+          <View style={[classes.cameraBox, box]}>
+            <CameraView ref={cameraRef} style={classes.camera} facing="back" ratio="4:3" />
+            <View style={classes.hint} pointerEvents="none">
+              <Text style={classes.hintText}>Fill the frame with your rock</Text>
+            </View>
+            <Animated.View
+              style={[classes.flashOverlay, {opacity: flashOpacity}]}
+              pointerEvents="none"
+            />
+            {capturedUri && (
+              <Animated.Image
+                source={{uri: capturedUri}}
+                style={[
+                  classes.flyAwayThumbnail,
+                  {
+                    transform: [
+                      {translateX: thumbnailTranslateX},
+                      {translateY: thumbnailTranslateY},
+                      {scale: thumbnailScale},
+                    ],
+                  },
+                ]}
+              />
+            )}
+          </View>
         )}
+      </View>
 
-        <View style={classes.captureZone}>
-          <TouchableOpacity
-            style={classes.captureButton}
-            onPress={handleCapture}
-            activeOpacity={0.5}
-            disabled={saving}>
-            <View style={classes.shutterInner} />
-          </TouchableOpacity>
-          <Text style={classes.captureLabel}>TAP TO CAPTURE</Text>
-        </View>
+      <View style={classes.shutterBar}>
+        <TouchableOpacity
+          style={[classes.captureButton, {borderColor: colors.text}]}
+          onPress={handleCapture}
+          activeOpacity={0.5}
+          disabled={saving}
+          accessibilityRole="button"
+          accessibilityLabel="Take photo">
+          <View
+            style={[classes.shutterInner, {backgroundColor: saving ? colors.border : colors.accent}]}
+          />
+        </TouchableOpacity>
+        <Text style={[classes.captureLabel, {color: colors.text}]}>
+          {saving ? 'Saving...' : 'Take photo'}
+        </Text>
       </View>
 
       {statusMessage ? (
         <View
           style={[
             classes.statusBanner,
-            statusKind === 'success'
-              ? classes.statusSuccess
-              : classes.statusError,
+            statusKind === 'success' ? classes.statusSuccess : classes.statusError,
           ]}>
           <Text style={classes.statusText}>{statusMessage}</Text>
         </View>
       ) : null}
     </View>
   );
-}
-
-function createStyles() {
-  return StyleSheet.create({
-    wrapper: {
-      flex: 1,
-      backgroundColor: '#000',
-    },
-    cameraContainer: {
-      height: 520, // Fixed large height (approx 80% screen on most devices)
-      borderRadius: 24,
-      overflow: 'hidden',
-      backgroundColor: '#1e293b',
-      margin: 12,
-      borderWidth: 2,
-      borderColor: 'rgba(255,255,255,0.15)',
-      position: 'relative',
-    },
-    camera: {
-      flex: 1,
-    },
-    flashOverlay: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: '#fff',
-      zIndex: 10,
-    },
-    flyAwayThumbnail: {
-      position: 'absolute',
-      width: '100%',
-      height: '100%',
-      zIndex: 9,
-    },
-    captureZone: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: 160,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'rgba(0,0,0,0.3)', // Slight dim for contrast
-      zIndex: 12,
-    },
-    captureButton: {
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      backgroundColor: 'transparent',
-      borderWidth: 6,
-      borderColor: '#fff',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 8,
-      shadowColor: '#000',
-      shadowOffset: {width: 0, height: 4},
-      shadowOpacity: 0.5,
-      shadowRadius: 10,
-      elevation: 10,
-    },
-    shutterInner: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: '#fff',
-    },
-    captureLabel: {
-      color: '#fff',
-      fontWeight: '800',
-      fontFamily: 'Outfit_700Bold',
-      marginTop: 8,
-      fontSize: 14,
-      textShadowColor: 'rgba(0,0,0,0.8)',
-      textShadowOffset: {width: 0, height: 2},
-      textShadowRadius: 4,
-    },
-    statusBanner: {
-      position: 'absolute',
-      top: 60,
-      left: 20,
-      right: 20,
-      padding: 20,
-      borderRadius: 16,
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 20,
-      shadowColor: '#000',
-      shadowOffset: {width: 0, height: 10},
-      shadowOpacity: 0.5,
-      shadowRadius: 20,
-    },
-    statusSuccess: {
-      backgroundColor: '#15803d', // Green-700
-      borderWidth: 2,
-      borderColor: '#4ade80',
-    },
-    statusError: {
-      backgroundColor: '#b91c1c', // Red-700
-      borderWidth: 2,
-      borderColor: '#fca5a5',
-    },
-    statusText: {
-      color: '#fff',
-      fontSize: 24, // HUGE text
-      fontWeight: '900',
-      fontFamily: 'Outfit_800ExtraBold',
-      textAlign: 'center',
-    },
-    permissionContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      padding: 32,
-      backgroundColor: '#000',
-    },
-    title: {
-      color: '#fff',
-      fontSize: 28,
-      fontWeight: '800',
-      fontFamily: 'Outfit_800ExtraBold',
-      marginBottom: 20,
-      textAlign: 'center',
-    },
-    primaryButton: {
-      backgroundColor: '#fff',
-      paddingVertical: 20,
-      paddingHorizontal: 32,
-      borderRadius: 100,
-      alignItems: 'center',
-    },
-    primaryButtonText: {
-      color: '#000',
-      fontSize: 20,
-      fontWeight: '700',
-    },
-  });
 }
