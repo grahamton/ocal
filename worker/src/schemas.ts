@@ -22,15 +22,31 @@ const ContextFields = {
   taken_at: z.string().max(40).nullish(),
 };
 
+// How much Al says. The app lets the user pick; "full" is the default.
+const LengthField = z.enum(['short', 'full']).nullish();
+
+// What Al already told them about their last few finds, so he can avoid
+// repeating himself. The app builds this from its own saved cards.
+const RecentSchema = z.object({
+  name: z.string().max(100),
+  opener: z.string().max(200),
+  fun_fact: z.string().max(240).nullish(),
+  checks: z.array(z.string().max(80)).max(4),
+  asked: z.string().max(120).nullish(),
+});
+
 export const IdentifyBodySchema = z.object({
   image: ImageSchema,
   ...ContextFields,
+  length: LengthField,
+  recent: z.array(RecentSchema).max(6).nullish(),
 });
 
 export const ChatBodySchema = z.object({
   image: ImageSchema,
   card: RockCardSchema,
   ...ContextFields,
+  length: LengthField,
   messages: z
     .array(
       z.object({
@@ -49,3 +65,5 @@ export type ImageInput = z.infer<typeof ImageSchema>;
 export type IdentifyBody = z.infer<typeof IdentifyBodySchema>;
 export type ChatBody = z.infer<typeof ChatBodySchema>;
 export type FindContext = Pick<IdentifyBody, 'location' | 'note' | 'taken_at'>;
+export type RecentCard = z.infer<typeof RecentSchema>;
+export type AlLength = 'short' | 'full';

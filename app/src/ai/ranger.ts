@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 import * as ImageManipulator from 'expo-image-manipulator';
 import {FindRecord} from '@/shared/types';
 import {ChatTurn, RockCard} from '@/ai/rockCard';
+import {getAlLength, recentCards} from '@/ai/alStyle';
 
 // Client for the Ranger Al Cloudflare Worker (worker/). The app sends only
 // the photo, location and the user's own words; prompts live on the Worker.
@@ -92,7 +93,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 
 export async function identifyFind(find: FindRecord): Promise<{card: RockCard; model: string}> {
   const image = await prepareImage(find.photoUri);
-  return post('/identify', {image, ...findContext(find)});
+  const [recent, length] = await Promise.all([recentCards(find), getAlLength()]);
+  return post('/identify', {image, ...findContext(find), recent, length});
 }
 
 export async function askAl(find: FindRecord, turns: ChatTurn[]): Promise<string> {
@@ -102,6 +104,7 @@ export async function askAl(find: FindRecord, turns: ChatTurn[]): Promise<string
     image,
     card: find.card,
     ...findContext(find),
+    length: await getAlLength(),
     messages: turns.map(({role, content}) => ({role, content})),
   });
   return reply;

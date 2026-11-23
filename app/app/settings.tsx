@@ -6,6 +6,7 @@ import {useRouter} from 'expo-router';
 import {useTheme} from '@/shared/ThemeContext';
 import {ThemeMode} from '@/shared/theme';
 import {DataManager} from '@/features/settings/DataManager';
+import {AlLengthPicker} from '@/features/settings/AlLengthPicker';
 
 const LOOKS: {mode: ThemeMode; label: string; sub: string; bg: string; fg: string}[] = [
   {mode: 'journal', label: 'Soft', sub: '(indoors)', bg: '#FDFBF7', fg: '#1e293b'},
@@ -65,6 +66,8 @@ export default function SettingsScreen() {
             );
           })}
         </View>
+
+        <AlLengthPicker />
 
         <DataManager />
       </ScrollView>

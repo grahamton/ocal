@@ -11,6 +11,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        sceneStyle: {backgroundColor: colors.background},
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textSecondary,
         // Tall enough for large system font sizes, and clear of the

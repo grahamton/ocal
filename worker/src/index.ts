@@ -75,7 +75,14 @@ export default {
       if (url.pathname === '/identify') {
         const body = await readBody(req, IdentifyBodySchema);
         if (body instanceof Response) return body;
-        const card = await identify(client, env.CLAUDE_MODEL, body.image, body);
+        const card = await identify(
+          client,
+          env.CLAUDE_MODEL,
+          body.image,
+          body,
+          body.length ?? 'full',
+          body.recent ?? [],
+        );
         return json({card, model: env.CLAUDE_MODEL, at: new Date().toISOString()});
       }
       if (url.pathname === '/chat') {

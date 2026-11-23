@@ -2,12 +2,14 @@ import Anthropic from '@anthropic-ai/sdk';
 import {zodOutputFormat} from '@anthropic-ai/sdk/helpers/zod';
 import {RockCard, RockCardSchema} from './card';
 import {
+  ANGLES,
   CHAT_INSTRUCTIONS,
   IDENTIFY_INSTRUCTIONS,
   KNOWLEDGE_BASE,
+  LENGTH_NOTES,
   PERSONA,
 } from './prompt';
-import type {ChatBody, FindContext, ImageInput} from './schemas';
+import type {AlLength, ChatBody, FindContext, ImageInput, RecentCard} from './schemas';
 
 // Stable prefix: persona + KB. The 1h cache breakpoint on the KB means every
 // identify/chat within the hour re-reads ~15k tokens at ~0.1x price.
@@ -49,6 +51,25 @@ const describeContext = (ctx: FindContext): string => {
   return lines.join('\n');
 };
 
+// Variety for a fresh card: a random angle, the length the user asked for,
+// and what Al already told them recently (to avoid repeating it). All of this
+// goes in the user turn so the cached system prompt stays byte-stable.
+const describeVariety = (length: AlLength, recent: RecentCard[]): string => {
+  const angle = ANGLES[Math.floor(Math.random() * ANGLES.length)];
+  const lines = [LENGTH_NOTES[length], `For variety this time: ${angle}`];
+  if (recent.length) {
+    lines.push(
+      'You already told this beachcomber the following about their last few finds. Do not reuse these openers, checks, fun facts or questions; find fresh ones for this stone:',
+      ...recent.map(
+        r =>
+          `- ${r.name}: opened "${r.opener}"; checks: ${r.checks.join(' | ') || 'none'}; ` +
+          `fun fact: ${r.fun_fact ?? 'none'}; asked: ${r.asked ?? 'none'}`,
+      ),
+    );
+  }
+  return lines.join('\n');
+};
+
 // One line per call in `wrangler dev` / Workers logs: watch cache_read climb
 // after the first request (the KB is billed at ~0.1x when read from cache).
 const logUsage = (route: string, msg: Anthropic.Beta.BetaMessage) => {
@@ -75,6 +96,8 @@ export async function identify(
   model: string,
   image: ImageInput,
   ctx: FindContext,
+  length: AlLength = 'full',
+  recent: RecentCard[] = [],
 ): Promise<RockCard> {
   const msg = await client.beta.messages.create({
     ...FALLBACK,
@@ -87,7 +110,10 @@ export async function identify(
         role: 'user',
         content: [
           imageBlock(image),
-          {type: 'text', text: `${describeContext(ctx)}\n\n${IDENTIFY_INSTRUCTIONS}`},
+          {
+            type: 'text',
+            text: `${describeContext(ctx)}\n\n${IDENTIFY_INSTRUCTIONS}\n\n${describeVariety(length, recent)}`,
+          },
         ],
       },
     ],
@@ -112,7 +138,7 @@ export async function chat(
       imageBlock(body.image),
       {
         type: 'text',
-        text: `${describeContext(body)}\n\nYour earlier rock card for this find:\n${JSON.stringify(body.card)}\n\n${CHAT_INSTRUCTIONS}`,
+        text: `${describeContext(body)}\n\nYour earlier rock card for this find:\n${JSON.stringify(body.card)}\n\n${CHAT_INSTRUCTIONS}\n${LENGTH_NOTES[body.length ?? 'full']}`,
         cache_control: {type: 'ephemeral'},
       },
     ],

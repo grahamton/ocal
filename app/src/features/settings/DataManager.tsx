@@ -75,7 +75,7 @@ export function DataManager() {
         disabled={loading}
         onPress={() => runExport(() => exportService.exportBackupJson())}
         accessibilityRole="button">
-        <Text style={[styles.btnText, {color: '#fff'}]}>Save a backup</Text>
+        <Text style={[styles.btnText, {color: colors.onAccent}]}>Save a backup</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.btn, plain]}

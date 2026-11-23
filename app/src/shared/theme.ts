@@ -10,6 +10,7 @@ export const PALETTE_JOURNAL = {
   card: '#ffffff', // Pure white paper card
   border: '#e2e8f0', // Slate 200 (subtle pencil line)
   accent: '#0b5f58', // Deep teal: AAA with white text
+  onAccent: '#ffffff', // Text/icons that sit on the accent color
   accentSecondary: '#f59e0b', // Amber 500 (Highlighter)
   danger: '#991b1b', // Dark red: AAA on white
   success: '#22c55e', // Green 500
@@ -22,7 +23,8 @@ export const PALETTE_HIGH_CONTRAST = {
   textSecondary: '#e2e8f0', // Slate 200 (still very bright)
   card: '#000000', // Black
   border: '#FFFFFF', // White (2px solid)
-  accent: '#EAB308', // Neon Yellow/Gold
+  accent: '#FACC15', // Bright yellow: reads on black
+  onAccent: '#000000', // Black on yellow, about 14:1
   accentSecondary: '#06b6d4', // Cyan
   danger: '#FF0000', // Pure Red
   success: '#00FF00', // Pure Green

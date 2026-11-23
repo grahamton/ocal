@@ -6,8 +6,7 @@ import {controls} from './CameraControls.styles';
 // expo-camera zoom is 0..1 of the phone's maximum, so these are gentle steps.
 export const ZOOM_STEPS = [
   {label: 'Normal', value: 0},
-  {label: 'Closer', value: 0.2},
-  {label: 'Closest', value: 0.4},
+  {label: 'Closer', value: 0.15},
 ];
 
 type ZoomBarProps = {zoom: number; onChange: (zoom: number) => void};
@@ -39,7 +38,7 @@ type LightProps = {on: boolean; onToggle: () => void};
 
 export function LightButton({on, onToggle}: LightProps) {
   const {colors} = useTheme();
-  const fg = on ? '#fff' : colors.text;
+  const fg = on ? colors.onAccent : colors.text;
   return (
     <TouchableOpacity
       style={[

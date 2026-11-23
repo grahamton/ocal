@@ -66,7 +66,7 @@ export function AskAlChat({find, colors}: Props) {
               ? {alignSelf: 'flex-end', backgroundColor: colors.accent}
               : {alignSelf: 'flex-start', backgroundColor: colors.background},
           ]}>
-          <Text style={[s.text, {color: t.role === 'user' ? '#fff' : colors.text}]}>
+          <Text style={[s.text, {color: t.role === 'user' ? colors.onAccent : colors.text}]}>
             {t.content}
           </Text>
         </View>
@@ -105,7 +105,7 @@ export function AskAlChat({find, colors}: Props) {
           disabled={sending || !draft.trim()}
           accessibilityRole="button"
           accessibilityLabel="Send to Ranger Al">
-          <Text style={s.sendText}>Send</Text>
+          <Text style={[s.sendText, {color: colors.onAccent}]}>Send</Text>
         </TouchableOpacity>
       </View>
     </View>

@@ -33,7 +33,7 @@ export function FilterButtons({filter, setFilter, total, colors}: Props) {
             onPress={() => setFilter(o.key)}
             accessibilityRole="button"
             accessibilityState={{selected: active}}>
-            <Text style={[styles.text, {color: active ? '#fff' : colors.text}]}>
+            <Text style={[styles.text, {color: active ? colors.onAccent : colors.text}]}>
               {o.label}
             </Text>
           </TouchableOpacity>

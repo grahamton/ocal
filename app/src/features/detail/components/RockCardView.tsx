@@ -62,7 +62,7 @@ export function RockCardView({find, onRetry, colors}: Props) {
               style={[s.button, {backgroundColor: colors.accent}]}
               onPress={onRetry}
               accessibilityRole="button">
-              <Text style={s.buttonText}>Try again now</Text>
+              <Text style={[s.buttonText, {color: colors.onAccent}]}>Try again now</Text>
             </TouchableOpacity>
           </>
         ) : (
@@ -84,7 +84,7 @@ export function RockCardView({find, onRetry, colors}: Props) {
         </View>
       )}
       <View style={s.badges}>
-        <Text style={[s.badge, {backgroundColor: colors.accent}]}>
+        <Text style={[s.badge, {backgroundColor: colors.accent, color: colors.onAccent}]}>
           {CONFIDENCE_WORDS[card.confidence]}
         </Text>
         <Text style={[s.badge, s.badgeAmber]}>
