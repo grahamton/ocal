@@ -6,7 +6,6 @@ import {useTheme} from '@/shared/ThemeContext';
 import {useSession} from '@/shared/SessionContext';
 import {StatusIcon} from '@/shared/components/StatusIcon';
 import {GlassView} from '@/shared/components/GlassView';
-import {THEME} from '@/shared/theme';
 import {SessionControlModal} from './SessionControlModal';
 
 export function MainHeader() {
@@ -51,21 +50,18 @@ export function MainHeader() {
                 styles.sessionPillContainer,
                 activeSession
                   ? {
-                      backgroundColor:
-                        mode === 'high-contrast'
-                          ? colors.success + '40'
-                          : colors.success + '15',
-                      borderColor: colors.success + '40',
-                      borderWidth: 1,
+                      backgroundColor: colors.card,
+                      borderColor: colors.accent,
+                      borderWidth: 2,
                     }
                   : {
                       justifyContent: 'center',
-                      opacity: 0.8,
+                      backgroundColor: colors.card,
                       borderColor: colors.border,
-                      borderWidth: 1,
+                      borderWidth: 2,
                     },
               ]}
-              intensity={activeSession ? 20 : 10}>
+              intensity={0}>
               {activeSession && (
                 <View
                   style={[styles.pulseDot, {backgroundColor: colors.success}]}
@@ -75,15 +71,10 @@ export function MainHeader() {
                 style={[
                   styles.sessionPillText,
                   {
-                    color: activeSession
-                      ? mode === 'high-contrast'
-                        ? colors.text
-                        : colors.success
-                      : colors.textSecondary,
+                    color: colors.text,
                     textAlign: activeSession ? 'left' : 'center',
                     fontWeight: activeSession ? '800' : '600',
                   },
-                  !activeSession && {fontSize: 13},
                 ]}
                 numberOfLines={1}
                 ellipsizeMode="tail">
@@ -91,14 +82,8 @@ export function MainHeader() {
               </Text>
               <Ionicons
                 name={activeSession ? 'options-outline' : 'add-circle-outline'}
-                size={activeSession ? 16 : 18}
-                color={
-                  activeSession
-                    ? mode === 'high-contrast'
-                      ? colors.text
-                      : colors.success
-                    : colors.textSecondary
-                }
+                size={24}
+                color={colors.text}
                 style={{marginLeft: 4, flexShrink: 0}}
               />
             </GlassView>
@@ -135,21 +120,22 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sessionPillContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    minHeight: 52,
+    borderRadius: 26,
     flexDirection: 'row',
     alignItems: 'center',
     maxWidth: '100%',
   },
   sessionPillText: {
-    ...THEME.typography.label,
+    fontSize: 18,
+    fontFamily: 'Outfit_700Bold',
     flexShrink: 1,
   },
   pulseDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
   },
 });

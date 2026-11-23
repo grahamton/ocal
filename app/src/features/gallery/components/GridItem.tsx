@@ -3,7 +3,6 @@ import {StyleSheet, Text, TouchableOpacity, View, Image} from 'react-native';
 import {LinearGradient} from 'expo-linear-gradient';
 import {Ionicons} from '@expo/vector-icons';
 import {StatusIcon} from '@/shared/components/StatusIcon';
-import {formatLocationSync} from '@/shared/format';
 import {FindRecord} from '@/shared/types';
 import {ThemeColors} from '@/shared/ThemeContext';
 
@@ -86,14 +85,8 @@ export function GridItem({
       <View style={styles.cardBody}>
         <Text
           style={[styles.titleText, {color: colors.text}]}
-          numberOfLines={1}>
+          numberOfLines={3}>
           {displayLabel}
-        </Text>
-
-        <Text
-          style={[styles.locationText, {color: colors.textSecondary}]}
-          numberOfLines={1}>
-          {item.location_text || formatLocationSync(item.lat, item.long)}
         </Text>
 
         <Text

@@ -15,7 +15,11 @@ export const RockCardSchema = z.object({
     .string()
     .nullable()
     .describe('When photo_ok is false: one friendly tip for a better shot. Otherwise null.'),
-  name: z.string().describe('Best guess in plain words, e.g. "Banded Agate" or "Mystery Pebble".'),
+  name: z
+    .string()
+    .describe(
+      'Short best guess, 1-4 plain words, e.g. "Banded Agate" or "Mystery Pebble". No parentheses; put look-alikes in also_could_be.',
+    ),
   kind: z.enum(['mineral', 'rock', 'fossil', 'sea_glass', 'artifact', 'not_a_rock', 'unknown']),
   confidence: z.enum(['pretty_sure', 'good_hunch', 'could_be', 'honest_mystery']),
   also_could_be: z.array(z.string()).describe('0-3 look-alikes worth considering.'),

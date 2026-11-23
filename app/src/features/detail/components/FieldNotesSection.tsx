@@ -1,37 +1,36 @@
 import React from 'react';
-import {Text, TextInput, View} from 'react-native';
-import {styles} from '../FindDetailModal.styles';
-
+import {StyleSheet, Text, TextInput, View} from 'react-native';
 import {ThemeColors} from '@/shared/ThemeContext';
 
 type Props = {
   note: string;
   setNote: (note: string) => void;
+  onBlur: () => void;
   colors: ThemeColors;
 };
 
-export function FieldNotesSection({note, setNote, colors}: Props) {
+/** Free-form notes. Saved automatically when you tap away. */
+export function FieldNotesSection({note, setNote, onBlur, colors}: Props) {
   return (
-    <View style={styles.notesContainer}>
-      <Text style={[styles.label, {color: colors.textSecondary}]}>
-        YOUR FIELD NOTES
-      </Text>
+    <View style={s.wrap}>
+      <Text style={[s.label, {color: colors.text}]}>My notes</Text>
       <TextInput
         value={note}
         onChangeText={setNote}
-        style={[
-          styles.notesInput,
-          {
-            backgroundColor: colors.background,
-            borderColor: colors.border,
-            color: colors.text,
-          },
-        ]}
-        placeholder="Add your story about this find..."
+        onBlur={onBlur}
+        style={[s.input, {backgroundColor: colors.card, borderColor: colors.border, color: colors.text}]}
+        placeholder="Where you found it, who was with you..."
         placeholderTextColor={colors.textSecondary}
         multiline
         textAlignVertical="top"
+        accessibilityLabel="My notes about this rock"
       />
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  wrap: {gap: 8},
+  label: {fontSize: 22, fontWeight: '800'},
+  input: {minHeight: 110, borderWidth: 2, borderRadius: 14, padding: 14, fontSize: 18},
+});

@@ -148,7 +148,9 @@ export function CameraCapture({onSaved}: Props) {
     try {
       logger.add('capture', 'Taking picture...');
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.6,
+        // High enough to zoom in on banding and cracks; Ranger Al gets a
+        // resized copy, so this only affects the photo kept on the phone.
+        quality: 0.85,
         skipProcessing: true,
       });
 

@@ -53,16 +53,6 @@ export default function DetailScreen() {
       <FindDetailModal
         item={item}
         onClose={() => router.back()}
-        onSaved={() => {
-          router.back();
-        }}
-        onFilterBySession={sessionId => {
-          router.back();
-          router.push({
-            pathname: '/(tabs)/gallery',
-            params: {sessionId},
-          });
-        }}
       />
     </View>
   );
