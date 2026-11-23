@@ -28,16 +28,6 @@ export function GridItem({
   const aiResult = item.card ?? null;
   const displayLabel = item.label || aiResult?.name || (item.aiError ? 'Waiting for signal' : 'Al is looking...');
 
-  const formatDate = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (date.toDateString() === today.toDateString()) return 'Today';
-    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-    return date.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
-  };
 
   return (
     <TouchableOpacity
@@ -87,12 +77,6 @@ export function GridItem({
           style={[styles.titleText, {color: colors.text}]}
           numberOfLines={3}>
           {displayLabel}
-        </Text>
-
-        <Text
-          style={[styles.sessionText, {color: colors.textSecondary}]}
-          numberOfLines={1}>
-          {formatDate(item.timestamp)}
         </Text>
       </View>
     </TouchableOpacity>

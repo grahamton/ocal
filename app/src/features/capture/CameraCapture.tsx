@@ -18,6 +18,7 @@ import {useSession} from '@/shared/SessionContext';
 import {logger} from '@/shared/LogService';
 import {useTheme} from '@/shared/ThemeContext';
 import {classes} from './CameraCapture.styles';
+import {LightButton, ZoomBar} from './CameraControls';
 
 type Props = {
   onSaved: () => void;
@@ -27,6 +28,8 @@ export function CameraCapture({onSaved}: Props) {
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [saving, setSaving] = useState(false);
+  const [zoom, setZoom] = useState(0);
+  const [lightOn, setLightOn] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusKind, setStatusKind] = useState<'info' | 'success' | 'error'>(
     'info',
@@ -260,10 +263,18 @@ export function CameraCapture({onSaved}: Props) {
       <View style={classes.previewArea} onLayout={onPreviewLayout}>
         {box && (
           <View style={[classes.cameraBox, box]}>
-            <CameraView ref={cameraRef} style={classes.camera} facing="back" ratio="4:3" />
+            <CameraView
+              ref={cameraRef}
+              style={classes.camera}
+              facing="back"
+              ratio="4:3"
+              zoom={zoom}
+              enableTorch={lightOn}
+            />
             <View style={classes.hint} pointerEvents="none">
               <Text style={classes.hintText}>Fill the frame with your rock</Text>
             </View>
+            <ZoomBar zoom={zoom} onChange={setZoom} />
             <Animated.View
               style={[classes.flashOverlay, {opacity: flashOpacity}]}
               pointerEvents="none"
@@ -288,6 +299,7 @@ export function CameraCapture({onSaved}: Props) {
       </View>
 
       <View style={classes.shutterBar}>
+        <LightButton on={lightOn} onToggle={() => setLightOn(v => !v)} />
         <TouchableOpacity
           style={[classes.captureButton, {borderColor: colors.text}]}
           onPress={handleCapture}

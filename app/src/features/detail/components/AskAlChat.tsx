@@ -71,10 +71,21 @@ export function AskAlChat({find, colors}: Props) {
           </Text>
         </View>
       ))}
+      {suggestions.length > 0 && (
+        <Text style={[s.text, {color: colors.textSecondary}]}>
+          Tap a question, or type your own:
+        </Text>
+      )}
       {suggestions.map(q => (
-        <View key={q} style={[s.bubble, {backgroundColor: colors.background}]}>
-          <Text style={[s.text, {color: colors.text}]}>{q}</Text>
-        </View>
+        <TouchableOpacity
+          key={q}
+          style={[s.starter, {borderColor: colors.accent, backgroundColor: colors.card}]}
+          onPress={() => send(q)}
+          disabled={sending}
+          accessibilityRole="button">
+          <Text style={[s.starterText, {color: colors.accent}]}>{q}</Text>
+          <Ionicons name="arrow-forward" size={24} color={colors.accent} />
+        </TouchableOpacity>
       ))}
       {sending && <ActivityIndicator color={colors.accent} />}
       {error && <Text style={[s.text, {color: colors.danger}]}>{error}</Text>}
@@ -82,7 +93,7 @@ export function AskAlChat({find, colors}: Props) {
         <TextInput
           value={draft}
           onChangeText={setDraft}
-          placeholder="Tell Al what you see, or ask anything..."
+          placeholder="Type here..."
           placeholderTextColor={colors.textSecondary}
           style={[s.input, {color: colors.text, borderColor: colors.border}]}
           multiline
@@ -94,7 +105,7 @@ export function AskAlChat({find, colors}: Props) {
           disabled={sending || !draft.trim()}
           accessibilityRole="button"
           accessibilityLabel="Send to Ranger Al">
-          <Ionicons name="send" size={24} color="#fff" />
+          <Text style={s.sendText}>Send</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -106,16 +117,28 @@ const s = StyleSheet.create({
   title: {fontSize: 22, fontWeight: '800'},
   bubble: {maxWidth: '88%', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10},
   text: {fontSize: 18, lineHeight: 26},
+  starter: {
+    minHeight: 60,
+    borderWidth: 2,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  starterText: {flex: 1, fontSize: 18, fontWeight: '800', lineHeight: 24},
   inputRow: {flexDirection: 'row', alignItems: 'flex-end', gap: 8},
   input: {
     flex: 1,
-    minHeight: 56,
+    minHeight: 60,
     maxHeight: 140,
-    borderWidth: 1,
+    borderWidth: 2,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 18,
   },
-  send: {width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center'},
+  send: {minWidth: 84, height: 60, borderRadius: 18, alignItems: 'center', justifyContent: 'center'},
+  sendText: {color: '#fff', fontSize: 18, fontWeight: '800'},
 });

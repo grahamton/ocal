@@ -11,11 +11,22 @@ type Props = {
   colors: ThemeColors;
 };
 
-function Section({title, items, colors}: {title: string; items: string[]; colors: ThemeColors}) {
+type SectionProps = {
+  title: string;
+  items: string[];
+  colors: ThemeColors;
+  boxed?: boolean;
+};
+
+function Section({title, items, colors, boxed}: SectionProps) {
   if (!items.length) return null;
   return (
-    <View style={s.section}>
-      <Text style={[s.sectionTitle, {color: colors.textSecondary}]}>{title}</Text>
+    <View
+      style={[
+        s.section,
+        boxed && [s.boxed, {borderColor: colors.accent, backgroundColor: colors.background}],
+      ]}>
+      <Text style={[s.sectionTitle, {color: colors.accent}]}>{title}</Text>
       {items.map(item => (
         <Text key={item} style={[s.bullet, {color: colors.text}]}>
           {'•  '}
@@ -76,14 +87,14 @@ export function RockCardView({find, onRetry, colors}: Props) {
         <Text style={[s.badge, {backgroundColor: colors.accent}]}>
           {CONFIDENCE_WORDS[card.confidence]}
         </Text>
-        <Text style={[s.badge, {backgroundColor: colors.accentSecondary}]}>
+        <Text style={[s.badge, s.badgeAmber]}>
           {KEEPER_WORDS[card.keeper]}
         </Text>
       </View>
       <Text style={[s.story, {color: colors.text}]}>{card.story}</Text>
-      <Section title="TRY THIS" items={card.try_this} colors={colors} />
-      <Section title="WHAT AL NOTICED" items={card.clues} colors={colors} />
-      <Section title="COULD ALSO BE" items={card.also_could_be} colors={colors} />
+      <Section boxed title="Try this" items={card.try_this} colors={colors} />
+      <Section title="What Al noticed" items={card.clues} colors={colors} />
+      <Section title="It could also be" items={card.also_could_be} colors={colors} />
       {card.tumbles_well != null && (
         <Text style={[s.body, {color: colors.textSecondary}]}>
           {card.tumbles_well ? 'Good for a rock tumbler.' : 'Not a great tumbler rock.'}
@@ -111,7 +122,7 @@ const s = StyleSheet.create({
   badges: {flexDirection: 'row', flexWrap: 'wrap', gap: 8},
   badge: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -120,7 +131,14 @@ const s = StyleSheet.create({
   },
   story: {fontSize: 20, lineHeight: 30},
   section: {gap: 6},
-  sectionTitle: {fontSize: 16, fontWeight: '800', letterSpacing: 1},
+  boxed: {borderWidth: 2, borderRadius: 16, padding: 16},
+  badgeAmber: {
+    backgroundColor: '#fef3c7',
+    color: '#78350f',
+    borderWidth: 2,
+    borderColor: '#78350f',
+  },
+  sectionTitle: {fontSize: 22, fontWeight: '800'},
   bullet: {fontSize: 18, lineHeight: 26},
   body: {fontSize: 18, lineHeight: 26},
   tip: {flexDirection: 'row', gap: 10, borderWidth: 2, borderRadius: 12, padding: 12},

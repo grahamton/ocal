@@ -1,7 +1,7 @@
 import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {FindRecord, Session} from '@/shared/types';
+import {FindRecord} from '@/shared/types';
 import {formatLocationSync} from '@/shared/format';
 import {ThemeColors} from '@/shared/ThemeContext';
 
@@ -10,7 +10,6 @@ type Props = {
   label: string;
   favorite: boolean;
   onToggleFavorite: () => void;
-  session: Session | null;
   colors: ThemeColors;
 };
 
@@ -23,7 +22,7 @@ const formatDate = (timestamp: string) =>
     minute: '2-digit',
   });
 
-export function DetailHeader({localItem, label, favorite, onToggleFavorite, session, colors}: Props) {
+export function DetailHeader({localItem, label, favorite, onToggleFavorite, colors}: Props) {
   const place = localItem.location_text || formatLocationSync(localItem.lat, localItem.long);
   return (
     <View style={[s.card, {backgroundColor: colors.card}]}>
@@ -39,7 +38,6 @@ export function DetailHeader({localItem, label, favorite, onToggleFavorite, sess
         <Ionicons name="time-outline" size={22} color={colors.textSecondary} />
         <Text style={[s.meta, {color: colors.textSecondary}]}>
           {formatDate(localItem.timestamp)}
-          {session ? ` · ${session.name}` : ''}
         </Text>
       </View>
 

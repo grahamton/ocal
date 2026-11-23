@@ -1,0 +1,40 @@
+import {StyleSheet} from 'react-native';
+
+export const controls = StyleSheet.create({
+  zoomBar: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 12,
+    flexDirection: 'row',
+    gap: 8,
+    padding: 8,
+    borderRadius: 36,
+    backgroundColor: 'rgba(15,23,42,0.88)',
+  },
+  zoomBtn: {
+    flex: 1,
+    minHeight: 56,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  zoomBtnActive: {backgroundColor: '#fff'},
+  zoomText: {color: '#fff', fontSize: 18, fontWeight: '800'},
+  zoomTextActive: {color: '#0f172a'},
+  lightBtn: {
+    position: 'absolute',
+    left: 0,
+    top: 18,
+    minWidth: 84,
+    minHeight: 68,
+    paddingHorizontal: 8,
+    borderRadius: 20,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lightText: {fontSize: 18, fontWeight: '800'},
+});

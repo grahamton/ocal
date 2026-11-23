@@ -35,6 +35,7 @@ export const classes = StyleSheet.create({
   },
   shutterBar: {
     alignItems: 'center',
+    marginHorizontal: 0,
     justifyContent: 'center',
     paddingTop: 14,
     paddingBottom: 6,

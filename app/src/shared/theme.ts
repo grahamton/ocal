@@ -9,9 +9,9 @@ export const PALETTE_JOURNAL = {
   textSecondary: '#475569', // Slate 600
   card: '#ffffff', // Pure white paper card
   border: '#e2e8f0', // Slate 200 (subtle pencil line)
-  accent: '#0f766e', // Teal 700 (Deep Teal Ink)
+  accent: '#0b5f58', // Deep teal: AAA with white text
   accentSecondary: '#f59e0b', // Amber 500 (Highlighter)
-  danger: '#ef4444', // Red 500
+  danger: '#991b1b', // Dark red: AAA on white
   success: '#22c55e', // Green 500
 };
 

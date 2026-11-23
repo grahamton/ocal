@@ -1,141 +1,54 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
 import {useTheme} from '@/shared/ThemeContext';
-import {useSession} from '@/shared/SessionContext';
-import {StatusIcon} from '@/shared/components/StatusIcon';
-import {GlassView} from '@/shared/components/GlassView';
-import {SessionControlModal} from './SessionControlModal';
 
-export function MainHeader() {
+type Props = {title?: string};
+
+// Top bar: an optional screen title and one labeled Settings button.
+export function MainHeader({title}: Props) {
   const router = useRouter();
-  const {colors, mode} = useTheme();
-  const {activeSession, startSession} = useSession();
-  const [modalVisible, setModalVisible] = useState(false);
-
-  const handleSessionPress = async () => {
-    if (activeSession) {
-      setModalVisible(true);
-    } else {
-      // Start session immediately or go to session screen?
-      // User said flow is broken, let's make it direct.
-      try {
-        await startSession();
-      } catch (error) {
-        console.error('Failed to start session', error);
-      }
-    }
-  };
+  const {colors} = useTheme();
 
   return (
-    <View style={styles.header}>
-      <View style={styles.headerRow}>
-        {/* Left: Logo Only */}
-        <StatusIcon
-          status="polished"
-          category="mineral"
-          size={32}
-          theme={mode === 'high-contrast' ? 'beach' : 'journal'}
-        />
-
-        {/* Center: Session Pill (Expanded) */}
-        <View style={{flex: 1, paddingHorizontal: 12}}>
-          <TouchableOpacity
-            onPress={handleSessionPress}
-            style={{width: '100%'}}
-            activeOpacity={0.8}>
-            <GlassView
-              style={[
-                styles.sessionPillContainer,
-                activeSession
-                  ? {
-                      backgroundColor: colors.card,
-                      borderColor: colors.accent,
-                      borderWidth: 2,
-                    }
-                  : {
-                      justifyContent: 'center',
-                      backgroundColor: colors.card,
-                      borderColor: colors.border,
-                      borderWidth: 2,
-                    },
-              ]}
-              intensity={0}>
-              {activeSession && (
-                <View
-                  style={[styles.pulseDot, {backgroundColor: colors.success}]}
-                />
-              )}
-              <Text
-                style={[
-                  styles.sessionPillText,
-                  {
-                    color: colors.text,
-                    textAlign: activeSession ? 'left' : 'center',
-                    fontWeight: activeSession ? '800' : '600',
-                  },
-                ]}
-                numberOfLines={1}
-                ellipsizeMode="tail">
-                {activeSession ? activeSession.name : 'Start Walk'}
-              </Text>
-              <Ionicons
-                name={activeSession ? 'options-outline' : 'add-circle-outline'}
-                size={24}
-                color={colors.text}
-                style={{marginLeft: 4, flexShrink: 0}}
-              />
-            </GlassView>
-          </TouchableOpacity>
-        </View>
-
-        {/* Right: Actions */}
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <TouchableOpacity
-            onPress={() => router.push('/settings')}
-            style={{padding: 12}}
-            accessibilityLabel="Settings">
-            <Ionicons name="settings-outline" size={28} color={colors.text} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <SessionControlModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        session={activeSession}
-      />
+    <View style={styles.row}>
+      {title ? (
+        <Text style={[styles.title, {color: colors.text}]} accessibilityRole="header">
+          {title}
+        </Text>
+      ) : (
+        <View />
+      )}
+      <TouchableOpacity
+        onPress={() => router.push('/settings')}
+        style={[styles.button, {borderColor: colors.text, backgroundColor: colors.card}]}
+        accessibilityRole="button"
+        accessibilityLabel="Settings">
+        <Ionicons name="settings-outline" size={26} color={colors.text} />
+        <Text style={[styles.buttonText, {color: colors.text}]}>Settings</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    marginBottom: 8,
-  },
-  headerRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    marginTop: 8,
   },
-  sessionPillContainer: {
-    paddingHorizontal: 14,
-    minHeight: 52,
-    borderRadius: 26,
+  title: {fontSize: 34, fontFamily: 'Outfit_800ExtraBold', flexShrink: 1},
+  button: {
     flexDirection: 'row',
     alignItems: 'center',
-    maxWidth: '100%',
+    gap: 10,
+    minHeight: 56,
+    paddingHorizontal: 18,
+    borderRadius: 28,
+    borderWidth: 2,
   },
-  sessionPillText: {
-    fontSize: 18,
-    fontFamily: 'Outfit_700Bold',
-    flexShrink: 1,
-  },
-  pulseDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 8,
-  },
+  buttonText: {fontSize: 18, fontWeight: '700', fontFamily: 'Outfit_700Bold'},
 });

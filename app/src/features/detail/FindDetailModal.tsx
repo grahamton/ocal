@@ -12,7 +12,7 @@ import {Ionicons} from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import * as localDb from '@/shared/localDb';
-import {FindRecord, Session} from '@/shared/types';
+import {FindRecord} from '@/shared/types';
 import useIdentifyQueue from '@/ai/IdentifyQueueService';
 import {useTheme} from '@/shared/ThemeContext';
 
@@ -37,17 +37,12 @@ export function FindDetailModal({item, onClose}: Props) {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
   const [note, setNote] = useState('');
-  const [session, setSession] = useState<Session | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const {retry} = useIdentifyQueue();
 
   useEffect(() => {
     if (!item) return;
     setNote(item.note ?? '');
-    setSession(null);
-    if (item.sessionId) {
-      localDb.getSession(item.sessionId).then(s => s && setSession(s));
-    }
     // Only reset local note text when switching to a different find.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.id]);
@@ -117,7 +112,6 @@ export function FindDetailModal({item, onClose}: Props) {
             label={item.label ?? ''}
             favorite={item.favorite}
             onToggleFavorite={toggleFavorite}
-            session={session}
             colors={colors}
           />
         </View>

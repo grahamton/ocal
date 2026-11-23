@@ -4,9 +4,9 @@ import {Ionicons} from '@expo/vector-icons';
 import {FindRecord} from '@/shared/types';
 import {useTheme} from '@/shared/ThemeContext';
 import {useGalleryGrid} from './hooks/useGalleryGrid';
-import {GalleryHeader} from './components/GalleryHeader';
+import {FilterButtons} from './components/FilterButtons';
 import {GridItem} from './components/GridItem';
-import {ListItem} from './components/ListItem';
+import {GalleryRow, groupByDay} from './dayGroups';
 import {styles} from './GalleryGrid.styles';
 
 const spacing = 12;
@@ -14,7 +14,6 @@ const spacing = 12;
 type Props = {
   refreshKey: number;
   onSelect?: (item: FindRecord) => void;
-  initialSessionId?: string | null;
   ListHeaderComponent?: React.ReactNode;
   refreshControl?: React.ReactElement;
 };
@@ -22,103 +21,65 @@ type Props = {
 export function GalleryGrid({
   refreshKey,
   onSelect,
-  initialSessionId,
   ListHeaderComponent,
   refreshControl,
 }: Props) {
   const {colors, mode} = useTheme();
   const {width} = useWindowDimensions();
+  const {items, error, filter, setFilter, filteredItems, handleItemPress} =
+    useGalleryGrid({refreshKey, onSelect});
 
-  const {
-    items,
-    error,
-    filter,
-    setFilter,
-    viewMode,
-    setViewMode,
-    selectedSessionId,
-    setSelectedSessionId,
-    activeSession,
-    sessions,
-    recentSessions,
-    filteredItems,
-    handleItemPress,
-  } = useGalleryGrid({refreshKey, initialSessionId, onSelect});
+  const cardWidth = (width - 32 - spacing) / 2;
+  const rows = groupByDay(filteredItems);
 
-  const numColumns = width > 600 ? 3 : 2;
-  const cardWidth = (width - 48 - spacing * (numColumns - 1)) / numColumns;
-  const columns = viewMode === 'grid' ? numColumns : 1;
-
-  const renderItem = ({item}: {item: FindRecord}) => {
-    return viewMode === 'grid' ? (
-      <GridItem
-        item={item}
-        cardWidth={cardWidth}
-        colors={colors}
-        mode={mode}
-        onPress={() => handleItemPress(item)}
-      />
-    ) : (
-      <ListItem
-        item={item}
-        colors={colors}
-        mode={mode}
-        onPress={() => handleItemPress(item)}
-      />
-    );
-  };
-
-  const renderEmptyComponent = () => {
-    if (items.length === 0) {
+  const renderRow = ({item}: {item: GalleryRow}) => {
+    if (item.type === 'day') {
       return (
-        <View style={[styles.emptyBox, {backgroundColor: colors.card}]}>
-          <Ionicons
-            name="camera-outline"
-            size={48}
-            color={colors.accent}
-            style={{marginBottom: 16}}
-          />
-          <Text style={[styles.emptyText, {color: colors.text}]}>
-            Your collection is empty.
-          </Text>
-          <Text
-            style={[
-              styles.emptySubText,
-              {color: colors.textSecondary, marginTop: 8},
-            ]}>
-            Ready for a walk? Tap Capture to start finding treasures.
-          </Text>
-        </View>
+        <Text
+          style={[styles.dayHeading, {color: colors.text}]}
+          accessibilityRole="header">
+          {item.label}
+        </Text>
       );
     }
     return (
-      <View style={styles.emptyCollection}>
-        <Text style={[styles.emptySubText, {color: colors.textSecondary}]}>
-          {filter === 'session' && !selectedSessionId
-            ? 'Select a walk to see finds.'
-            : 'No finds match this filter.'}
-        </Text>
+      <View style={styles.pairRow}>
+        {item.items.map(find => (
+          <GridItem
+            key={find.id}
+            item={find}
+            cardWidth={cardWidth}
+            colors={colors}
+            mode={mode}
+            onPress={() => handleItemPress(find)}
+          />
+        ))}
       </View>
     );
   };
 
+  const renderEmpty = () => (
+    <View style={[styles.emptyBox, {backgroundColor: colors.card}]}>
+      <Ionicons name="camera-outline" size={48} color={colors.accent} />
+      <Text style={[styles.emptyText, {color: colors.text}]}>
+        {items.length === 0 ? 'No rocks yet.' : 'No favorites yet.'}
+      </Text>
+      <Text style={[styles.emptySubText, {color: colors.textSecondary}]}>
+        {items.length === 0
+          ? 'Tap Take Photo to find your first one.'
+          : 'Open a rock and tap Add to favorites.'}
+      </Text>
+    </View>
+  );
+
   if (error) {
     return (
       <View style={[styles.emptyBox, {backgroundColor: colors.card}]}>
-        <Ionicons
-          name="cloud-offline-outline"
-          size={48}
-          color={colors.danger}
-          style={{marginBottom: 16}}
-        />
+        <Ionicons name="cloud-offline-outline" size={48} color={colors.danger} />
         <Text style={[styles.emptyText, {color: colors.text}]}>
-          Error Loading Finds
+          Could not load your rocks
         </Text>
-        <Text
-          style={[
-            styles.emptySubText,
-            {color: colors.textSecondary, marginTop: 8},
-          ]}>
+        <Text style={[styles.emptySubText, {color: colors.textSecondary}]}>
           {error}
         </Text>
       </View>
@@ -127,33 +88,23 @@ export function GalleryGrid({
 
   return (
     <FlatList
-      key={`${viewMode}-${columns}`}
-      data={filteredItems}
-      numColumns={columns}
-      keyExtractor={item => item.id}
-      renderItem={renderItem}
-      columnWrapperStyle={
-        viewMode === 'grid' ? styles.columnWrapper : undefined
-      }
-      contentContainerStyle={[styles.listContainer, {paddingBottom: 120}]}
+      data={rows}
+      keyExtractor={row => row.key}
+      renderItem={renderRow}
+      contentContainerStyle={styles.listContainer}
       refreshControl={refreshControl}
       ListHeaderComponent={
-        <GalleryHeader
-          itemsCount={items.length}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          filter={filter}
-          setFilter={setFilter}
-          sessions={sessions}
-          recentSessions={recentSessions}
-          selectedSessionId={selectedSessionId}
-          setSelectedSessionId={setSelectedSessionId}
-          activeSession={activeSession}
-          ListHeaderComponent={ListHeaderComponent}
-          colors={colors}
-        />
+        <>
+          {ListHeaderComponent}
+          <FilterButtons
+            filter={filter}
+            setFilter={setFilter}
+            total={items.length}
+            colors={colors}
+          />
+        </>
       }
-      ListEmptyComponent={renderEmptyComponent}
+      ListEmptyComponent={renderEmpty}
     />
   );
 }
