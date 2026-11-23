@@ -2,6 +2,31 @@
 
 All notable changes to the **Ocal** project will be documented in this file.
 
+## [3.0.0-dev] - 2026-11-23 ("The Reboot")
+
+### Added
+- **Ranger Al on Claude:** Cloudflare Worker (`worker/`) calling Claude Sonnet 5.5.
+  - `/identify` returns a playful structured rock card; `/chat` handles follow-ups.
+  - The prompt and geology KB live only in the Worker, prompt-cached.
+  - Access code, rate limiting, and the API key kept as a secret.
+- **Ask Ranger Al chat** on every rock, saved with the find.
+- **Self-healing identify queue:** waits for signal and retries on foreground, when the network returns, and on a timer.
+- **Zoomable photo viewer:** pinch, drag, double-tap, plus big zoom buttons.
+- **Full-size 3:4 camera viewfinder** with the shutter below it.
+- **Before/after UI screenshots** (`docs/screenshots/`) and an elder-friendly design brief (`docs/DESIGN_HANDOFF.md`).
+
+### Changed
+- **Data:** back to on-device SQLite (`localDb.ts`, `ocal_v2.db`) and local photos.
+- **Senior UX pass:**
+  - visible status bar, taller tabs ("Take Photo" / "My Rocks")
+  - auto-saving notes and favorites, labeled Share/Delete
+  - high-contrast walk pill
+
+### Removed
+- Firebase (Auth, Firestore, Storage, Functions), Gemini, LiteLLM proxy, PostHog analytics, Zustand.
+- Insights, posters/batch select, data health check, the old detail cards, and four drifting copies of the prompt.
+- Old `server/`, `mcp/`, `src/` (untracked); stale docs moved to `docs/archive/`.
+
 ## [2.0.0] - 2026-03-23
 
 ### Added

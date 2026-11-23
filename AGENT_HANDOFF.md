@@ -1,84 +1,46 @@
-# Agentic Handoff: Ocal Developer Guide
+# Agent Handoff: Ocal (Nov 23, 2026)
 
-Welcome! This repository has been fully refactored, formatted, and configured with **zero ESLint errors** to serve as a clean baseline for continued development.
+## Where things stand
+- **Reboot done:** Firebase and Gemini removed. Local SQLite and local photos in the app; Claude on a Cloudflare Worker for AI.
+- **Tested on a Pixel 10 Pro at 1.5× font:**
+  - identify, chat, offline retry
+  - zoomable photo viewer, 3:4 viewfinder
+- **Worker deployed:** `https://ocal-ranger.rainbowfetch-cms-auth.workers.dev`, with secrets set.
+- **Health:** `tsc` 0 errors, `npm run lint` clean in `app/`; `npm run typecheck` clean in `worker/`.
+- **Not done:**
+  - The app's `.env` still points at the local Worker.
+  - The standalone APK for dad's Samsung isn't built.
+  - `npm test` is broken (pre-existing).
 
----
+## File map
+| Area | Files |
+|---|---|
+| Worker (AI) | `worker/src/index.ts` (routes, auth, rate limit), `ranger.ts` (Claude calls, caching, usage log), `prompt.ts` (Ranger Al persona, the only copy), `card.ts` (rock card schema), `schemas.ts` (request validation) |
+| App AI client | `app/src/ai/ranger.ts` (resize, POST, offline errors), `rockCard.ts` (types, confidence words), `IdentifyQueueService.tsx` (self-healing queue) |
+| Data | `app/src/shared/localDb.ts` (SQLite; serialized read-modify-write), `storageService.ts` (photos) |
+| Camera | `app/app/(tabs)/index.tsx`, `app/src/features/capture/CameraCapture.tsx` + `.styles.ts` |
+| My Rocks | `app/app/(tabs)/gallery.tsx`, `app/src/features/gallery/` |
+| Rock detail | `app/src/features/detail/FindDetailModal.tsx`, `components/` (DetailHeader, RockCardView, AskAlChat, FieldNotesSection, PhotoViewer) |
 
-## 🚦 Repository Status & Health
-- **Lint Check:** 100% Green (`npm run lint` compiles with 0 errors/warnings).
-- **TypeScript Code:** 100% Type-safe (`tsc -p tsconfig.test.json` builds with 0 compile errors).
-- **Formatting:** Checked and formatted with Prettier (`npm run format`).
-- **Unit Test Runner Note:** `npm run test` executes typescript compilation successfully. If Node.js `v24+` complains about native ESM type-stripping inside `node_modules` during tests, you can compile via `tsc` directly to verify typing integrity.
+## Testing on a phone (wireless debugging)
+1. Pair once with `adb pair <ip:port> <code>`, then `adb connect <ip:port>`.
+   - `adb mdns services` shows the ports.
+2. Forward ports so the phone reaches your PC:
+   - `adb reverse tcp:8081 tcp:8081`
+   - `adb reverse tcp:8787 tcp:8787`
+3. Run `npm run dev` in `worker/` and `npx expo start --dev-client --localhost` in `app/`, then open the app.
+4. Screenshots: `adb exec-out screencap -p > shot.png`. Before/after shots are in `docs/screenshots/`.
 
----
+## Gotchas
+- **Airplane mode** drops the Wi-Fi adb link and the port forwards. Re-run `adb connect` and `adb reverse` after.
+- **New native modules** need a rebuild: `npx expo prebuild`, then `gradlew assembleDebug`.
+- **Android 16 KB page-size warning** comes from Expo SDK 52's native libraries. Harmless for now; upgrading Expo fixes it.
+- **Worker logs:** each Claude call logs a token/cache line (`[identify] in=… cache_read=…`). The 26k-token prompt plus KB should show `cache_read`.
 
-## 🏗 Operations & Dev Guide
-Run the following scripts within the `app/` workspace directory:
-- **Install:** `npm install`
-- **Start Expo Web Dev:** `npm run web`
-- **Type Check & Lint:** `npm run lint`
-- **Auto Format:** `npm run format`
-- **Unit Tests:** `npm run test`
-
----
-
-## 📜 Key Mandates
-1. **File Size Limit (< 200 Lines):** Keep every React/TypeScript file under 200 lines. 
-   - *Is this realistic?* Yes, but **only if** concerns are strictly separated. If a component file exceeds 150 lines:
-     - Extract styling blocks into a sibling `<Component>.styles.ts` file.
-     - Move complex business logic or async flow handling into custom hooks or Zustand stores.
-     - Split large JSX tree nodes into smaller dedicated sub-components.
-2. **No Tailwind CSS:** Style exclusively with React Native `StyleSheet` and `@/shared/ThemeContext` color tokens.
-3. **Path Aliases:** Always use `@/*` for imports targeting `app/src/`.
-4. **Offline-First Schema:** All captured records are stored locally with optimistic UI rendering.
-5. **The Silent Partner UI:** Keep UI friction low for seniors (high contrast, large font sizes $\ge 16$px, wide touch targets, and automatic background identification).
-6. **Global Queue Providers:** Subscriptions and background listeners (like the AI processor) must run in single global context providers or Zustand stores to prevent duplicate concurrent API invocations.
-7. **View Recycling for Lists:** Always render collection views using `FlatList` or `FlashList` to enable view recycling. Never use nested scroll views containing map renders.
-8. **Native Modal presentation:** Delegate modal layers to Expo Router's native Stack navigator options (e.g. `presentation: 'modal'`) rather than using custom React Native inline `<Modal>` components.
-
----
-
-## 🛠 Recent Structural Refactoring
-The codebase was recently refactored to optimize performance and enforce code boundaries:
-
-1. **AI Queue Listener Provider (`@/ai/IdentifyQueueService`)**
-   - Moved queue subscription into the global `IdentifyQueueProvider` context wrapper.
-   - Prevents duplicate Firestore subscriptions and prevents concurrent duplicate calls to the Gemini API.
-   - Initialized at root `app/app/_layout.tsx`.
-2. **Modularized Find details (`@/features/detail/`)**
-   - Extracted large custom sections out of `FindDetailModal.tsx` into small, focused sub-components inside `src/features/detail/components/` (`MineralDetails.tsx`, `PetrologyDetails.tsx`, `PaleontologyDetails.tsx`, `ArtifactDetails.tsx`, `LapidaryGuidance.tsx`, `GeologicContext.tsx`, and `TechnicalDetails.tsx`).
-   - `FindDetailModal.tsx` is now **195 lines** (under the 200-line mandate).
-3. **Upgraded list rendering (`@/features/gallery/`)**
-   - Converted the collection grid/list views from `.map` inside ScrollView to `FlatList` to optimize memory via view recycling.
-   - Extracted grid card and list row renderers into `GridItem.tsx` and `ListItem.tsx` under `src/features/gallery/components/`.
-   - `GalleryGrid.tsx` is now **197 lines** (under the 200-line mandate).
-4. **Native Expo Router modal routing (`/detail/[id]`)**
-   - Replaced custom React Native `<Modal>` component with Expo Router's native modal presenter configuration.
-   - Detail page queries Firestore using `subscribeToFind` to allow background AI updates to update the modal content in real time.
-
----
-
-## 📂 Codebase Anatomy
-- **Root Layout & Routing:** `app/app/` (Expo Router Stack and tabs).
-  - `(tabs)/index.tsx`: Capture tab.
-  - `(tabs)/gallery.tsx`: Gallery tab.
-  - `detail/[id].tsx`: Native modal find detail page.
-- **Components & Features:** `app/src/features/`
-  - `capture/`: Camera rendering, GPS collection, and ledger widgets.
-  - `gallery/`: FlatList rendering, grid/list view mode selectors.
-  - `detail/`: Modularized details layout.
-- **Shared Utilities & State Contexts:** `app/src/shared/`
-  - `SessionContext.tsx`: Session/auth status tracking.
-  - `firestoreService.ts`: Firestore document read/writes and listeners.
-  - `ThemeContext.tsx` & `theme.ts`: Contrast configurations and palettes.
-  - `store/useSelectionStore.ts`: Zustand multi-select global state.
-- **Gemini AI Core Prompt & Schema:** `app/src/ai/`
-  - `RangerConfig.ts`: Context details injection.
-  - `rockIdSchema.ts`: Structured schema return parser.
-
----
-
-## 🎯 Next Backlog Priorities
-- **Web Companion View:** Complete the desktop client layout so users can view and export their findings on a larger screen.
-- **Poster Share Mode ("Fossil Plate"):** Implement canvas/image generation of selected finds as a collective image block.
-- **Geologic Prompt Tuning:** Continue refining context prompts to map regional geological formations based on location hints.
+## Next up
+- **UI review:** see `docs/DESIGN_HANDOFF.md`.
+- **APK for dad:** point `.env` at the live Worker, then build a release APK.
+- **Optional:**
+  - set identify to `low` effort for speed
+  - Haiku vs Sonnet eval
+  - shared collection (D1 + R2)

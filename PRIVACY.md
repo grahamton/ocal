@@ -1,6 +1,6 @@
 # Privacy Policy for Ocal
 
-Effective Date: March 24, 2026
+Effective Date: November 23, 2026
 
 Ocal ("we", "us", or "our") operates the Ocal mobile application. This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service and the choices you have associated with that data.
 
@@ -12,9 +12,11 @@ We collect several different types of information for various purposes to provid
 
 #### Personal Data
 While using our Service, we may ask you to provide us with certain personally identifiable information that can be used to contact or identify you ("Personal Data"). Personally identifiable information may include, but is not limited to:
-- Cookies and Usage Data
 - Images of rocks/minerals captured by you
 - Location data (GPS coordinates) if permitted
+- Notes and questions you write about a find
+
+Your photos, notes and collection are stored **on your phone**. A resized copy of a photo, its approximate location, your note and any chat messages are sent over the internet only to identify the rock and answer your questions. Ocal does not keep them on a server and has no accounts or analytics.
 
 #### Usage Data
 We may also collect information on how the Service is accessed and used ("Usage Data"). This Usage Data may include information such as your device's Internet Protocol address (e.g. IP address), device type, and other diagnostic data.
@@ -54,11 +56,11 @@ The security of your data is important to us, but remember that no method of tra
 
 We may employ third party companies and individuals to facilitate our Service ("Service Providers"), to provide the Service on our behalf, to perform Service-related services or to assist us in analyzing how our Service is used.
 
-### Firebase
-We use Firebase services (Auth, Firestore, Cloud Storage, Functions) provided by Google.
+### Cloudflare
+Identification requests pass through a Cloudflare Worker that forwards them to the AI provider.
 
-### Google Gemini
-We use Google Gemini AI to analyze images of rocks.
+### Anthropic (Claude)
+We use Anthropic's Claude AI to analyze photos of rocks and answer questions about them. Anthropic processes these requests under its commercial API terms.
 
 ## Changes to This Privacy Policy
 

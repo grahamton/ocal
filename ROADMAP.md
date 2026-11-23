@@ -1,6 +1,14 @@
 # Ocal Roadmap
 
-Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-technical outdoor enthusiast. Current focus: Database foundation (Phase 4 - SQLite Migration) to support advanced features while testers validate Phase 3 release.
+Context: Beach Mode, tools-not-toys, silent partner. Primary user is a non-technical outdoor enthusiast (the owner's 74-year-old dad).
+
+> **Current direction (Nov 2026):** the app was rebooted onto on-device SQLite plus Claude on a Cloudflare Worker (see `CHANGELOG.md` 3.0.0-dev).
+> Focus now:
+> 1. An elder-friendly UI review (`docs/DESIGN_HANDOFF.md`).
+> 2. A sideloaded APK for dad.
+> 3. A possible shared collection on Cloudflare D1 and R2.
+>
+> Phases below are history. Firebase-era items (Phase 4 Firestore, cloud sync via Firebase) are superseded.
 
 ## Phase 1 - The Bucket (Capture Core)
 

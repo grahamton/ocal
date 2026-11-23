@@ -1,56 +1,35 @@
-# Ocal: The Rock Buddy (v2.0)
+# Ocal: Rock Buddy
 
-**"Your Silent Partner in Discovery"**
+Snap a photo of a beach rock, and **Ranger Al**, a friendly retired geologist, tells you what it might be, how to check, and whether it's a keeper. Then you can ask him about it.
 
-Ocal is an offline-first, high-contrast rock identification app designed for senior beachcombers on the Pacific Coast. It prioritizes clarity, safety, and field utility over social features or gamification.
+Built for a 74-year-old Oregon beachcomber: big text, big buttons, plain words, and it works without signal.
 
-## 🌟 Key Features
+## How it works
+- **Take photo:** saved on your phone instantly, even offline.
+- **Ranger Al looks:** a Cloudflare Worker sends the photo to Claude Sonnet 5.5 and returns a "rock card":
+  - a short name, plus how sure Al is in words
+  - his story, "try this" checks, look-alikes, and keeper or leaverite
+- **Ask Ranger Al:** chat about any rock.
+- **My Rocks:** your collection, with favorites, notes, and a zoomable photo viewer.
 
-### 🌲 Ranger Al Persona (Gemini 3.1)
+Everything except the AI call stays on the phone (SQLite plus local photos).
 
-Powered by the latest **Gemini 3.1 Flash** model, Ranger Al provides deep geological context with full traceability.
+## Getting started
+```bash
+# Worker (Claude): needs worker/.dev.vars with ANTHROPIC_API_KEY and APP_ACCESS_CODE
+cd worker && npm install && npm run dev
 
-- **Campfire Storyteller**: Explains _why_ the rock matters with deep geologic history.
-- **Safety with Sense**: Only warns for immediate dangers (UXO), not for every sharp rock.
-- **Humility**: Admits when it's unsure ("It's a bit of a mystery...") rather than guessing.
-- **Traceability**: Every identification logs the specific AI model and schema version used.
+# App: app/.env needs EXPO_PUBLIC_RANGER_URL and EXPO_PUBLIC_OCAL_KEY (same access code)
+cd app && npm install && npx expo start --dev-client
+```
+- On a phone in dev, `localhost` is rewritten to your PC automatically.
+- Deploying the Worker: see [worker/README.md](./worker/README.md).
 
-### 💎 The Polish Guide (Lapidary Advice)
+## Docs
+- [AGENTS.md](./AGENTS.md): rules for anyone (human or AI) changing the code.
+- [AGENT_HANDOFF.md](./AGENT_HANDOFF.md): current state and file map.
+- [docs/DESIGN_HANDOFF.md](./docs/DESIGN_HANDOFF.md): elder-friendly UI review.
+- [conductor/tech-stack.md](./conductor/tech-stack.md) · [CHANGELOG.md](./CHANGELOG.md) · [ROADMAP.md](./ROADMAP.md)
 
-A dedicated **"Ranger's Workshop"** analysis for rock tumblers.
-
-- **Green Badge**: "TUMBLE CANDIDATE" for hard stones (Agate, Jasper).
-- **Red Badge**: "SKIP THE TUMBLER" for soft or porous stones (Basalt, Sandstone).
-- **Technical Logic**: Evaluates Mohs hardness and texture to prevent ruining a batch.
-
-### 📓 Field Journal Ethos
-
-- **Universal App Architecture**: Powered by **Expo Router** for native-feeling navigation and deep linking.
-- **Magic Container Flow**: Non-blocking Firestore writes ensure the app feels instant, even when offline.
-- **High Contrast**: Designed for bright sunlight readability with senior-friendly typography.
-- **Zustand State**: High-performance selection and UI state management.
-
-## 📱 Getting Started
-
-1.  **Install Dependencies**: `npm install` (in both root and `/app`)
-2.  **Firebase Project Setup**:
-    -   Place your production `google-services.json` in the `app/` directory.
-3.  **Run (Dev)**: `npm run start` inside the `app/` directory.
-4.  **Build (Android)**: `npx eas-cli build -p android --profile production`
-
-## 📚 Documentation
-
-- [**Changelog**](./CHANGELOG.md): Track the evolution of the 2.0 modernization.
-- [**Conductor Dashboard**](./conductor/index.md): The central hub for project vision, tech stack, and development tracks.
-- [**Agent Guidance**](./docs/agent_guidance.md): "The Rulebook" for AI agents working on this repo.
-- [**Backlog**](./docs/BACKLOG.md): Pending features.
-
-## ⚖️ License
-
-**Proprietary / All Rights Reserved.**
-See [LICENSE](./LICENSE) for details. Unauthorized copying or distribution is prohibited.
-
-## 🤝 Contributing
-
-This is a private repository. External contributions are not currently accepted.
-Please read the [**Agent Guidance**](./docs/agent_guidance.md) before making authorized changes to ensure you match the design ethos.
+## License
+**Proprietary / All Rights Reserved.** See [LICENSE](./LICENSE).
